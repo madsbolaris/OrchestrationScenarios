@@ -1,3 +1,5 @@
 namespace OrchestrationScenarios.Models.ContentParts;
 
-public abstract class ContentPart { }
+public abstract class ContentPart
+{
+}

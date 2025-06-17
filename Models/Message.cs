@@ -5,6 +5,6 @@ namespace OrchestrationScenarios.Models;
 public class Message
 {
     public string Name { get; set; } = "";
-    public string Role { get; set; } = "user"; // user, assistant, tool, developer, system
+    public AuthorRole Role { get; set; } = AuthorRole.User;
     public List<ContentPart> Content { get; set; } = [];
 }

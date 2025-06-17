@@ -1,7 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using OrchestrationScenarios.Agents;
+using Microsoft.Extensions.Configuration;
 using OrchestrationScenarios.Scenarios;
 using System.Reflection;
+using OpenAI;
+using OpenAI.Responses;
+using System.ClientModel;
+using OrchestrationScenarios.Models;
 
 class Program
 {
@@ -9,17 +14,32 @@ class Program
     {
         var services = new ServiceCollection();
 
-        // Select which IAgent to use
-        string agentType = args.Length > 1 ? args[1].ToLowerInvariant() : "basic";
-        switch (agentType)
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false)
+            .Build();
+
+        // 2. Bind configuration to a typed object
+        var openAIConfig = new OpenAIConfiguration();
+        configuration.Bind("OpenAI", openAIConfig.OpenAI);
+        openAIConfig.ModelId = configuration["OpenAI:ModelId"] ?? "gpt-4";
+
+        // 3. Register it and the OpenAI client in DI
+        services.AddSingleton(openAIConfig);
+
+        services.AddSingleton<OpenAIResponseClient>((provider) =>
         {
-            case "weather":
-                services.AddSingleton<OrchestrationScenarios.Models.Agent, WeatherPersonAgent>();
-                break;
-            default:
-                services.AddSingleton<OrchestrationScenarios.Models.Agent, BasicAgent>();
-                break;
-        }
+            var config = provider.GetRequiredService<OpenAIConfiguration>();
+            var options = new OpenAIClientOptions();
+            return new (
+                model: config.ModelId,
+                credential: new ApiKeyCredential(config.OpenAI.ApiKey),
+                options: options
+            );
+        });
+
+        services.AddSingleton<BasicAgent>();
+        services.AddSingleton<WeatherPersonAgent>();
 
         // Register all IScenario implementations
         var scenarioTypes = Assembly.GetExecutingAssembly()

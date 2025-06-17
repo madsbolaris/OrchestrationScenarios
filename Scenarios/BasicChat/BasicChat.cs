@@ -1,4 +1,7 @@
+using Microsoft.Extensions.AI;
+using OrchestrationScenarios.Agents;
 using OrchestrationScenarios.Models;
+using OrchestrationScenarios.Models.ContentParts;
 
 namespace OrchestrationScenarios.Scenarios;
 
@@ -7,7 +10,7 @@ public class BasicChatScenario : IScenario
     private readonly Agent _agent;
     public string Name => "Basic Chat Scenario";
 
-    public BasicChatScenario(Agent agent)
+    public BasicChatScenario(BasicAgent agent)
     {
         _agent = agent;
     }
@@ -24,15 +27,59 @@ public class BasicChatScenario : IScenario
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine("</user>");
 
-        Console.ForegroundColor = ConsoleColor.Magenta;
-        Console.Write("<agent>");
+        string? currentMessageId = null;
+        AuthorRole? currentRole = null;
 
-        Console.ResetColor();
-        var reply = await _agent.ChatAsync(input ?? "");
-        Console.Write($"Agent: {reply}");
+        await foreach (var part in _agent.StreamRunAsync([
+            new Message
+            {
+                Role = AuthorRole.User,
+                Content = [new Models.ContentParts.TextContent("what's the weather in Seattle today?")]
+            }
+        ]))
+        {
+            switch (part)
+            {
+                case StreamedStartContent start:
+                    currentMessageId = start.MessageId;
+                    currentRole = start.AuthorRole;
 
-        Console.ForegroundColor = ConsoleColor.Magenta;
-        Console.WriteLine("</agent>");
-        Console.ResetColor();
+                    Console.ForegroundColor = GetColor(start.AuthorRole);
+                    Console.Write($"<{GetTag(start.AuthorRole)}>");
+                    Console.ResetColor();
+                    break;
+
+                case StreamedTextContent text:
+                    Console.Write(text.Text);
+                    break;
+
+                case StreamedEndContent end:
+                    if (currentMessageId == end.MessageId && currentRole is not null)
+                    {
+                        Console.ForegroundColor = GetColor(currentRole.Value);
+                        Console.WriteLine($"</{GetTag(currentRole.Value)}>");
+                        Console.ResetColor();
+                        currentMessageId = null;
+                        currentRole = null;
+                    }
+                    break;
+            }
+        }
     }
+
+
+
+    private static ConsoleColor GetColor(AuthorRole role) => role switch
+    {
+        AuthorRole.Tool => ConsoleColor.Yellow,
+        AuthorRole.Agent => ConsoleColor.Magenta,
+        _ => ConsoleColor.Gray
+    };
+
+    private static string GetTag(AuthorRole role) => role switch
+    {
+        AuthorRole.Tool => "tool",
+        AuthorRole.Agent => "agent",
+        _ => "unknown"
+    };
 }
