@@ -34,7 +34,7 @@ public class BasicChatScenario : IScenario
             new Message
             {
                 Role = AuthorRole.User,
-                Content = [new Models.ContentParts.TextContent("what's the weather in Seattle today?")]
+                Content = [new Models.ContentParts.TextContent("what's today's date?")]
             }
         ]))
         {
