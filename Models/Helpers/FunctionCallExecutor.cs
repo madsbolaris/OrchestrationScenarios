@@ -22,7 +22,7 @@ public static class FunctionCallExecutor
         var args = JsonSerializer.Deserialize<Dictionary<string, object>>(functionCall.Arguments)
                    ?? throw new InvalidOperationException("Failed to deserialize arguments");
 
-        var result = await function.InvokeAsync(kernel, new KernelArguments(args));
+        var result = await function.InvokeAsync(kernel, new KernelArguments(args!));
         return result?.GetValue<object>();
     }
 }

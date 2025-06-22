@@ -26,7 +26,7 @@ public abstract class Agent(OpenAIResponseClient client)
                 switch (part)
                 {
                     case StreamedFunctionCallContent call:
-                        if (call.CallId == null)
+                        if (call.CallId != null)
                         {
                             callIds.Add(call.CallId);
                         }
