@@ -1,9 +1,3 @@
-// <copyright file="SetStreamingOperation.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -12,7 +6,7 @@ namespace OrchestrationScenarios.Models.Runs.Responses.StreamingOperations;
 /// <summary>
 /// Represents an operation that sets (overwrites) the value at a JSON path.
 /// </summary>
-public class SetStreamingOperation<T> : StreamingOperation<T>
+public class SetStreamingOperation<T> : StreamingOperation<T> where T : new()
 {
     private readonly string? _jsonPath;
     private readonly object _value;
@@ -22,6 +16,31 @@ public class SetStreamingOperation<T> : StreamingOperation<T>
 
     [JsonPropertyName("v")]
     public object? Value => _value;
+
+    [JsonIgnore]
+    public T TypedValue
+    {
+        get
+        {
+            if (_jsonPath is null)
+            {
+                // Full object
+                return (T)_value;
+            }
+
+            // Reconstruct T from a single property
+            var instance = new T();
+            var prop = typeof(T).GetProperty(_jsonPath, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if (prop is null || !prop.CanWrite)
+            {
+                throw new InvalidOperationException($"Property '{_jsonPath}' not found or not writable on type '{typeof(T)}'.");
+            }
+
+            var converted = _value == null ? null : Convert.ChangeType(_value, prop.PropertyType);
+            prop.SetValue(instance, converted);
+            return instance;
+        }
+    }
 
     public SetStreamingOperation(T value)
     {
@@ -52,7 +71,7 @@ public class SetStreamingOperation<T> : StreamingOperation<T>
 
     private static Dictionary<string, object?> GetNonDefaultProperties(T value)
     {
-        var properties = value!.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
         var result = new Dictionary<string, object?>();
 
         foreach (var prop in properties)

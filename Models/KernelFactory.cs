@@ -1,23 +1,23 @@
+using Microsoft.Extensions.AI;
+
 namespace OrchestrationScenarios.Models;
 
-using Microsoft.SemanticKernel;
 
-public static class KernelFactory
+public static class ToolFactory
 {
-    public static Kernel Create()
+    public static Dictionary<string, AIFunction> CreateAIFunctions()
     {
-        var kernel = new Kernel();
+        var tools = new Dictionary<string, AIFunction>();
 
         // Add any built-in plugins/functions
-        var nowFunction = KernelFunctionFactory.CreateFromMethod(
+        var nowFunction = AIFunctionFactory.Create(
             () => DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-            "Now",
+            "DateTime-Now",
             "Returns the current time in the format yyyy-MM-dd HH:mm:ss"
         );
 
-        var dateTimePlugin = KernelPluginFactory.CreateFromFunctions("DateTime", [nowFunction]);
-        kernel.Plugins.Add(dateTimePlugin);
+        tools.Add("DateTime-Now", nowFunction);
 
-        return kernel;
+        return tools;
     }
 }

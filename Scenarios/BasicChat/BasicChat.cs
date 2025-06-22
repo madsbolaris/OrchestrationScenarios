@@ -1,6 +1,8 @@
 using OrchestrationScenarios.Agents;
 using OrchestrationScenarios.Models;
-using OrchestrationScenarios.Models.ContentParts;
+using OrchestrationScenarios.Models.Messages;
+using OrchestrationScenarios.Models.Messages.Content;
+using OrchestrationScenarios.Models.Messages.Types;
 using OrchestrationScenarios.Utils;
 
 namespace OrchestrationScenarios.Scenarios;
@@ -17,36 +19,33 @@ public class BasicChatScenario : IScenario
 
     public async Task RunAsync()
     {
-        List<Message> messages = [
-            new()
+        List<ChatMessage> messages = [
+            new UserMessage()
             {
-                Role = AuthorRole.User,
-                Content = [new TextContent("what's today's date? Then search for today's weather in Seattle, WA.")]
+                Content = [new TextContent() {Text = "What's today's date?"}]
+                // Content = [new TextContent() {Text = "what's today's date? Then search for today's weather in Seattle, WA."}]
             },
-            new()
+            new AgentMessage()
             {
-                Role = AuthorRole.Agent,
-                Content = [new ToolCallContent("DateTime", "Now", "0001", "{}")]
+                Content = [new ToolCallContent() { Name = "DateTimeNow", ToolCallId = "0001", Arguments = [] }]
             },
-            new()
+            new ToolMessage()
             {
-                Role = AuthorRole.Tool,
-                Content = [new ToolResultContent("DateTime", "Now", "0001", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))]
+                ToolCallId = "0001",
+                Content = [new ToolResultContent() { Results = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") }]
             },
-            new()
+            new AgentMessage()
             {
-                Role = AuthorRole.Agent,
-                Content = [new ToolCallContent("WebSearch", "Search", "0002", "{\"query\": \"weather in Seattle, WA\"}")]
+                Content = [new ToolCallContent() { Name = "WebSearch", ToolCallId = "0002", Arguments = new Dictionary<string, object?> { { "query", "weather in Seattle, WA" } } }]
             },
-            new()
+            new ToolMessage()
             {
-                Role = AuthorRole.Tool,
-                Content = [new ToolResultContent("WebSearch", "Search", "0002", "REDACTED")]
+                ToolCallId = "0002",
+                Content = [new ToolResultContent() { Results = "REDACTED" }]
             },
-            new()
+            new AgentMessage()
             {
-                Role = AuthorRole.Agent,
-                Content = [new TextContent("""
+                Content = [new TextContent() { Text = """
                 Jun 19, 2025, 1:49:37 PM
 
                 ## Weather for Seattle, WA:
@@ -63,7 +62,7 @@ public class BasicChatScenario : IScenario
 
 
                 After an unusually dry spring and hotter-than-normal June, rain is finally returning to Seattle, providing a much-needed reprieve from increasing fire risks, depleted snowpacks, and widespread drought conditions. The National Weather Service forecasts rain and showers in the region from Wednesday through Sunday. ([axios.com](https://www.axios.com/local/seattle/2025/06/17/seattle-rain-returns-fire-risk-drought?utm_source=openai))
-                """)]
+                """ } ]
             }
         ];
 

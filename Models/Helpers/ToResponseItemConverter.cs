@@ -2,39 +2,75 @@ namespace OrchestrationScenarios.Models.Helpers;
 
 using System.Text.Json;
 using OpenAI.Responses;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Agents.OpenAI;
+using Microsoft.Extensions.AI;
 
 public static class ToResponseItemConverter
 {
-    public static IEnumerable<ResponseItem> Convert(ChatMessageContent message)
+    public static IEnumerable<ResponseItem> Convert(ChatMessage message)
     {
         var items = new List<ResponseItem>();
 
+        if (message.Contents.Count == 0)
+            throw new InvalidOperationException("Assistant messages must have at least one item.");
+
         switch (message.Role.ToString())
         {
+            
             case "system":
+                foreach (var item in message.Contents)
+                {
+                    if (item is TextContent text)
+                    {
+                        items.Add(ResponseItem.CreateSystemMessageItem(text.Text));
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Unknown item type: {item.GetType().Name}");
+                    }
+                }
+                break;
+            
             case "developer":
+                foreach (var item in message.Contents)
+                {
+                    if (item is TextContent text)
+                    {
+                        items.Add(ResponseItem.CreateDeveloperMessageItem(text.Text));
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Unknown item type: {item.GetType().Name}");
+                    }
+                }
+                break;
+
             case "user":
-                items.Add(message.ToResponseItem());
+                foreach (var item in message.Contents)
+                {
+                    if (item is TextContent text)
+                    {
+                        items.Add(ResponseItem.CreateUserMessageItem(text.Text));
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Unknown item type: {item.GetType().Name}");
+                    }
+                }
                 break;
 
             case "assistant":
-                if (message.Items.Count == 0)
-                    throw new InvalidOperationException("Assistant messages must have at least one item.");
-
-                foreach (var item in message.Items)
+                foreach (var item in message.Contents)
                 {
                     switch (item)
                     {
-                        case Microsoft.SemanticKernel.TextContent text:
+                        case TextContent text:
                             items.Add(ResponseItem.CreateAssistantMessageItem(text.Text));
                             break;
 
-                        case Microsoft.SemanticKernel.FunctionCallContent functionCall:
+                        case FunctionCallContent functionCall:
                             items.Add(ResponseItem.CreateFunctionCallItem(
-                                functionCall.Id,
-                                functionCall.FunctionName,
+                                functionCall.CallId,
+                                functionCall.Name,
                                 BinaryData.FromString(JsonSerializer.Serialize(functionCall.Arguments))
                             ));
                             break;
@@ -46,12 +82,9 @@ public static class ToResponseItemConverter
                 break;
 
             case "tool":
-                if (message.Items.Count == 0)
-                    throw new InvalidOperationException("Tool messages must have at least one item.");
-
-                foreach (var item in message.Items)
+                foreach (var item in message.Contents)
                 {
-                    if (item is not Microsoft.SemanticKernel.FunctionResultContent functionResult)
+                    if (item is not FunctionResultContent functionResult)
                         throw new InvalidOperationException($"Expected FunctionResultContent, got {item.GetType().Name}");
 
                     items.Add(ResponseItem.CreateFunctionCallOutputItem(

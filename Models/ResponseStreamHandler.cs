@@ -1,24 +1,26 @@
 namespace OrchestrationScenarios.Models;
 
-using Microsoft.SemanticKernel;
+using Microsoft.Extensions.AI;
 using OpenAI.Responses;
-using OrchestrationScenarios.Models.ContentParts;
 using OrchestrationScenarios.Models.Helpers;
+using OrchestrationScenarios.Models.Messages.Content;
+using OrchestrationScenarios.Models.Messages.Types;
+using OrchestrationScenarios.Models.Runs.Responses.Deltas;
+using OrchestrationScenarios.Models.Runs.Responses.StreamingOperations;
+using OrchestrationScenarios.Models.Runs.Responses.StreamingUpdates;
 
 public sealed class ResponseStreamHandler
 {
     private readonly OpenAIResponseClient _client;
-    private readonly Kernel _kernel;
 
-    public ResponseStreamHandler(OpenAIResponseClient client, Kernel kernel)
+    public ResponseStreamHandler(OpenAIResponseClient client)
     {
         _client = client;
-        _kernel = kernel;
     }
 
-    public async IAsyncEnumerable<StreamedContentPart> RunStreamingAsync(List<Message> messages, List<ResponseTool> tools)
+    public async IAsyncEnumerable<StreamingUpdate> RunStreamingAsync(List<Messages.ChatMessage> messages, List<ResponseTool> tools, Dictionary<string, AIFunction> aiFunctions)
     {
-        var chatMessages = messages.Select(ToKernelMessageConverter.Convert).ToList();
+        var chatMessages = messages.Select(ToMicrosoftExtensionsAIMessageConverter.Convert).ToList();
         var responseItems = chatMessages.SelectMany(ToResponseItemConverter.Convert).ToList();
 
         var options = new ResponseCreationOptions
@@ -33,13 +35,12 @@ public sealed class ResponseStreamHandler
 
         var response = _client.CreateResponseStreamingAsync(responseItems, options);
 
-        var functionCallBuilders = new Dictionary<string, ContentParts.ToolCallContent>();
+        var functionCallBuilders = new Dictionary<string, ToolCallContent>();
 
         await foreach (var streamedPart in FromOpenAIResponsesStreamingResponseParser.ParseAsync(
             response,
             messages,
-            functionCallBuilders,
-            async fn => await FunctionCallExecutor.ExecuteAsync(fn, _kernel)
+            functionCallBuilders
         ))
         {
             yield return streamedPart;
@@ -47,43 +48,62 @@ public sealed class ResponseStreamHandler
 
         if (functionCallBuilders.Count > 0)
         {
-            foreach (var part in HandleFunctionCalls(functionCallBuilders, messages))
+            await foreach (var part in HandleFunctionCallsAsync(
+                functionCallBuilders,
+                messages,
+                async fn => await FunctionCallExecutor.ExecuteAsync(fn, aiFunctions)))
                 yield return part;
         }
     }
 
-    private IEnumerable<StreamedContentPart> HandleFunctionCalls(
-        Dictionary<string, ContentParts.ToolCallContent> calls,
-        List<Message> messages)
+    private async IAsyncEnumerable<StreamingUpdate> HandleFunctionCallsAsync(
+        Dictionary<string, ToolCallContent> calls,
+        List<Messages.ChatMessage> messages,
+        Func<ToolCallContent, Task<object?>> invokeFunction)
     {
         foreach (var functionCallContent in calls.Values)
         {
-            yield return new StreamedStartContent(AuthorRole.Tool, functionCallContent.CallId!);
+            var messageId = "m_" + functionCallContent.ToolCallId;
 
-            var parts = functionCallContent.Name!.Split('-');
-            if (parts.Length != 2)
+            yield return new ChatMessageUpdate<ToolMessageDelta>()
             {
-                throw new InvalidOperationException($"Expected function name in format 'plugin-function', but got '{functionCallContent.Name}'.");
-            }
+                Delta = new StartStreamingOperation<ToolMessageDelta>(new ToolMessageDelta()),
+            };
 
-            var pluginName = parts[0];
-            var functionName = parts[1];
+            var toolResults = await invokeFunction(functionCallContent);
 
-            messages.Add(new Message
+            messages.Add(new ToolMessage
             {
-                Role = AuthorRole.Tool,
+                ToolCallId = functionCallContent.ToolCallId,
                 Content = [
-                    new ContentParts.ToolResultContent(
-                        pluginName: pluginName,
-                        functionName: functionName,
-                        callId: functionCallContent.CallId!,
-                        functionResult: functionCallContent.Results?.ToString() ?? string.Empty
-                    )
+                    new ToolResultContent()
+                    {
+                        Results = toolResults
+                    }
                 ]
             });
 
-            yield return new StreamedFunctionResultContent(functionCallContent.CallId!, functionCallContent.CallId!, 0, functionCallContent.Results?.ToString() ?? string.Empty);
-            yield return new StreamedEndContent(AuthorRole.Tool, functionCallContent.CallId!, 1);
+            yield return new ChatMessageUpdate<ToolMessageDelta>()
+            {
+                ConversationId = messages.FirstOrDefault()?.ConversationId!,
+                MessageId = messageId,
+                Delta = new SetStreamingOperation<ToolMessageDelta>(new ToolMessageDelta()
+                {
+                    Content = [
+                        new ToolResultContent()
+                        {
+                            Results = toolResults
+                        }
+                    ]
+                })
+            };
+
+            yield return new ChatMessageUpdate<ToolMessageDelta>()
+            {
+                ConversationId = messages.FirstOrDefault()?.ConversationId!,
+                MessageId = messageId!,
+                Delta = new EndStreamingOperation<ToolMessageDelta>(new ToolMessageDelta())
+            };
         }
     }
 }

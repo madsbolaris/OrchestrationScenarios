@@ -15,5 +15,5 @@ public class ToolCallContent : AIContent
     public string Name { get; set; } = default!;
     public string ToolCallId { get; set; } = default!;
 
-    public Dictionary<string, object>? Arguments { get; set; }
+    public Dictionary<string, object?>? Arguments { get; set; }
 }

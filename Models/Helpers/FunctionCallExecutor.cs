@@ -1,28 +1,19 @@
 namespace OrchestrationScenarios.Models.Helpers;
 
-using System.Text.Json;
-using Microsoft.SemanticKernel;
-using FunctionCallContent = ContentParts.ToolCallContent;
+using Microsoft.Extensions.AI;
+using OrchestrationScenarios.Models.Messages.Content;
 
 public static class FunctionCallExecutor
 {
-    public static async Task<object?> ExecuteAsync(FunctionCallContent functionCall, Kernel kernel)
+    public static async Task<object?> ExecuteAsync(ToolCallContent toolCall, Dictionary<string, AIFunction> aiFunctions)
     {
-        if (functionCall.Name is null)
+        if (toolCall.Name is null)
             throw new ArgumentException("FunctionCallContent.Name is null");
 
-        var parts = functionCall.Name.Split('-');
-        if (parts.Length != 2)
-            throw new InvalidOperationException($"Expected function name in format 'plugin-function', got '{functionCall.Name}'");
+        var function = aiFunctions.GetValueOrDefault(toolCall.Name) ?? throw new InvalidOperationException($"Function '{toolCall.Name}' not found");
+        var args = toolCall.Arguments;
 
-        string pluginName = parts[0];
-        string functionName = parts[1];
-
-        var function = kernel.Plugins.GetFunction(pluginName, functionName) ?? throw new InvalidOperationException($"Function '{functionName}' not found in plugin '{pluginName}'");
-        var args = JsonSerializer.Deserialize<Dictionary<string, object>>(functionCall.Arguments)
-                   ?? throw new InvalidOperationException("Failed to deserialize arguments");
-
-        var result = await function.InvokeAsync(kernel, new KernelArguments(args!));
-        return result?.GetValue<object>();
+        var result = await function.InvokeAsync(new (args));
+        return result;
     }
 }
