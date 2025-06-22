@@ -1,4 +1,4 @@
-namespace OrchestrationScenarios.Parsing;
+namespace OrchestrationScenarios.Runtime.Response;
 
 using System.Text;
 using OpenAI.Responses;

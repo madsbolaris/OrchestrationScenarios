@@ -4,6 +4,7 @@ using OrchestrationScenarios.Models.Messages.Types;
 using OrchestrationScenarios.Models.Runs.Responses.Deltas;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingOperations;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingUpdates;
+using OrchestrationScenarios.Runtime.Response;
 using OrchestrationScenarios.Utilities;
 
 namespace OrchestrationScenarios.Runtime;

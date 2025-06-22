@@ -2,12 +2,10 @@ using Microsoft.Extensions.AI;
 using OpenAI.Responses;
 using OrchestrationScenarios.Conversion;
 using OrchestrationScenarios.Models.Agents;
-using OrchestrationScenarios.Models.Messages.Types;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingUpdates;
 using OrchestrationScenarios.Models.Tools.ToolDefinitions.Function;
-using OrchestrationScenarios.Parsing;
 
-namespace OrchestrationScenarios.Runtime;
+namespace OrchestrationScenarios.Runtime.Response;
 
 public sealed class ResponseStreamHandler(OpenAIResponseClient client)
 {
