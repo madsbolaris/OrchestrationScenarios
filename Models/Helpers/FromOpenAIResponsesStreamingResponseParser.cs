@@ -2,25 +2,25 @@ namespace OrchestrationScenarios.Models.Helpers;
 
 using System.Text;
 using OpenAI.Responses;
-using OrchestrationScenarios.Models.Messages;
 using OrchestrationScenarios.Models.Messages.Content;
 using OrchestrationScenarios.Models.Messages.Types;
-using OrchestrationScenarios.Models.Runs.Responses;
 using OrchestrationScenarios.Models.Runs.Responses.Deltas;
 using OrchestrationScenarios.Models.Runs.Responses.Deltas.Content;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingOperations;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingUpdates;
+using OrchestrationScenarios.Models.Messages;
 
 public static class FromOpenAIResponsesStreamingResponseParser
 {
     public static async IAsyncEnumerable<StreamingUpdate> ParseAsync(
         IAsyncEnumerable<StreamingResponseUpdate> responseStream,
-        List<ChatMessage> messages,
-        Dictionary<string, ToolCallContent> functionCallBuilders)
+        string conversationId,
+        Func<ToolCallContent, Task<object?>> invokeFunction,
+        List<ChatMessage> outputMessages)
     {
+        var functionCallBuilders = new Dictionary<string, ToolCallContent>();
+        var functionCallTasks = new List<Task<(ToolCallContent, object?)>>();
         var responseBuilder = new StringBuilder();
-
-        string conversationId = Guid.NewGuid().ToString();
         string? currentMessageId = null;
 
         yield return new RunUpdate()
@@ -35,7 +35,6 @@ public static class FromOpenAIResponsesStreamingResponseParser
                 case StreamingResponseOutputItemAddedUpdate outputItem:
                     if (currentMessageId != null && currentMessageId != outputItem.Item.Id)
                     {
-                        // If we have a current message and the new item has a different ID, end the current message
                         yield return new ChatMessageUpdate<AgentMessageDelta>()
                         {
                             ConversationId = conversationId,
@@ -68,11 +67,10 @@ public static class FromOpenAIResponsesStreamingResponseParser
                             MessageId = currentMessageId,
                             Delta = new SetStreamingOperation<AgentMessageDelta>(new AgentMessageDelta()
                             {
-                                Content = [new ToolCallContent() { ToolCallId = fnCall.Id, Name = fnCall.FunctionName }]
+                                Content = [new ToolCallContent { ToolCallId = fnCall.Id, Name = fnCall.FunctionName }]
                             })
                         };
                     }
-
                     break;
 
                 case StreamingResponseContentPartAddedUpdate contentPart:
@@ -91,27 +89,22 @@ public static class FromOpenAIResponsesStreamingResponseParser
                         MessageId = textDelta.ItemId,
                         Index = textDelta.ContentIndex,
                         Delta = new AppendStreamingOperation<TextContentDelta>(
-                            new TextContentDelta()
-                            {
-                                Text = textDelta.Delta
-                            }
-                        )
+                            new TextContentDelta { Text = textDelta.Delta })
                     };
                     break;
 
                 case StreamingResponseOutputTextDoneUpdate textDone:
-                    messages.Add(new AgentMessage()
+                    outputMessages.Add(new AgentMessage
                     {
-                        Content = [new TextContent() { Text = responseBuilder.ToString() }]
+                        Content = [new TextContent { Text = responseBuilder.ToString() }]
                     });
-                    responseBuilder.Clear();
-
                     yield return new AIContentUpdate<TextContentDelta>()
                     {
                         MessageId = textDone.ItemId,
                         Index = textDone.ContentIndex + 1,
                         Delta = new EndStreamingOperation<TextContentDelta>(new TextContentDelta())
                     };
+                    responseBuilder.Clear();
                     break;
 
                 case StreamingResponseFunctionCallArgumentsDeltaUpdate fnArgsDelta:
@@ -120,18 +113,14 @@ public static class FromOpenAIResponsesStreamingResponseParser
                         MessageId = fnArgsDelta.ItemId,
                         Index = fnArgsDelta.OutputIndex,
                         Delta = new AppendStreamingOperation<ToolCallContentDelta>(
-                            new ToolCallContentDelta()
-                            {
-                                Arguments = fnArgsDelta.Delta
-                            }
-                        )
+                            new ToolCallContentDelta { Arguments = fnArgsDelta.Delta })
                     };
                     break;
 
                 case StreamingResponseFunctionCallArgumentsDoneUpdate fnArgsDone:
                     if (functionCallBuilders.TryGetValue(fnArgsDone.ItemId, out var fnContent))
                     {
-                        messages.Add(new AgentMessage()
+                        outputMessages.Add(new AgentMessage
                         {
                             Content = [fnContent]
                         });
@@ -142,23 +131,70 @@ public static class FromOpenAIResponsesStreamingResponseParser
                             Index = fnArgsDone.OutputIndex + 1,
                             Delta = new EndStreamingOperation<ToolCallContentDelta>(new ToolCallContentDelta())
                         };
+
+                        var task = Task.Run(async () => (fnContent, await invokeFunction(fnContent)));
+                        functionCallTasks.Add(task);
                     }
                     break;
 
+                case StreamingResponseOutputItemDoneUpdate itemDone:
+                    if (currentMessageId != null)
+                    {
+                        yield return new ChatMessageUpdate<AgentMessageDelta>()
+                        {
+                            ConversationId = conversationId,
+                            MessageId = itemDone.Item.Id,
+                            Delta = new EndStreamingOperation<AgentMessageDelta>(new AgentMessageDelta())
+                        };
+                        currentMessageId = null;
+                    }
+
+                    // Await tool calls and yield tool messages
+                    foreach (var task in await Task.WhenAll(functionCallTasks))
+                    {
+                        var (fnCallContent, toolResults) = task;
+
+                        outputMessages.Add(new ToolMessage
+                        {
+                            ToolCallId = fnCallContent.ToolCallId,
+                            Content = [new ToolResultContent { Results = toolResults }]
+                        });
+
+                        yield return new ChatMessageUpdate<ToolMessageDelta>
+                        {
+                            ConversationId = conversationId,
+                            MessageId = "m_" + fnCallContent.ToolCallId,
+                            Delta = new StartStreamingOperation<ToolMessageDelta>(new ToolMessageDelta())
+                        };
+
+                        yield return new ChatMessageUpdate<ToolMessageDelta>
+                        {
+                            ConversationId = conversationId,
+                            MessageId = "m_" + fnCallContent.ToolCallId,
+                            Delta = new SetStreamingOperation<ToolMessageDelta>(new ToolMessageDelta
+                            {
+                                Content = [new ToolResultContent { Results = toolResults }]
+                            })
+                        };
+
+                        yield return new ChatMessageUpdate<ToolMessageDelta>
+                        {
+                            ConversationId = conversationId,
+                            MessageId = "m_" + fnCallContent.ToolCallId,
+                            Delta = new EndStreamingOperation<ToolMessageDelta>(new ToolMessageDelta())
+                        };
+                    }
+                    functionCallTasks.Clear();
+                    break;
+
                 case StreamingResponseWebSearchCallInProgressUpdate webStart:
-                    // yield return new ChatMessageUpdate<AgentMessageDelta>()
-                    // {
-                    //     ConversationId = conversationId,
-                    //     MessageId = webStart.ItemId,
-                    //     Delta = new StartStreamingOperation<AgentMessageDelta>(new AgentMessageDelta())
-                    // };
                     yield return new ChatMessageUpdate<AgentMessageDelta>()
                     {
                         ConversationId = conversationId,
                         MessageId = webStart.ItemId,
-                        Delta = new SetStreamingOperation<AgentMessageDelta>(new AgentMessageDelta()
+                        Delta = new SetStreamingOperation<AgentMessageDelta>(new AgentMessageDelta
                         {
-                            Content = [new ToolCallContent() { ToolCallId = webStart.ItemId, Name = "WebSearch" }]
+                            Content = [new ToolCallContent { ToolCallId = webStart.ItemId, Name = "WebSearch" }]
                         })
                     };
                     yield return new ChatMessageUpdate<AgentMessageDelta>()
@@ -167,7 +203,6 @@ public static class FromOpenAIResponsesStreamingResponseParser
                         MessageId = webStart.ItemId,
                         Delta = new EndStreamingOperation<AgentMessageDelta>(new AgentMessageDelta())
                     };
-
                     currentMessageId = null;
 
                     yield return new ChatMessageUpdate<ToolMessageDelta>()
@@ -179,13 +214,18 @@ public static class FromOpenAIResponsesStreamingResponseParser
                     break;
 
                 case StreamingResponseWebSearchCallCompletedUpdate webEnd:
+                    outputMessages.Add(new ToolMessage
+                    {
+                        ToolCallId = webEnd.ItemId,
+                        Content = [new ToolResultContent { Results = "REDACTED" }]
+                    });
                     yield return new ChatMessageUpdate<ToolMessageDelta>()
                     {
                         ConversationId = conversationId,
                         MessageId = webEnd.ItemId,
-                        Delta = new SetStreamingOperation<ToolMessageDelta>(new ToolMessageDelta()
+                        Delta = new SetStreamingOperation<ToolMessageDelta>(new ToolMessageDelta
                         {
-                            Content = [new ToolResultContent() { Results = "REDACTED" }] // Placeholder for actual results
+                            Content = [new ToolResultContent { Results = "REDACTED" }]
                         })
                     };
                     yield return new ChatMessageUpdate<ToolMessageDelta>()
@@ -194,35 +234,8 @@ public static class FromOpenAIResponsesStreamingResponseParser
                         MessageId = webEnd.ItemId,
                         Delta = new EndStreamingOperation<ToolMessageDelta>(new ToolMessageDelta())
                     };
-
                     currentMessageId = null;
                     break;
-
-
-                case StreamingResponseOutputItemDoneUpdate streamingResponseOutputItemDoneUpdate:
-                    if (currentMessageId != null)
-                    {
-                        yield return new ChatMessageUpdate<AgentMessageDelta>()
-                        {
-                            ConversationId = conversationId,
-                            MessageId = streamingResponseOutputItemDoneUpdate.Item.Id,
-                            Delta = new EndStreamingOperation<AgentMessageDelta>(new AgentMessageDelta())
-                        };
-                    }
-
-                    currentMessageId = null;
-                    break;
-
-                case StreamingResponseCreatedUpdate:
-                case StreamingResponseInProgressUpdate:
-                case StreamingResponseCompletedUpdate:
-                case StreamingResponseTextAnnotationAddedUpdate:
-                case StreamingResponseContentPartDoneUpdate partDone:
-                case StreamingResponseWebSearchCallSearchingUpdate:
-                    break;
-
-                default:
-                    throw new InvalidOperationException($"Unknown response type: {update.GetType().Name}");
             }
         }
 
