@@ -4,6 +4,7 @@
 
 #nullable enable
 
+using OrchestrationScenarios.Models.Agents;
 using OrchestrationScenarios.Models.Messages;
 using OrchestrationScenarios.Models.Runs.Requests.Options;
 

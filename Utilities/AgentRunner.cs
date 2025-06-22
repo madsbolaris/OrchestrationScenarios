@@ -1,3 +1,5 @@
+using OpenAI.Responses;
+using OrchestrationScenarios.Helpers;
 using OrchestrationScenarios.Models;
 using OrchestrationScenarios.Models.Messages;
 using OrchestrationScenarios.Models.Messages.Content;
@@ -12,7 +14,7 @@ namespace OrchestrationScenarios.Utils;
 
 public static class AgentRunner
 {
-    public static async Task RunAsync(Agent agent, List<ChatMessage> allMessages)
+    public static async Task RunAsync(OpenAIResponseClient client, List<ChatMessage> allMessages)
     {
         // Step 1: Find index of first agent message
         int agentIndex = allMessages.FindIndex(m => m.GetType() == typeof(AgentMessage));
@@ -70,8 +72,48 @@ public static class AgentRunner
         }
 
         // Step 4: Stream the agent's actual response
-        var stream = agent.StreamRunAsync(inputMessages);
+        var stream = GetStreamingUpdates(client, inputMessages);
         await DisplayStreamAsync(stream);
+    }
+    
+    private static IAsyncEnumerable<StreamingUpdate> GetStreamingUpdates(OpenAIResponseClient client, List<ChatMessage> messages)
+    {
+        var aiFunctions = ToolFactory.CreateAIFunctions();
+        var tools = aiFunctions.Select(kvp =>
+        {
+            var jsonSchema = kvp.Value.JsonSchema;
+
+            if (!jsonSchema.TryGetProperty("properties", out var props))
+                throw new InvalidOperationException("Missing 'properties' in JSON schema");
+
+            return ResponseTool.CreateFunctionTool(
+                kvp.Value.Name,
+                kvp.Value.Description,
+                BinaryData.FromString(props.GetRawText())
+            );
+        }).ToList();
+
+        tools.Add(ResponseTool.CreateWebSearchTool());
+
+        var handler = new ResponseStreamHandler(client);
+
+        return Stream();
+
+        async IAsyncEnumerable<StreamingUpdate> Stream()
+        {
+            var didRunComplete = false;
+
+            while (!didRunComplete)
+            {
+                await foreach (var part in handler.RunStreamingAsync(messages, tools, aiFunctions))
+                {
+                    yield return part;
+
+                    if (part is RunUpdate { Delta: EndStreamingOperation<RunDelta> })
+                        didRunComplete = true;
+                }
+            }
+        }
     }
 
     private static async Task DisplayStreamAsync(IAsyncEnumerable<StreamingUpdate> stream)
@@ -144,7 +186,7 @@ public static class AgentRunner
                             {
                                 continue;
                             }
-                            
+
                             foreach (var content in setToolMessageStreamingOperation.TypedValue!.Content)
                             {
                                 switch (content)
@@ -196,10 +238,11 @@ public static class AgentRunner
             }
         }
     }
+    
 
     private static ConsoleColor GetColor(Type role) => role switch
     {
-        var t when t == typeof(ToolMessageDelta) ||  t == typeof(ToolMessage) => ConsoleColor.Yellow,
+        var t when t == typeof(ToolMessageDelta) || t == typeof(ToolMessage) => ConsoleColor.Yellow,
         var t when t == typeof(AgentMessageDelta) || t == typeof(AgentMessage) => ConsoleColor.Magenta,
         var t when t == typeof(UserMessage) => ConsoleColor.Cyan,
         var t when t == typeof(TextContentDelta) || t == typeof(TextContent) => ConsoleColor.Yellow,

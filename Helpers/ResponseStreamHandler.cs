@@ -1,8 +1,8 @@
-namespace OrchestrationScenarios.Models;
+namespace OrchestrationScenarios.Helpers;
 
+using System.Linq;
 using Microsoft.Extensions.AI;
 using OpenAI.Responses;
-using OrchestrationScenarios.Models.Helpers;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingUpdates;
 
 public sealed class ResponseStreamHandler
@@ -15,7 +15,7 @@ public sealed class ResponseStreamHandler
     }
 
     public async IAsyncEnumerable<StreamingUpdate> RunStreamingAsync(
-        List<Messages.ChatMessage> messages,
+        List<Models.Messages.ChatMessage> messages,
         List<ResponseTool> tools,
         Dictionary<string, AIFunction> aiFunctions)
     {

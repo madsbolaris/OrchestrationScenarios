@@ -1,5 +1,5 @@
+using OpenAI.Responses;
 using OrchestrationScenarios.Agents;
-using OrchestrationScenarios.Models;
 using OrchestrationScenarios.Models.Messages;
 using OrchestrationScenarios.Models.Messages.Content;
 using OrchestrationScenarios.Models.Messages.Types;
@@ -7,15 +7,9 @@ using OrchestrationScenarios.Utils;
 
 namespace OrchestrationScenarios.Scenarios;
 
-public class BasicChatScenario : IScenario
+public class BasicChatScenario(OpenAIResponseClient client, BasicAgent agent) : IScenario
 {
-    private readonly Agent _agent;
     public string Name => "Basic Chat Scenario";
-
-    public BasicChatScenario(BasicAgent agent)
-    {
-        _agent = agent;
-    }
 
     public async Task RunAsync()
     {
@@ -66,6 +60,6 @@ public class BasicChatScenario : IScenario
             }
         ];
 
-        await AgentRunner.RunAsync(_agent, messages);
+        await AgentRunner.RunAsync(client, messages);
     }
 }

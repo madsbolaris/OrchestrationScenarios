@@ -1,4 +1,4 @@
-namespace OrchestrationScenarios.Models.Helpers;
+namespace OrchestrationScenarios.Helpers;
 
 using Microsoft.Extensions.AI;
 using OrchestrationScenarios.Models.Messages.Content;

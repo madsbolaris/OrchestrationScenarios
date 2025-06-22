@@ -1,4 +1,4 @@
-namespace OrchestrationScenarios.Models.Helpers;
+namespace OrchestrationScenarios.Helpers;
 
 using System.Text.Json;
 using OpenAI.Responses;

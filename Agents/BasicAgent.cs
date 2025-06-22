@@ -1,8 +1,7 @@
-using OpenAI.Responses;
-using OrchestrationScenarios.Models;
+using OrchestrationScenarios.Models.Agents;
 
 namespace OrchestrationScenarios.Agents;
 
-public class BasicAgent(OpenAIResponseClient client) : Agent(client)
+public class BasicAgent() : Agent
 {
 }

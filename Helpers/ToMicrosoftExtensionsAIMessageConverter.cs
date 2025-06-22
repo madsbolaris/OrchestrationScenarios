@@ -1,4 +1,4 @@
-namespace OrchestrationScenarios.Models.Helpers;
+namespace OrchestrationScenarios.Helpers;
 
 using System.Text.Json;
 using Microsoft.Extensions.AI;
@@ -10,7 +10,7 @@ using OrchestrationScenarios.Models.Messages;
 
 public static class ToMicrosoftExtensionsAIMessageConverter
 {
-    public static Microsoft.Extensions.AI.ChatMessage Convert(Messages.ChatMessage message)
+    public static Microsoft.Extensions.AI.ChatMessage Convert(Models.Messages.ChatMessage message)
     {
         var items = new List<AIContent>();
 
