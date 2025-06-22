@@ -22,8 +22,8 @@ public class BasicChatScenario : IScenario
         List<ChatMessage> messages = [
             new UserMessage()
             {
-                Content = [new TextContent() {Text = "What's today's date?"}]
-                // Content = [new TextContent() {Text = "what's today's date? Then search for today's weather in Seattle, WA."}]
+                // Content = [new TextContent() {Text = "What's today's date?"}]
+                Content = [new TextContent() {Text = "what's today's date? Then search for today's weather in Seattle, WA."}]
             },
             new AgentMessage()
             {

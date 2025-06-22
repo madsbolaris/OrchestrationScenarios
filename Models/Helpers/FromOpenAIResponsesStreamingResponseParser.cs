@@ -146,15 +146,56 @@ public static class FromOpenAIResponsesStreamingResponseParser
                     break;
 
                 case StreamingResponseWebSearchCallInProgressUpdate webStart:
-                    // yield return new StreamedStartContent(AuthorRole.Agent, webStart.ItemId);
-                    // yield return new StreamedTextContent(AuthorRole.Agent, webStart.ItemId, 0, "WebSearch()");
-                    // yield return new StreamedEndContent(AuthorRole.Agent, webStart.ItemId, 1);
-                    // yield return new StreamedStartContent(AuthorRole.Tool, "tool-" + webStart.ItemId);
+                    // yield return new ChatMessageUpdate<AgentMessageDelta>()
+                    // {
+                    //     ConversationId = conversationId,
+                    //     MessageId = webStart.ItemId,
+                    //     Delta = new StartStreamingOperation<AgentMessageDelta>(new AgentMessageDelta())
+                    // };
+                    yield return new ChatMessageUpdate<AgentMessageDelta>()
+                    {
+                        ConversationId = conversationId,
+                        MessageId = webStart.ItemId,
+                        Delta = new SetStreamingOperation<AgentMessageDelta>(new AgentMessageDelta()
+                        {
+                            Content = [new ToolCallContent() { ToolCallId = webStart.ItemId, Name = "WebSearch" }]
+                        })
+                    };
+                    yield return new ChatMessageUpdate<AgentMessageDelta>()
+                    {
+                        ConversationId = conversationId,
+                        MessageId = webStart.ItemId,
+                        Delta = new EndStreamingOperation<AgentMessageDelta>(new AgentMessageDelta())
+                    };
+
+                    currentMessageId = null;
+
+                    yield return new ChatMessageUpdate<ToolMessageDelta>()
+                    {
+                        ConversationId = conversationId,
+                        MessageId = webStart.ItemId,
+                        Delta = new StartStreamingOperation<ToolMessageDelta>(new ToolMessageDelta())
+                    };
                     break;
 
                 case StreamingResponseWebSearchCallCompletedUpdate webEnd:
-                    // yield return new StreamedTextContent(AuthorRole.Tool, "tool-" + webEnd.ItemId, 0, "REDACTED");
-                    // yield return new StreamedEndContent(AuthorRole.Tool, "tool-" + webEnd.ItemId, 1);
+                    yield return new ChatMessageUpdate<ToolMessageDelta>()
+                    {
+                        ConversationId = conversationId,
+                        MessageId = webEnd.ItemId,
+                        Delta = new SetStreamingOperation<ToolMessageDelta>(new ToolMessageDelta()
+                        {
+                            Content = [new ToolResultContent() { Results = "REDACTED" }] // Placeholder for actual results
+                        })
+                    };
+                    yield return new ChatMessageUpdate<ToolMessageDelta>()
+                    {
+                        ConversationId = conversationId,
+                        MessageId = webEnd.ItemId,
+                        Delta = new EndStreamingOperation<ToolMessageDelta>(new ToolMessageDelta())
+                    };
+
+                    currentMessageId = null;
                     break;
 
 
