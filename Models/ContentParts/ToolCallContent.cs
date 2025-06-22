@@ -2,7 +2,7 @@ namespace OrchestrationScenarios.Models.ContentParts;
 
 using System.Text;
 
-public class FunctionCallContent(string pluginName, string functionName, string callId, string? arguments = null) : ContentPart
+public class ToolCallContent(string pluginName, string functionName, string callId, string? arguments = null) : ContentPart
 {
     public string PluginName { get; set; } = pluginName;
     public string FunctionName { get; set; } = functionName;
@@ -36,7 +36,7 @@ public class FunctionCallContent(string pluginName, string functionName, string 
     /// <summary>
     /// Alternate constructor that accepts name in "plugin-function" format.
     /// </summary>
-    public FunctionCallContent(string name, string callId, string? arguments = null, int functionCallIndex = 0)
+    public ToolCallContent(string name, string callId, string? arguments = null, int functionCallIndex = 0)
         : this(
             pluginName: name.Split('-')[0],
             functionName: name.Split('-')[1],

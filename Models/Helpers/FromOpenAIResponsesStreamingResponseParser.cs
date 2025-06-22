@@ -9,8 +9,8 @@ public static class FromOpenAIResponsesStreamingResponseParser
     public static async IAsyncEnumerable<StreamedContentPart> ParseAsync(
         IAsyncEnumerable<StreamingResponseUpdate> responseStream,
         List<Message> messages,
-        Dictionary<string, FunctionCallContent> functionCallBuilders,
-        Func<FunctionCallContent, Task<object?>> invokeFunction)
+        Dictionary<string, ToolCallContent> functionCallBuilders,
+        Func<ToolCallContent, Task<object?>> invokeFunction)
     {
         var responseBuilder = new StringBuilder();
 
@@ -18,16 +18,10 @@ public static class FromOpenAIResponsesStreamingResponseParser
         {
             switch (update)
             {
-                case StreamingResponseCreatedUpdate:
-                case StreamingResponseInProgressUpdate:
-                case StreamingResponseCompletedUpdate:
-                case StreamingResponseTextAnnotationAddedUpdate:
-                    break;
-
                 case StreamingResponseOutputItemAddedUpdate outputItem:
                     if (outputItem.Item is FunctionCallResponseItem fnCall)
                     {
-                        var fnContent = new FunctionCallContent(
+                        var fnContent = new ToolCallContent(
                             callId: fnCall.CallId,
                             name: fnCall.FunctionName,
                             functionCallIndex: outputItem.OutputIndex
@@ -58,9 +52,6 @@ public static class FromOpenAIResponsesStreamingResponseParser
                     yield return new StreamedEndContent(AuthorRole.Agent, textDone.ItemId, textDone.ContentIndex + 1);
                     break;
 
-                case StreamingResponseContentPartDoneUpdate partDone:
-                    break;
-
                 case StreamingResponseFunctionCallArgumentsDeltaUpdate fnArgsDelta:
                     yield return new StreamedFunctionCallContent(messageId: fnArgsDelta.ItemId, index: fnArgsDelta.OutputIndex, argumentDelta: fnArgsDelta.Delta);
                     if (functionCallBuilders.TryGetValue(fnArgsDelta.ItemId, out var fnContentDelta))
@@ -76,7 +67,7 @@ public static class FromOpenAIResponsesStreamingResponseParser
                         {
                             Role = AuthorRole.Agent,
                             Content = [
-                                new FunctionCallContent(
+                                new ToolCallContent(
                                     callId: doneFnContent.CallId!,
                                     pluginName: doneFnContent.Name!.Split('-')[0],
                                     functionName: doneFnContent.Name!.Split('-')[1],
@@ -103,6 +94,11 @@ public static class FromOpenAIResponsesStreamingResponseParser
                     yield return new StreamedEndContent(AuthorRole.Tool, "tool-" + webEnd.ItemId, 1);
                     break;
 
+                case StreamingResponseCreatedUpdate:
+                case StreamingResponseInProgressUpdate:
+                case StreamingResponseCompletedUpdate:
+                case StreamingResponseTextAnnotationAddedUpdate:
+                case StreamingResponseContentPartDoneUpdate partDone:
                 case StreamingResponseOutputItemDoneUpdate:
                 case StreamingResponseWebSearchCallSearchingUpdate:
                     break;

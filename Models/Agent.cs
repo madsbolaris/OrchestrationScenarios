@@ -1,5 +1,6 @@
 namespace OrchestrationScenarios.Models;
 
+using OpenAI.Responses;
 using OrchestrationScenarios.Models.ContentParts;
 
 public abstract class Agent(OpenAIResponseClient client)

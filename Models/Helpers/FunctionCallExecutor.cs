@@ -2,8 +2,7 @@ namespace OrchestrationScenarios.Models.Helpers;
 
 using System.Text.Json;
 using Microsoft.SemanticKernel;
-using OrchestrationScenarios.Models.ContentParts;
-using FunctionCallContent = ContentParts.FunctionCallContent;
+using FunctionCallContent = ContentParts.ToolCallContent;
 
 public static class FunctionCallExecutor
 {

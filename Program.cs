@@ -7,11 +7,13 @@ using OpenAI;
 using OpenAI.Responses;
 using System.ClientModel;
 using OrchestrationScenarios.Models;
+using Microsoft.Agents.CopilotStudio.Client;
 
 class Program
 {
     static async Task Main(string[] args)
     {
+
         var services = new ServiceCollection();
 
         var configuration = new ConfigurationBuilder()

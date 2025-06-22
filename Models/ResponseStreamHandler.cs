@@ -33,7 +33,7 @@ public sealed class ResponseStreamHandler
 
         var response = _client.CreateResponseStreamingAsync(responseItems, options);
 
-        var functionCallBuilders = new Dictionary<string, ContentParts.FunctionCallContent>();
+        var functionCallBuilders = new Dictionary<string, ContentParts.ToolCallContent>();
 
         await foreach (var streamedPart in FromOpenAIResponsesStreamingResponseParser.ParseAsync(
             response,
@@ -53,7 +53,7 @@ public sealed class ResponseStreamHandler
     }
 
     private IEnumerable<StreamedContentPart> HandleFunctionCalls(
-        Dictionary<string, ContentParts.FunctionCallContent> calls,
+        Dictionary<string, ContentParts.ToolCallContent> calls,
         List<Message> messages)
     {
         foreach (var functionCallContent in calls.Values)
@@ -73,7 +73,7 @@ public sealed class ResponseStreamHandler
             {
                 Role = AuthorRole.Tool,
                 Content = [
-                    new ContentParts.FunctionResultContent(
+                    new ContentParts.ToolResultContent(
                         pluginName: pluginName,
                         functionName: functionName,
                         callId: functionCallContent.CallId!,

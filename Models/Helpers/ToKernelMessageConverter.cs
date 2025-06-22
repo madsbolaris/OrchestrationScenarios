@@ -3,7 +3,6 @@ namespace OrchestrationScenarios.Models.Helpers;
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel;
-using OrchestrationScenarios.Models.ContentParts;
 
 public static class ToKernelMessageConverter
 {
@@ -16,13 +15,13 @@ public static class ToKernelMessageConverter
             items.Add(contentPart switch
             {
                 ContentParts.TextContent text => new Microsoft.SemanticKernel.TextContent(text.Text),
-                ContentParts.FunctionCallContent call => new Microsoft.SemanticKernel.FunctionCallContent(
+                ContentParts.ToolCallContent call => new Microsoft.SemanticKernel.FunctionCallContent(
                     functionName: call.FunctionName,
                     pluginName: call.PluginName,
                     id: call.CallId,
                     arguments: new KernelArguments(JsonSerializer.Deserialize<Dictionary<string, object>>(call.Arguments)!)
                 ),
-                ContentParts.FunctionResultContent result => new Microsoft.SemanticKernel.FunctionResultContent(
+                ContentParts.ToolResultContent result => new Microsoft.SemanticKernel.FunctionResultContent(
                     result.FunctionName, result.PluginName, result.CallId, result.FunctionResult
                 ),
                 _ => throw new ArgumentException($"Unknown content part: {contentPart.GetType().Name}")

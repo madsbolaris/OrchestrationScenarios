@@ -1,6 +1,6 @@
 namespace OrchestrationScenarios.Models.ContentParts;
 
-public class FunctionResultContent(string pluginName, string functionName, string callId, string functionResult) : ContentPart
+public class ToolResultContent(string pluginName, string functionName, string callId, string functionResult) : ContentPart
 {
     public string PluginName { get; set; } = pluginName;
     public string FunctionName { get; set; } = functionName;

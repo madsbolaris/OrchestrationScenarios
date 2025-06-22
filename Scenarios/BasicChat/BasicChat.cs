@@ -1,6 +1,7 @@
 using OrchestrationScenarios.Agents;
 using OrchestrationScenarios.Models;
 using OrchestrationScenarios.Models.ContentParts;
+using OrchestrationScenarios.Utils;
 
 namespace OrchestrationScenarios.Scenarios;
 
@@ -16,105 +17,56 @@ public class BasicChatScenario : IScenario
 
     public async Task RunAsync()
     {
-        Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.Write("<user>");
-        Console.ResetColor();
-        var input = "Hello";
-        Console.Write(input);
-        Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.WriteLine("</user>");
-
-        string? currentMessageId = null;
-        AuthorRole? currentRole = null;
-
-        // Track open tool-call tags and their args
-        var openToolCalls = new Dictionary<string, (string name, bool opened)>();
-        var callArgsBuffer = new Dictionary<string, List<string>>();
-
-        await foreach (var part in _agent.StreamRunAsync([
-            new Message
+        List<Message> messages = [
+            new()
             {
                 Role = AuthorRole.User,
                 Content = [new TextContent("what's today's date? Then search for today's weather in Seattle, WA.")]
-            }
-        ]))
-        {
-            switch (part)
+            },
+            new()
             {
-                case StreamedStartContent start:
-                    currentMessageId = start.MessageId;
-                    currentRole = start.AuthorRole;
+                Role = AuthorRole.Agent,
+                Content = [new ToolCallContent("DateTime", "Now", "0001", "{}")]
+            },
+            new()
+            {
+                Role = AuthorRole.Tool,
+                Content = [new ToolResultContent("DateTime", "Now", "0001", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))]
+            },
+            new()
+            {
+                Role = AuthorRole.Agent,
+                Content = [new ToolCallContent("WebSearch", "Search", "0002", "{\"query\": \"weather in Seattle, WA\"}")]
+            },
+            new()
+            {
+                Role = AuthorRole.Tool,
+                Content = [new ToolResultContent("WebSearch", "Search", "0002", "REDACTED")]
+            },
+            new()
+            {
+                Role = AuthorRole.Agent,
+                Content = [new TextContent("""
+                Jun 19, 2025, 1:49:37 PM
 
-                    Console.ForegroundColor = GetColor(start.AuthorRole);
-                    Console.Write($"<{GetTag(start.AuthorRole)}>");
-                    Console.ResetColor();
-                    break;
+                ## Weather for Seattle, WA:
+                Current Conditions: Mostly sunny, 64°F (18°C)
 
-                case StreamedFunctionCallContent funcCall:
-                    var callId = funcCall.MessageId;
+                Daily Forecast:
+                * Thursday, June 19: Low: 51°F (11°C), High: 67°F (19°C), Description: Times of clouds and sun
+                * Friday, June 20: Low: 52°F (11°C), High: 60°F (16°C), Description: Mostly cloudy with a couple of showers
+                * Saturday, June 21: Low: 55°F (13°C), High: 62°F (17°C), Description: Cloudy and cool with a couple of showers
+                * Sunday, June 22: Low: 54°F (12°C), High: 71°F (22°C), Description: Occasional rain and drizzle in the morning; otherwise, mostly cloudy and warmer
+                * Monday, June 23: Low: 56°F (13°C), High: 76°F (24°C), Description: Abundant sunshine and pleasant
+                * Tuesday, June 24: Low: 58°F (14°C), High: 83°F (28°C), Description: Brilliant sunshine and very warm
+                * Wednesday, June 25: Low: 57°F (14°C), High: 76°F (24°C), Description: Cloudy
 
-                    if (!callArgsBuffer.TryGetValue(callId, out var buffer))
-                    {
-                        buffer = [];
-                        callArgsBuffer[callId] = buffer;
-                    }
 
-                    buffer.Add(funcCall.ArgumentDelta);
-
-                    if (funcCall.PluginName is not null && funcCall.FunctionName is not null)
-                    {
-                        var name = $"{funcCall.PluginName}-{funcCall.FunctionName}";
-                        openToolCalls[callId] = (name, false);
-                    }
-
-                    // Print opening tag if we haven't yet
-                    if (openToolCalls.TryGetValue(callId, out var entry) && !entry.opened)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.Write($"<tool-call name=\"{entry.name}\">");
-                        Console.ResetColor();
-                        openToolCalls[callId] = (entry.name, true);
-                    }
-
-                    // Print the current delta
-                    Console.Write(funcCall.ArgumentDelta);
-                    break;
-
-                case StreamedFunctionResultContent funcResult:
-                    // Print tool output
-                    Console.Write(funcResult.Result);
-                    break;
-
-                case StreamedTextContent text:
-                    Console.Write(text.Text);
-                    break;
-
-                case StreamedEndContent end:
-                    if (currentMessageId == end.MessageId && currentRole is not null)
-                    {
-                        Console.ForegroundColor = GetColor(currentRole.Value);
-                        Console.WriteLine($"</{GetTag(currentRole.Value)}>");
-                        Console.ResetColor();
-                        currentMessageId = null;
-                        currentRole = null;
-                    }
-                    break;
+                After an unusually dry spring and hotter-than-normal June, rain is finally returning to Seattle, providing a much-needed reprieve from increasing fire risks, depleted snowpacks, and widespread drought conditions. The National Weather Service forecasts rain and showers in the region from Wednesday through Sunday. ([axios.com](https://www.axios.com/local/seattle/2025/06/17/seattle-rain-returns-fire-risk-drought?utm_source=openai))
+                """)]
             }
-        }
+        ];
+
+        await AgentRunner.RunAsync(_agent, messages);
     }
-
-
-    private static ConsoleColor GetColor(AuthorRole role) => role switch
-    {
-        AuthorRole.Tool => ConsoleColor.Yellow,
-        AuthorRole.Agent => ConsoleColor.Magenta,
-        _ => ConsoleColor.Gray
-    };
-
-    private static string GetTag(AuthorRole role) => role switch
-    {
-        AuthorRole.Tool => "tool",
-        AuthorRole.Agent => "agent",
-        _ => "unknown"
-    };
 }

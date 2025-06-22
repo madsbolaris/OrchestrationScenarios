@@ -3,8 +3,6 @@ namespace OrchestrationScenarios.Models.Helpers;
 using System.Text.Json;
 using OpenAI.Responses;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-using OrchestrationScenarios.Models.ContentParts;
 using Microsoft.SemanticKernel.Agents.OpenAI;
 
 public static class ToResponseItemConverter
