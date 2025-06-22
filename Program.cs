@@ -1,51 +1,58 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using OrchestrationScenarios.Agents;
-using Microsoft.Extensions.Configuration;
-using OrchestrationScenarios.Scenarios;
+﻿using System;
+using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
 using OpenAI;
 using OpenAI.Responses;
 using System.ClientModel;
+
+using OrchestrationScenarios.Agents;
 using OrchestrationScenarios.Models;
 using OrchestrationScenarios.Runtime;
+using OrchestrationScenarios.Scenarios;
 
 class Program
 {
     static async Task Main(string[] args)
     {
-
         var services = new ServiceCollection();
 
+        // Load configuration
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: false)
             .Build();
 
-        // 2. Bind configuration to a typed object
+        // Bind OpenAI configuration
         var openAIConfig = new OpenAIConfiguration();
         configuration.Bind("OpenAI", openAIConfig.OpenAI);
         openAIConfig.ModelId = configuration["OpenAI:ModelId"] ?? "gpt-4";
-
-        // 3. Register it and the OpenAI client in DI
         services.AddSingleton(openAIConfig);
 
-        services.AddSingleton<OpenAIResponseClient>((provider) =>
+        // Register OpenAI client
+        services.AddSingleton<OpenAIResponseClient>(provider =>
         {
             var config = provider.GetRequiredService<OpenAIConfiguration>();
-            var options = new OpenAIClientOptions();
-            return new (
+            return new OpenAIResponseClient(
                 model: config.ModelId,
                 credential: new ApiKeyCredential(config.OpenAI.ApiKey),
-                options: options
+                options: new OpenAIClientOptions()
             );
         });
 
+        // Core services
+        services.AddSingleton<ResponseStreamHandler>();
         services.AddSingleton<AgentRunner>();
 
+        // Agents
         services.AddSingleton<BasicAgent>();
         services.AddSingleton<WeatherPersonAgent>();
 
-        // Register all IScenario implementations
+        // Scenarios
         var scenarioTypes = Assembly.GetExecutingAssembly()
             .GetTypes()
             .Where(t => typeof(IScenario).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
@@ -56,20 +63,19 @@ class Program
         var provider = services.BuildServiceProvider();
         var scenarios = provider.GetServices<IScenario>().ToList();
 
-        // Scenario selection by name (arg[0])
+        // Try running a scenario by name
         if (args.Length > 0)
         {
-            var scenarioName = args[0];
-            var selected = scenarios.FirstOrDefault(s =>
-                s.Name.Equals(scenarioName, StringComparison.OrdinalIgnoreCase));
+            var scenario = scenarios.FirstOrDefault(s =>
+                s.Name.Equals(args[0], StringComparison.OrdinalIgnoreCase));
 
-            if (selected != null)
+            if (scenario != null)
             {
-                await selected.RunAsync();
+                await scenario.RunAsync();
                 return;
             }
 
-            Console.WriteLine($"Scenario '{scenarioName}' not found.");
+            Console.WriteLine($"Scenario '{args[0]}' not found.");
             return;
         }
 

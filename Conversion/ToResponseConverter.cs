@@ -5,6 +5,7 @@ using OpenAI.Responses;
 using OrchestrationScenarios.Models.Tools.ToolDefinitions.Function;
 using OrchestrationScenarios.Models.Tools.ToolDefinitions.BingGrounding;
 using OrchestrationScenarios.Models.Tools.ToolDefinitions;
+using OrchestrationScenarios.Models.Messages;
 
 namespace OrchestrationScenarios.Conversion;
 
@@ -18,6 +19,12 @@ public static class ToResponseConverter
             BingGroundingToolDefinition => CreateBingTool(),
             _ => throw new NotSupportedException($"Unknown tool type: {tool.GetType().Name}")
         };
+    }
+
+    public static IEnumerable<ResponseItem> Convert(ChatMessage message)
+    {
+        var converted = ToMicrosoftExtensionsAIContentConverter.Convert(message);
+        return MicrosoftExtensionsAIToResponseConverter.Convert(converted);
     }
 
     private static ResponseTool ConvertFunctionTool(FunctionToolDefinition tool)
