@@ -1,26 +1,25 @@
-namespace OrchestrationScenarios.Helpers;
+// File: Runtime/ResponseStreamHandler.cs
+// Namespace: OrchestrationScenarios.Runtime
+
+namespace OrchestrationScenarios.Runtime;
 
 using System.Linq;
 using Microsoft.Extensions.AI;
 using OpenAI.Responses;
+using OrchestrationScenarios.Parsing;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingUpdates;
+using OrchestrationScenarios.Execution;
+using OrchestrationScenarios.Conversion;
 
-public sealed class ResponseStreamHandler
+public sealed class ResponseStreamHandler(OpenAIResponseClient client)
 {
-    private readonly OpenAIResponseClient _client;
-
-    public ResponseStreamHandler(OpenAIResponseClient client)
-    {
-        _client = client;
-    }
-
     public async IAsyncEnumerable<StreamingUpdate> RunStreamingAsync(
         List<Models.Messages.ChatMessage> messages,
         List<ResponseTool> tools,
         Dictionary<string, AIFunction> aiFunctions)
     {
-        var chatMessages = messages.Select(ToMicrosoftExtensionsAIMessageConverter.Convert).ToList();
-        var responseItems = chatMessages.SelectMany(ToResponseItemConverter.Convert).ToList();
+        var chatMessages = messages.Select(ToMicrosoftExtensionsAIContentConverter.Convert).ToList();
+        var responseItems = chatMessages.SelectMany(MicrosoftExtensionsAIToResponseConverter.Convert).ToList();
 
         var options = new ResponseCreationOptions
         {
@@ -32,10 +31,10 @@ public sealed class ResponseStreamHandler
             options.Tools.Add(tool);
         }
 
-        var response = _client.CreateResponseStreamingAsync(responseItems, options);
+        var response = client.CreateResponseStreamingAsync(responseItems, options);
         var conversationId = messages.FirstOrDefault()?.ConversationId ?? Guid.NewGuid().ToString();
 
-        await foreach (var update in FromOpenAIResponsesStreamingResponseParser.ParseAsync(
+        await foreach (var update in StreamingResponseParser.ParseAsync(
             response,
             conversationId,
             async fn => await FunctionCallExecutor.ExecuteAsync(fn, aiFunctions),

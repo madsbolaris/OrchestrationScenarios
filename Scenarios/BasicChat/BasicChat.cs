@@ -3,7 +3,7 @@ using OrchestrationScenarios.Agents;
 using OrchestrationScenarios.Models.Messages;
 using OrchestrationScenarios.Models.Messages.Content;
 using OrchestrationScenarios.Models.Messages.Types;
-using OrchestrationScenarios.Utils;
+using OrchestrationScenarios.Runtime;
 
 namespace OrchestrationScenarios.Scenarios;
 

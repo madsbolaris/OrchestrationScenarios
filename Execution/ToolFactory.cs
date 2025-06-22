@@ -1,6 +1,6 @@
 using Microsoft.Extensions.AI;
 
-namespace OrchestrationScenarios.Models;
+namespace OrchestrationScenarios.Execution;
 
 
 public static class ToolFactory

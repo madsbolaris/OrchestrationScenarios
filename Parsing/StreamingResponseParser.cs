@@ -1,4 +1,4 @@
-namespace OrchestrationScenarios.Helpers;
+namespace OrchestrationScenarios.Parsing;
 
 using System.Text;
 using OpenAI.Responses;
@@ -10,7 +10,7 @@ using OrchestrationScenarios.Models.Runs.Responses.StreamingOperations;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingUpdates;
 using OrchestrationScenarios.Models.Messages;
 
-public static class FromOpenAIResponsesStreamingResponseParser
+public static class StreamingResponseParser
 {
     public static async IAsyncEnumerable<StreamingUpdate> ParseAsync(
         IAsyncEnumerable<StreamingResponseUpdate> responseStream,
