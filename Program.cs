@@ -7,7 +7,7 @@ using OpenAI;
 using OpenAI.Responses;
 using System.ClientModel;
 using OrchestrationScenarios.Models;
-using Microsoft.Agents.CopilotStudio.Client;
+using OrchestrationScenarios.Runtime;
 
 class Program
 {
@@ -39,6 +39,8 @@ class Program
                 options: options
             );
         });
+
+        services.AddSingleton<AgentRunner>();
 
         services.AddSingleton<BasicAgent>();
         services.AddSingleton<WeatherPersonAgent>();

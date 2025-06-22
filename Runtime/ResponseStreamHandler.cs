@@ -8,7 +8,6 @@ using Microsoft.Extensions.AI;
 using OpenAI.Responses;
 using OrchestrationScenarios.Parsing;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingUpdates;
-using OrchestrationScenarios.Execution;
 using OrchestrationScenarios.Conversion;
 
 public sealed class ResponseStreamHandler(OpenAIResponseClient client)

@@ -7,7 +7,7 @@ using OrchestrationScenarios.Runtime;
 
 namespace OrchestrationScenarios.Scenarios;
 
-public class BasicChatScenario(OpenAIResponseClient client, BasicAgent agent) : IScenario
+public class BasicChatScenario(AgentRunner runner, BasicAgent agent) : IScenario
 {
     public string Name => "Basic Chat Scenario";
 
@@ -60,6 +60,6 @@ public class BasicChatScenario(OpenAIResponseClient client, BasicAgent agent) : 
             }
         ];
 
-        await AgentRunner.RunAsync(client, messages);
+        await runner.RunAsync(agent, messages);
     }
 }

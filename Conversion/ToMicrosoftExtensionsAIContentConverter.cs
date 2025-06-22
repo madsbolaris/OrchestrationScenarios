@@ -3,6 +3,7 @@ namespace OrchestrationScenarios.Conversion;
 using Microsoft.Extensions.AI;
 using Models.Messages.Content;
 using Models.Messages.Types;
+using OrchestrationScenarios.Models.Tools.ToolDefinitions.Function;
 
 public static class ToMicrosoftExtensionsAIContentConverter
 {
@@ -12,6 +13,16 @@ public static class ToMicrosoftExtensionsAIContentConverter
         var role = ConvertRole(message);
 
         return new ChatMessage(role, contents);
+    }
+
+    public static AIFunction ToAIFunction(FunctionToolDefinition tool)
+    {
+        if (tool.Method == null)
+        {
+            throw new ArgumentException("FunctionToolDefinition must have a Method defined.");
+        }
+
+        return AIFunctionFactory.Create(tool.Method, tool.Name, tool.Description);
     }
 
     private static Microsoft.Extensions.AI.AIContent ConvertContent(Models.Messages.ChatMessage parent, Models.Messages.Content.AIContent content)

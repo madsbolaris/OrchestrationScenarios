@@ -22,4 +22,6 @@ public class FunctionToolDefinition : AgentToolDefinition
     public JsonNode? Parameters { get; set; }
 
     public bool? Strict { get; set; }
+
+    public Delegate? Method { get; set; }
 }
