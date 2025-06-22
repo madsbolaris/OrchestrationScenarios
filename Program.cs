@@ -14,6 +14,8 @@ using OrchestrationScenarios.Agents;
 using OrchestrationScenarios.Models;
 using OrchestrationScenarios.Runtime;
 using OrchestrationScenarios.Scenarios;
+using OrchestrationScenarios.Runtime.Streaming;
+using OrchestrationScenarios.Runtime.Streaming.Providers.OpenAI;
 
 class Program
 {
@@ -45,7 +47,7 @@ class Program
         });
 
         // Core services
-        services.AddSingleton<ResponseStreamHandler>();
+        services.AddSingleton<IStreamingAgentClient, OpenAIStreamingClient>();
         services.AddSingleton<AgentRunner>();
 
         // Agents

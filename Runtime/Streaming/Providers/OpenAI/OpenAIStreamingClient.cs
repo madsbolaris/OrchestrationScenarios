@@ -1,3 +1,5 @@
+// File: Runtime/Streaming/Providers/OpenAI/OpenAIStreamingClient.cs
+
 using Microsoft.Extensions.AI;
 using OpenAI.Responses;
 using OrchestrationScenarios.Conversion;
@@ -5,9 +7,9 @@ using OrchestrationScenarios.Models.Agents;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingUpdates;
 using OrchestrationScenarios.Models.Tools.ToolDefinitions.Function;
 
-namespace OrchestrationScenarios.Runtime.Response;
+namespace OrchestrationScenarios.Runtime.Streaming.Providers.OpenAI;
 
-public sealed class ResponseStreamHandler(OpenAIResponseClient client)
+public sealed class OpenAIStreamingClient(OpenAIResponseClient client) : IStreamingAgentClient
 {
     public async IAsyncEnumerable<StreamingUpdate> RunStreamingAsync(
         Agent agent,
@@ -34,7 +36,7 @@ public sealed class ResponseStreamHandler(OpenAIResponseClient client)
         var response = client.CreateResponseStreamingAsync(responseItems, options);
         var conversationId = messages.FirstOrDefault()?.ConversationId ?? Guid.NewGuid().ToString();
 
-        await foreach (var update in StreamingResponseParser.ParseAsync(
+        await foreach (var update in OpenAIStreamingProcessor.ProcessAsync(
             response,
             conversationId,
             async fn => await FunctionCallExecutor.ExecuteAsync(fn, aiFunctions),

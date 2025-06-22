@@ -4,12 +4,12 @@ using OrchestrationScenarios.Models.Messages.Types;
 using OrchestrationScenarios.Models.Runs.Responses.Deltas;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingOperations;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingUpdates;
-using OrchestrationScenarios.Runtime.Response;
+using OrchestrationScenarios.Runtime.Streaming;
 using OrchestrationScenarios.Utilities;
 
 namespace OrchestrationScenarios.Runtime;
 
-public class AgentRunner(ResponseStreamHandler handler)
+public class AgentRunner(IStreamingAgentClient client)
 {
     public async Task RunAsync(Agent agent, List<Models.Messages.ChatMessage> allMessages)
     {
@@ -35,7 +35,7 @@ public class AgentRunner(ResponseStreamHandler handler)
 
             while (!done)
             {
-                await foreach (var update in handler.RunStreamingAsync(agent, messages))
+                await foreach (var update in client.RunStreamingAsync(agent, messages))
                 {
                     yield return update;
 
