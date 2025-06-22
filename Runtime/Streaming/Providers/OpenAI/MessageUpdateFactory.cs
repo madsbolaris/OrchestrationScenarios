@@ -10,31 +10,7 @@ namespace OrchestrationScenarios.Runtime.Streaming.Providers.OpenAI;
 
 public static class MessageUpdateFactory
 {
-    public static RunUpdate StartRun(
-        string conversationId,
-        string runId)
-    {
-        return new RunUpdate
-        {
-            RunId = runId,
-            ConversationId = conversationId,
-            Delta = new StartStreamingOperation<RunDelta>(new RunDelta())
-        };
-    }
-
-    public static RunUpdate EndRun(
-        string conversationId,
-        string runId)
-    {
-        return new RunUpdate
-        {
-            RunId = runId,
-            ConversationId = conversationId,
-            Delta = new EndStreamingOperation<RunDelta>(new RunDelta())
-        };
-    }
-
-    public static ChatMessageUpdate<TDelta> StartMessage<TDelta>(
+    public static ChatMessageUpdate<TDelta> Start<TDelta>(
         string conversationId,
         string messageId)
         where TDelta : SystemGeneratedMessageDelta, new()
@@ -47,7 +23,7 @@ public static class MessageUpdateFactory
         };
     }
 
-    public static ChatMessageUpdate<TDelta> SetMessage<TDelta>(
+    public static ChatMessageUpdate<TDelta> Set<TDelta>(
         string conversationId,
         string messageId,
         TDelta delta)
@@ -61,7 +37,7 @@ public static class MessageUpdateFactory
         };
     }
 
-    public static ChatMessageUpdate<TDelta> EndMessage<TDelta>(
+    public static ChatMessageUpdate<TDelta> End<TDelta>(
         string conversationId,
         string messageId)
         where TDelta : SystemGeneratedMessageDelta, new()
@@ -70,46 +46,6 @@ public static class MessageUpdateFactory
         {
             ConversationId = conversationId,
             MessageId = messageId,
-            Delta = new EndStreamingOperation<TDelta>(new TDelta())
-        };
-    }
-
-    public static AIContentUpdate<TDelta> StartContent<TDelta>(
-        string messageId,
-        int index)
-        where TDelta : AIContentDelta, new()
-    {
-        return new AIContentUpdate<TDelta>
-        {
-            MessageId = messageId,
-            Index = index,
-            Delta = new StartStreamingOperation<TDelta>(new TDelta())
-        };
-    }
-
-    public static AIContentUpdate<TDelta> AppendContent<TDelta>(
-        string messageId,
-        int index,
-        TDelta delta)
-        where TDelta : AIContentDelta, new()
-    {
-        return new AIContentUpdate<TDelta>
-        {
-            MessageId = messageId,
-            Index = index,
-            Delta = new AppendStreamingOperation<TDelta>(delta)
-        };
-    }
-
-    public static AIContentUpdate<TDelta> EndContent<TDelta>(
-        string messageId,
-        int index)
-        where TDelta : AIContentDelta, new()
-    {
-        return new AIContentUpdate<TDelta>
-        {
-            MessageId = messageId,
-            Index = index,
             Delta = new EndStreamingOperation<TDelta>(new TDelta())
         };
     }

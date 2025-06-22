@@ -10,10 +10,8 @@ using OpenAI;
 using OpenAI.Responses;
 using System.ClientModel;
 
-using OrchestrationScenarios.Agents;
 using OrchestrationScenarios.Models;
 using OrchestrationScenarios.Runtime;
-using OrchestrationScenarios.Scenarios;
 using OrchestrationScenarios.Runtime.Streaming;
 using OrchestrationScenarios.Runtime.Streaming.Providers.OpenAI;
 
@@ -36,7 +34,7 @@ class Program
         services.AddSingleton(openAIConfig);
 
         // Register OpenAI client
-        services.AddSingleton<OpenAIResponseClient>(provider =>
+        services.AddSingleton(provider =>
         {
             var config = provider.GetRequiredService<OpenAIConfiguration>();
             return new OpenAIResponseClient(
@@ -50,17 +48,25 @@ class Program
         services.AddSingleton<IStreamingAgentClient, OpenAIStreamingClient>();
         services.AddSingleton<AgentRunner>();
 
-        // Agents
-        services.AddSingleton<BasicAgent>();
-        services.AddSingleton<WeatherPersonAgent>();
-
         // Scenarios
-        var scenarioTypes = Assembly.GetExecutingAssembly()
-            .GetTypes()
-            .Where(t => typeof(IScenario).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+        // Register file-based scenarios from a folder
+        var tools = new Dictionary<string, Delegate>
+        {
+            { "DateTime-Now", (Func<string>)(() => DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")) }
+            // Add more built-in tools here
+        };
 
-        foreach (var type in scenarioTypes)
-            services.AddTransient(typeof(IScenario), type);
+        var scenarioFolder = Path.Combine(Directory.GetCurrentDirectory(), "Scenarios");
+        foreach (var file in Directory.EnumerateFiles(scenarioFolder, "*.liquid", SearchOption.AllDirectories))
+        {
+            var name = Path.GetFileNameWithoutExtension(file).Replace('_', ' ');
+            services.AddTransient<IScenario>(provider =>
+            {
+                var runner = provider.GetRequiredService<AgentRunner>();
+                return new ScenarioRunner(name, file, runner, tools);
+            });
+        }
+
 
         var provider = services.BuildServiceProvider();
         var scenarios = provider.GetServices<IScenario>().ToList();

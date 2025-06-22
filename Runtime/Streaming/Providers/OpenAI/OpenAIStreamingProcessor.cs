@@ -24,7 +24,7 @@ public static class OpenAIStreamingProcessor
         var responseBuilder = new StringBuilder();
         string? currentMessageId = null;
 
-        yield return MessageUpdateFactory.StartRun(conversationId, runId);
+        yield return RunUpdateFactory.Start(conversationId, runId);
 
         await foreach (var update in responseStream)
         {
@@ -33,16 +33,16 @@ public static class OpenAIStreamingProcessor
                 case StreamingResponseOutputItemAddedUpdate outputItem:
                     if (currentMessageId != null && currentMessageId != outputItem.Item.Id)
                     {
-                        yield return MessageUpdateFactory.EndMessage<AgentMessageDelta>(conversationId, currentMessageId);
+                        yield return MessageUpdateFactory.End<AgentMessageDelta>(conversationId, currentMessageId);
                     }
 
                     currentMessageId = outputItem.Item.Id!;
-                    yield return MessageUpdateFactory.StartMessage<AgentMessageDelta>(conversationId, currentMessageId);
+                    yield return MessageUpdateFactory.Start<AgentMessageDelta>(conversationId, currentMessageId);
 
                     if (outputItem.Item is FunctionCallResponseItem fnCall)
                     {
                         var fnCallContent = toolCallManager.RegisterCall(fnCall.Id, fnCall.FunctionName);
-                        yield return MessageUpdateFactory.SetMessage(conversationId, currentMessageId, new AgentMessageDelta
+                        yield return MessageUpdateFactory.Set(conversationId, currentMessageId, new AgentMessageDelta
                         {
                             Content = [fnCallContent]
                         });
@@ -50,12 +50,12 @@ public static class OpenAIStreamingProcessor
                     break;
 
                 case StreamingResponseContentPartAddedUpdate contentPart:
-                    yield return MessageUpdateFactory.StartContent<TextContentDelta>(contentPart.ItemId, contentPart.ContentIndex);
+                    yield return AIContentUpdateFactory.Start<TextContentDelta>(contentPart.ItemId, contentPart.ContentIndex);
                     break;
 
                 case StreamingResponseOutputTextDeltaUpdate textDelta:
                     responseBuilder.Append(textDelta.Delta);
-                    yield return MessageUpdateFactory.AppendContent<TextContentDelta>(textDelta.ItemId, textDelta.ContentIndex, new TextContentDelta
+                    yield return AIContentUpdateFactory.Append(textDelta.ItemId, textDelta.ContentIndex, new TextContentDelta
                     {
                         Text = textDelta.Delta
                     });
@@ -66,12 +66,12 @@ public static class OpenAIStreamingProcessor
                     {
                         Content = [new TextContent { Text = responseBuilder.ToString() }]
                     });
-                    yield return MessageUpdateFactory.EndContent<TextContentDelta>(textDone.ItemId, textDone.ContentIndex + 1);
+                    yield return AIContentUpdateFactory.End<TextContentDelta>(textDone.ItemId, textDone.ContentIndex + 1);
                     responseBuilder.Clear();
                     break;
 
                 case StreamingResponseFunctionCallArgumentsDeltaUpdate fnArgsDelta:
-                    yield return MessageUpdateFactory.AppendContent(fnArgsDelta.ItemId, fnArgsDelta.OutputIndex, new ToolCallContentDelta
+                    yield return AIContentUpdateFactory.Append(fnArgsDelta.ItemId, fnArgsDelta.OutputIndex, new ToolCallContentDelta
                     {
                         Arguments = fnArgsDelta.Delta
                     });
@@ -79,13 +79,13 @@ public static class OpenAIStreamingProcessor
 
                 case StreamingResponseFunctionCallArgumentsDoneUpdate fnArgsDone:
                     toolCallManager.CompleteToolCallArguments(fnArgsDone.ItemId);
-                    yield return MessageUpdateFactory.EndContent<ToolCallContentDelta>(fnArgsDone.ItemId, fnArgsDone.OutputIndex + 1);
+                    yield return AIContentUpdateFactory.End<ToolCallContentDelta>(fnArgsDone.ItemId, fnArgsDone.OutputIndex + 1);
                     break;
 
                 case StreamingResponseOutputItemDoneUpdate itemDone:
                     if (currentMessageId != null)
                     {
-                        yield return MessageUpdateFactory.EndMessage<AgentMessageDelta>(conversationId, itemDone.Item.Id);
+                        yield return MessageUpdateFactory.End<AgentMessageDelta>(conversationId, itemDone.Item.Id);
                         currentMessageId = null;
                     }
 
@@ -100,14 +100,14 @@ public static class OpenAIStreamingProcessor
                     break;
 
                 case StreamingResponseWebSearchCallInProgressUpdate webStart:
-                    yield return MessageUpdateFactory.SetMessage<AgentMessageDelta>(conversationId, webStart.ItemId, new AgentMessageDelta
+                    yield return MessageUpdateFactory.Set<AgentMessageDelta>(conversationId, webStart.ItemId, new AgentMessageDelta
                     {
-                        Content = [new ToolCallContent { ToolCallId = webStart.ItemId, Name = "WebSearch" }]
+                        Content = [new ToolCallContent { ToolCallId = webStart.ItemId, Name = "Microsoft.BingGrounding.Search" }]
                     });
-                    yield return MessageUpdateFactory.EndMessage<AgentMessageDelta>(conversationId, webStart.ItemId);
+                    yield return MessageUpdateFactory.End<AgentMessageDelta>(conversationId, webStart.ItemId);
                     currentMessageId = null;
 
-                    yield return MessageUpdateFactory.StartMessage<ToolMessageDelta>(conversationId, webStart.ItemId);
+                    yield return MessageUpdateFactory.Start<ToolMessageDelta>(conversationId, webStart.ItemId);
                     break;
 
                 case StreamingResponseWebSearchCallCompletedUpdate webEnd:
@@ -117,11 +117,11 @@ public static class OpenAIStreamingProcessor
                         ToolCallId = webEnd.ItemId,
                         Content = [results]
                     });
-                    yield return MessageUpdateFactory.SetMessage(conversationId, webEnd.ItemId, new ToolMessageDelta
+                    yield return MessageUpdateFactory.Set(conversationId, webEnd.ItemId, new ToolMessageDelta
                     {
                         Content = [results]
                     });
-                    yield return MessageUpdateFactory.EndMessage<ToolMessageDelta>(conversationId, webEnd.ItemId);
+                    yield return MessageUpdateFactory.End<ToolMessageDelta>(conversationId, webEnd.ItemId);
                     currentMessageId = null;
                     break;
             }
@@ -129,7 +129,7 @@ public static class OpenAIStreamingProcessor
 
         if (!toolCallManager.HasProcessedToolCalls())
         {
-            yield return MessageUpdateFactory.EndRun(conversationId, runId);
+            yield return RunUpdateFactory.End(conversationId, runId);
         }
     }
 }

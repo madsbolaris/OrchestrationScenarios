@@ -1,4 +1,4 @@
-namespace OrchestrationScenarios.Scenarios;
+namespace OrchestrationScenarios.Runtime;
 
 public interface IScenario
 {
