@@ -1,6 +1,3 @@
-// File: Utilities/ConsoleRenderHelper.cs
-// Namespace: OrchestrationScenarios.Utilities
-
 namespace OrchestrationScenarios.Utilities;
 
 using OrchestrationScenarios.Models.Messages;

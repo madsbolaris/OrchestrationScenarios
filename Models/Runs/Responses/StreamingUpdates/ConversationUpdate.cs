@@ -1,12 +1,5 @@
-// <copyright file="ThreadUpdate.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 using System.Text.Json.Serialization;
 using OrchestrationScenarios.Models.Conversations;
-using OrchestrationScenarios.Models.Runs.Responses.Deltas;
 
 namespace OrchestrationScenarios.Models.Runs.Responses.StreamingUpdates;
 

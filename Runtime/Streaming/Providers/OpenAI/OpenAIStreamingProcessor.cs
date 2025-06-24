@@ -1,5 +1,3 @@
-// File: Runtime/Streaming/Providers/OpenAI/OpenAIStreamingProcessor.cs
-
 using System.Text;
 using OpenAI.Responses;
 using OrchestrationScenarios.Models.Messages.Content;

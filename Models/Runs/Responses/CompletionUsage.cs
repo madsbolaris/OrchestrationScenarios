@@ -1,9 +1,3 @@
-// <copyright file="CompletionUsage.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 namespace OrchestrationScenarios.Models.Runs.Responses;
 
 /// <summary>

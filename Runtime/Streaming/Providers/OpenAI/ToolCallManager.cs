@@ -1,5 +1,3 @@
-// File: Runtime/Streaming/Providers/OpenAI/ToolCallManager.cs
-
 using OrchestrationScenarios.Models.Messages;
 using OrchestrationScenarios.Models.Messages.Content;
 using OrchestrationScenarios.Models.Messages.Types;

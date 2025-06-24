@@ -1,8 +1,4 @@
-// File: Runtime/Streaming/Providers/OpenAI/MessageUpdateFactory.cs
-
-using OrchestrationScenarios.Models.Messages.Types;
 using OrchestrationScenarios.Models.Runs.Responses.Deltas;
-using OrchestrationScenarios.Models.Runs.Responses.Deltas.Content;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingOperations;
 using OrchestrationScenarios.Models.Runs.Responses.StreamingUpdates;
 

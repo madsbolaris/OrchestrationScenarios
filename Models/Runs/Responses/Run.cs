@@ -1,9 +1,3 @@
-// <copyright file="Run.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 using OrchestrationScenarios.Models.Messages;
 
 namespace OrchestrationScenarios.Models.Runs.Responses;

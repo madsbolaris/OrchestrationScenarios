@@ -1,5 +1,3 @@
-// File: Runtime/Streaming/Providers/OpenAI/OpenAIStreamingClient.cs
-
 using Microsoft.Extensions.AI;
 using OpenAI.Responses;
 using OrchestrationScenarios.Conversion;

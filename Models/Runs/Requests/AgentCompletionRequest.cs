@@ -1,12 +1,5 @@
-// <copyright file="AgentCompletionRequest.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 using OrchestrationScenarios.Models.Messages;
 using OrchestrationScenarios.Models.Runs.Requests.Options;
-using System.Collections.Generic;
 
 namespace OrchestrationScenarios.Models.Runs.Requests;
 

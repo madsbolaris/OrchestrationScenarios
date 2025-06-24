@@ -1,9 +1,3 @@
-// <copyright file="ToolMessageDelta.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 using System.Text.Json.Serialization;
 
 namespace OrchestrationScenarios.Models.Runs.Responses.Deltas;

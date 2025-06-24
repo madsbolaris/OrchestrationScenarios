@@ -1,10 +1,3 @@
-
-// <copyright file="AgentOverrides.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 using OrchestrationScenarios.Models.Messages;
 using OrchestrationScenarios.Models.Agents.ToolChoiceBehaviors;
 using OrchestrationScenarios.Models.Agents.Models;

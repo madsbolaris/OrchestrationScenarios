@@ -1,4 +1,3 @@
-// File: Runtime/Streaming/IStreamingAgentClient.cs
 namespace OrchestrationScenarios.Runtime.Streaming;
 
 using OrchestrationScenarios.Models.Agents;

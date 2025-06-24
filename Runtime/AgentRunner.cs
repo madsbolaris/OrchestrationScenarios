@@ -1,4 +1,3 @@
-using OpenAI.Responses;
 using OrchestrationScenarios.Models.Agents;
 using OrchestrationScenarios.Models.Messages.Types;
 using OrchestrationScenarios.Models.Runs.Responses.Deltas;

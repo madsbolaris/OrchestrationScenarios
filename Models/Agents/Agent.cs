@@ -1,9 +1,3 @@
-// <copyright file="Agent.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;

@@ -1,9 +1,3 @@
-// <copyright file="SystemGeneratedMessageDelta.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 using OrchestrationScenarios.Models.Messages.Content;
 using System.Text.Json.Serialization;
 

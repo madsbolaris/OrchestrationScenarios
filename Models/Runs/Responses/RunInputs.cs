@@ -1,9 +1,3 @@
-// <copyright file="RunRequest.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 using OrchestrationScenarios.Models.Agents;
 using OrchestrationScenarios.Models.Messages;
 using OrchestrationScenarios.Models.Runs.Requests.Options;

@@ -1,9 +1,3 @@
-// <copyright file="Thread.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 namespace OrchestrationScenarios.Models.Conversations;
 
 using OrchestrationScenarios.Models.Messages;

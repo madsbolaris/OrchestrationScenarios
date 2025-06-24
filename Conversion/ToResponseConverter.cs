@@ -1,6 +1,3 @@
-// File: Conversion/ToResponseConverter.cs
-// Namespace: OrchestrationScenarios.Conversion
-
 using OpenAI.Responses;
 using OrchestrationScenarios.Models.Tools.ToolDefinitions.Function;
 using OrchestrationScenarios.Models.Tools.ToolDefinitions.BingGrounding;

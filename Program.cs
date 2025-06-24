@@ -1,9 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using OpenAI;
@@ -52,8 +47,8 @@ class Program
         // Register file-based scenarios from a folder
         var tools = new Dictionary<string, Delegate>
         {
-            { "DateTime-Now", (Func<string>)(() => DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")) }
-            // Add more built-in tools here
+            { "DateTime-Now", () => "2025-06-22 21:07:38" }
+            // Add more mock built-in tools here
         };
 
         var scenarioFolder = Path.Combine(Directory.GetCurrentDirectory(), "Scenarios");

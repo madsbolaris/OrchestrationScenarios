@@ -1,10 +1,3 @@
-// <copyright file="RunStatus.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
-using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 

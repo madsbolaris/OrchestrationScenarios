@@ -1,10 +1,3 @@
-// <copyright file="RunDelta.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using OrchestrationScenarios.Models.Messages;
 

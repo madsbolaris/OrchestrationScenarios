@@ -1,11 +1,3 @@
-// <copyright file="RequiredToolChoiceBehavior.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
-using System.Collections.Generic;
-
 namespace OrchestrationScenarios.Models.Agents.ToolChoiceBehaviors;
 
 /// <summary>

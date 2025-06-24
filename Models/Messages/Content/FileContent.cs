@@ -1,9 +1,3 @@
-// <copyright file="FileContent.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 namespace OrchestrationScenarios.Models.Messages.Content;
 
 public class FileContent : AIContent

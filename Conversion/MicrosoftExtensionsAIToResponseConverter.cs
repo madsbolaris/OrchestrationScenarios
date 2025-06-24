@@ -1,6 +1,3 @@
-// File: Conversion/MicrosoftExtensionsAIToResponseConverter.cs
-// Namespace: OrchestrationScenarios.Conversion
-
 namespace OrchestrationScenarios.Conversion;
 
 using System.Text.Json;

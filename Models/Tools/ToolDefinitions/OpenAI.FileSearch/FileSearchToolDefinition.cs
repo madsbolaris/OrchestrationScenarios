@@ -1,9 +1,3 @@
-// <copyright file="FileSearchToolDefinition.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 namespace OrchestrationScenarios.Models.Tools.ToolDefinitions.OpenAI.FileSearch;
 
 public class FileSearchToolDefinition : AgentToolDefinition

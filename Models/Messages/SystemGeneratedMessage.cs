@@ -1,9 +1,3 @@
-// <copyright file="SystemGeneratedMessage.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
-
-#nullable enable
-
 using OrchestrationScenarios.Models.Runs.Responses;
 
 namespace OrchestrationScenarios.Models.Messages;
