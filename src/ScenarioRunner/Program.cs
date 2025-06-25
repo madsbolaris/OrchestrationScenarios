@@ -8,7 +8,8 @@ using System.ClientModel;
 using AgentsSdk.Models;
 using AgentsSdk.Runtime.Streaming;
 using AgentsSdk.Runtime.Streaming.Providers.OpenAI;
-using ScenarioRunner;
+
+namespace ScenarioRunner;
 
 class Program
 {
@@ -51,7 +52,7 @@ class Program
             // Add more mock built-in tools here
         };
 
-        var scenarioFolder = Path.Combine(Directory.GetCurrentDirectory(), "Scenarios");
+        var scenarioFolder = Path.Combine(Directory.GetCurrentDirectory(), "Resources/Scenarios");
         foreach (var file in Directory.EnumerateFiles(scenarioFolder, "*.liquid", SearchOption.AllDirectories))
         {
             var name = Path.GetFileNameWithoutExtension(file).Replace('_', ' ');
