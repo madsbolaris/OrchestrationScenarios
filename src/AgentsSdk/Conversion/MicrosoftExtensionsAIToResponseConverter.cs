@@ -12,13 +12,10 @@ internal static class MicrosoftExtensionsAIToResponseConverter
 
     private static ResponseTool ConvertFunction(AIFunction function)
     {
-        if (!function.JsonSchema.TryGetProperty("properties", out var props))
-            throw new InvalidOperationException("Missing 'properties' in JSON schema");
-
         return ResponseTool.CreateFunctionTool(
             function.Name,
             function.Description,
-            BinaryData.FromString(props.GetRawText())
+            BinaryData.FromString(function.JsonSchema.GetRawText())
         );
     }
 

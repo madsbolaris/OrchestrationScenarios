@@ -6,7 +6,7 @@ using AgentsSdk.Models.Runs.Responses.Deltas.Content;
 using AgentsSdk.Models.Runs.Responses.StreamingOperations;
 using AgentsSdk.Models.Runs.Responses.StreamingUpdates;
 
-namespace ScenarioRunner;
+namespace AgentsSdk.Helpers;
 
 public static class ConsoleRenderHelper
 {

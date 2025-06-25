@@ -9,6 +9,7 @@ using AgentsSdk.Runtime.Streaming;
 using AgentsSdk.Runtime.Streaming.Providers.OpenAI;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
+using AgentsSdk.Runtime;
 
 namespace ScenarioRunner;
 
@@ -20,7 +21,7 @@ class Program
             .ConfigureAppConfiguration((_, config) =>
             {
                 config
-            .SetBasePath(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..")))
+                    .SetBasePath(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..")))
                     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
             })
             .ConfigureLogging((hostingContext, logging) =>

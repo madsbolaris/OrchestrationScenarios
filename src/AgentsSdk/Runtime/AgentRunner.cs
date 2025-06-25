@@ -1,3 +1,4 @@
+using AgentsSdk.Helpers;
 using AgentsSdk.Models.Agents;
 using AgentsSdk.Models.Messages;
 using AgentsSdk.Models.Messages.Types;
@@ -6,15 +7,14 @@ using AgentsSdk.Models.Runs.Responses.StreamingOperations;
 using AgentsSdk.Models.Runs.Responses.StreamingUpdates;
 using AgentsSdk.Runtime.Streaming;
 
-namespace ScenarioRunner;
+namespace AgentsSdk.Runtime;
 
 public class AgentRunner(IStreamingAgentClient client)
 {
-    public async Task RunAsync(Agent agent, List<ChatMessage> allMessages)
+    public async Task RunAsync(Agent agent, List<ChatMessage>? allMessages = null)
     {
+        allMessages ??= [];
         int agentIndex = allMessages.FindIndex(m => m is AgentMessage);
-        if (agentIndex == -1)
-            throw new InvalidOperationException("No agent message found to stream.");
 
         var inputMessages = allMessages.Take(agentIndex).ToList();
         var stream = GetStreamingUpdates(agent, inputMessages);
@@ -31,6 +31,11 @@ public class AgentRunner(IStreamingAgentClient client)
         async IAsyncEnumerable<StreamingUpdate> Stream()
         {
             var done = false;
+
+            if (agent.Instructions != null && agent.Instructions.Count > 0)
+            {
+                messages.InsertRange(0, agent.Instructions);
+            }
 
             while (!done)
             {

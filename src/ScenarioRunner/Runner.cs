@@ -1,3 +1,5 @@
+using AgentsSdk.Runtime;
+
 namespace ScenarioRunner;
 
 public class Runner(string name, string path, AgentRunner runner, Dictionary<string, Delegate> tools) : IScenario
