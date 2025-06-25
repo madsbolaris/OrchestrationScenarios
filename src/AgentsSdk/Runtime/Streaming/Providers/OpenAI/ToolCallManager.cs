@@ -1,16 +1,21 @@
+using System.Text;
 using AgentsSdk.Models.Messages;
 using AgentsSdk.Models.Messages.Content;
-using AgentsSdk.Models.Messages.Types;
-using AgentsSdk.Models.Runs.Responses.Deltas;
-using AgentsSdk.Models.Runs.Responses.StreamingOperations;
 using AgentsSdk.Models.Runs.Responses.StreamingUpdates;
+using AgentsSdk.Models.Runs.Responses.StreamingOperations;
+using AgentsSdk.Models.Runs.Responses.Deltas;
+using AgentsSdk.Models.Messages.Types;
+using System.Text.Json;
 
 namespace AgentsSdk.Runtime.Streaming.Providers.OpenAI;
 
 public class ToolCallManager
 {
     private bool _processedToolCalls = false;
-    private readonly Dictionary<string, ToolCallContent> _builders = [];
+
+    // Updated to track both ToolCallContent and its corresponding argument builder
+    private readonly Dictionary<string, (ToolCallContent Content, StringBuilder Arguments)> _builders = [];
+
     private readonly List<Task<(ToolCallContent, object?)>> _tasks = [];
 
     private readonly Func<ToolCallContent, Task<object?>> _invokeFunction;
@@ -34,21 +39,31 @@ public class ToolCallManager
             Name = name
         };
 
-        _builders[toolCallId] = call;
+        _builders[toolCallId] = (call, new StringBuilder());
         return call;
+    }
+
+    public void AddFunctionCallArguments(string toolCallId, string delta)
+    {
+        if (_builders.TryGetValue(toolCallId, out var tuple))
+        {
+            tuple.Arguments.Append(delta);
+        }
     }
 
     public void CompleteToolCallArguments(string toolCallId)
     {
-        if (!_builders.TryGetValue(toolCallId, out var fnContent))
+        if (!_builders.TryGetValue(toolCallId, out var tuple))
             return;
+
+        tuple.Content.Arguments = JsonSerializer.Deserialize<Dictionary<string, object?>>(tuple.Arguments.ToString());
 
         _outputMessages.Add(new AgentMessage
         {
-            Content = [fnContent]
+            Content = [tuple.Content]
         });
 
-        var task = Task.Run(async () => (fnContent, await _invokeFunction(fnContent)));
+        var task = Task.Run(async () => (tuple.Content, await _invokeFunction(tuple.Content)));
         _tasks.Add(task);
     }
 

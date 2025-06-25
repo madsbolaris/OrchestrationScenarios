@@ -1,103 +1,64 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 using OpenAI;
 using OpenAI.Responses;
 using System.ClientModel;
-
 using AgentsSdk.Models;
 using AgentsSdk.Runtime.Streaming;
 using AgentsSdk.Runtime.Streaming.Providers.OpenAI;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 
 namespace ScenarioRunner;
 
 class Program
 {
-    static async Task Main(string[] args)
+    public static async Task Main(string[] args)
     {
-        var services = new ServiceCollection();
+        var host = Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration((_, config) =>
+            {
+                config
+            .SetBasePath(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..")))
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            })
+            .ConfigureLogging((hostingContext, logging) =>
+            {
+                logging.ClearProviders();
 
-        // Load configuration
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false)
+                // Add debug logger (shows up in VS/VS Code debug pane)
+                logging.AddDebug();
+            })
+            .ConfigureServices((context, services) =>
+            {
+                // Bind and register OpenAI configuration
+                services.Configure<OpenAISettings>(context.Configuration.GetSection("OpenAI"));
+
+                services.AddSingleton<IStreamingAgentClient, OpenAIStreamingClient>();
+                services.AddSingleton<AgentRunner>();
+
+                // Register file-based scenarios
+                var tools = new Dictionary<string, Delegate>
+                {
+                    { "DateTime-Now", () => "2025-06-22 21:07:38" }
+                };
+
+                var scenarioFolder = Path.Combine(Directory.GetCurrentDirectory(), "Resources/Scenarios");
+                foreach (var file in Directory.EnumerateFiles(scenarioFolder, "*.liquid", SearchOption.AllDirectories))
+                {
+                    var name = Path.GetFileNameWithoutExtension(file).Replace('_', ' ');
+                    services.AddTransient<IScenario>(provider =>
+                    {
+                        var runner = provider.GetRequiredService<AgentRunner>();
+                        return new Runner(name, file, runner, tools);
+                    });
+                }
+
+                services.AddHostedService<ScenarioRunnerService>();
+            })
             .Build();
 
-        // Bind OpenAI configuration
-        var openAIConfig = new OpenAIConfiguration();
-        configuration.Bind("OpenAI", openAIConfig.OpenAI);
-        openAIConfig.ModelId = configuration["OpenAI:ModelId"] ?? "gpt-4";
-        services.AddSingleton(openAIConfig);
-
-        // Register OpenAI client
-        services.AddSingleton(provider =>
-        {
-            var config = provider.GetRequiredService<OpenAIConfiguration>();
-            return new OpenAIResponseClient(
-                model: config.ModelId,
-                credential: new ApiKeyCredential(config.OpenAI.ApiKey),
-                options: new OpenAIClientOptions()
-            );
-        });
-
-        // Core services
-        services.AddSingleton<IStreamingAgentClient, OpenAIStreamingClient>();
-        services.AddSingleton<AgentRunner>();
-
-        // Scenarios
-        // Register file-based scenarios from a folder
-        var tools = new Dictionary<string, Delegate>
-        {
-            { "DateTime-Now", () => "2025-06-22 21:07:38" }
-            // Add more mock built-in tools here
-        };
-
-        var scenarioFolder = Path.Combine(Directory.GetCurrentDirectory(), "Resources/Scenarios");
-        foreach (var file in Directory.EnumerateFiles(scenarioFolder, "*.liquid", SearchOption.AllDirectories))
-        {
-            var name = Path.GetFileNameWithoutExtension(file).Replace('_', ' ');
-            services.AddTransient<IScenario>(provider =>
-            {
-                var runner = provider.GetRequiredService<AgentRunner>();
-                return new Runner(name, file, runner, tools);
-            });
-        }
-
-
-        var provider = services.BuildServiceProvider();
-        var scenarios = provider.GetServices<IScenario>().ToList();
-
-        // Try running a scenario by name
-        if (args.Length > 0)
-        {
-            var scenario = scenarios.FirstOrDefault(s =>
-                s.Name.Equals(args[0], StringComparison.OrdinalIgnoreCase));
-
-            if (scenario != null)
-            {
-                await scenario.RunAsync();
-                return;
-            }
-
-            Console.WriteLine($"Scenario '{args[0]}' not found.");
-            return;
-        }
-
-        // Interactive fallback
-        Console.WriteLine("Available Scenarios:");
-        for (int i = 0; i < scenarios.Count; i++)
-            Console.WriteLine($"{i + 1}. {scenarios[i].Name}");
-
-        Console.Write("Select a scenario to run: ");
-        if (int.TryParse(Console.ReadLine(), out int choice) &&
-            choice >= 1 && choice <= scenarios.Count)
-        {
-            Console.Clear();
-            await scenarios[choice - 1].RunAsync();
-        }
-        else
-        {
-            Console.WriteLine("Invalid selection.");
-        }
+        await host.RunAsync();
     }
 }

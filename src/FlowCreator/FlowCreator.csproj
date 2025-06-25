@@ -7,23 +7,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Azure.Core" Version="1.46.2" />
-    <PackageReference Include="Azure.Identity" Version="1.14.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.6" />
-    <PackageReference Include="Microsoft.PowerPlatform.Dataverse.Client" Version="1.2.9" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Resources\Flows\*.json" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
-
-
 </Project>

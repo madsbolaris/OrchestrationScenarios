@@ -69,6 +69,7 @@ public static class OpenAIStreamingProcessor
                     break;
 
                 case StreamingResponseFunctionCallArgumentsDeltaUpdate fnArgsDelta:
+                    toolCallManager.AddFunctionCallArguments(fnArgsDelta.ItemId, fnArgsDelta.Delta); // create function
                     yield return AIContentUpdateFactory.Append(fnArgsDelta.ItemId, fnArgsDelta.OutputIndex, new ToolCallContentDelta
                     {
                         Arguments = fnArgsDelta.Delta

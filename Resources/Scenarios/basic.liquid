@@ -11,7 +11,7 @@ agent:
   - name: "Microsoft.BingGrounding.Search"
 ---
 
-<user><text>What was the weather exactly two weeks ago in Seattle?</text></user>
+<user><text>What was the weather exactly two weeks ago in Seattle? Don't repeat yourself</text></user>
 <agent><tool-call name="DateTime-Now" id="0001"></tool-call></agent>
 <tool for="0001"><tool-result>2025-06-22 21:06:11</tool-result></tool>
 <agent><tool-call name="Microsoft.BingGrounding.Search" id="0002"></tool-call></agent>

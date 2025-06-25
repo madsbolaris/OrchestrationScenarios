@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScenarioRunner", "src\Scena
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowCreator", "src\FlowCreator\FlowCreator.csproj", "{97183CA2-E6BA-4CAF-A848-5CC4E0EA5283}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynchronizer", "src\FlowSynchronizer\FlowSynchronizer.csproj", "{97183CA2-E6BA-4CAF-A848-5CC4E0EA5283}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
