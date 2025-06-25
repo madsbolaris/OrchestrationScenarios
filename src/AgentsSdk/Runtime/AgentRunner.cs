@@ -13,13 +13,16 @@ public class AgentRunner(IStreamingAgentClient client)
 {
     public async Task RunAsync(Agent agent, List<ChatMessage>? allMessages = null)
     {
-        allMessages ??= [];
-        int agentIndex = allMessages.FindIndex(m => m is AgentMessage);
+        var stream = GetStreamingUpdates(agent, allMessages);
+        await ConsoleRenderHelper.DisplayConversationAsync(allMessages, stream);
 
-        var inputMessages = allMessages.Take(agentIndex).ToList();
-        var stream = GetStreamingUpdates(agent, inputMessages);
+        // allMessages ??= [];
+        // int agentIndex = allMessages.FindIndex(m => m is AgentMessage);
 
-        await ConsoleRenderHelper.DisplayConversationAsync(inputMessages, stream);
+        // var inputMessages = allMessages.Take(agentIndex).ToList();
+        // var stream = GetStreamingUpdates(agent, inputMessages);
+
+        // await ConsoleRenderHelper.DisplayConversationAsync(inputMessages, stream);
     }
 
     private IAsyncEnumerable<StreamingUpdate> GetStreamingUpdates(

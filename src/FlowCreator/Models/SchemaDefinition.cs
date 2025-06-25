@@ -9,31 +9,44 @@ namespace FlowCreator.Models
         public string Type { get; set; } = "object";
 
         [JsonPropertyName("properties")]
-        public Dictionary<string, SchemaProperty> Properties { get; set; } = [];
+        public Dictionary<string, SchemaProperty>? Properties { get; set; }
 
         public SchemaDefinition Clone()
         {
             return new SchemaDefinition
             {
                 Type = this.Type,
-                Properties = this.Properties.ToDictionary(
+                Properties = this.Properties?.ToDictionary(
                     entry => entry.Key,
                     entry => new SchemaProperty
                     {
                         Type = entry.Value.Type,
                         Description = entry.Value.Description
                     }
-                )
+                ) ?? new Dictionary<string, SchemaProperty>()
+                {
+                    { "PARAMETER_NAME", new SchemaProperty() }
+                }
             };
         }
 
         public class SchemaProperty
         {
-            [JsonPropertyName("type")]
-            public string Type { get; set; } = string.Empty;
+            private string? _type;
+            private string? _description;
 
-            [JsonPropertyName("description")]
-            public string? Description { get; set; } = string.Empty;
+            public string Type
+            {
+                get => _type ?? "PROPERTY_TYPE";
+                set => _type = value;
+            }
+
+            public string Description
+            {
+                get => _description ?? "PROPERTY_DESCRIPTION";
+                set => _description = value;
+            }
         }
+
     }
 }

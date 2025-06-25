@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace FlowCreator.Models;
 
+[JsonConverter(typeof(AIDocumentConverter))]
 public class AIDocument
 {
     [JsonPropertyName("id")]
@@ -15,7 +16,7 @@ public class AIDocument
     public string SwaggerFile { get; set; } = string.Empty;
 
     [JsonPropertyName("connectionReferenceLogicalName")]
-    public string ConnectionReferenceLogicalName { get; set; } = string.Empty;
+    public string? ConnectionReferenceLogicalName { get; set; }
 
     [JsonPropertyName("inputSchema")]
     public SchemaDefinition InputSchema { get; set; } = new();
@@ -59,6 +60,37 @@ public class AIDocument
 
     public override string ToString()
     {
+        return JsonSerializer.Serialize(this, GetJsonSerializerOptions());
+    }
+
+    private static JsonSerializerOptions? jsonSerializerOptions = null;
+
+    private static JsonSerializerOptions GetJsonSerializerOptions()
+    {
+        if (jsonSerializerOptions != null)
+            return jsonSerializerOptions;
+
+        jsonSerializerOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+        return jsonSerializerOptions;
+    }
+}
+
+
+public class AIDocumentConverter : JsonConverter<AIDocument>
+{
+    public override AIDocument? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        // Optional: implement deserialization if needed
+        throw new NotSupportedException("Deserialization is not supported for AIDocument.");
+    }
+
+    public override void Write(Utf8JsonWriter writer, AIDocument value, JsonSerializerOptions options)
+    {
         var fullDefinition = new
         {
             schemaVersion = "1.0.0.0",
@@ -66,29 +98,29 @@ public class AIDocument
             {
                 connectionReferences = new Dictionary<string, object>
                 {
-                    [ApiName] = new
+                    [value.ApiName] = new
                     {
                         runtimeSource = "embedded",
                         connection = new
                         {
-                            connectionReferenceLogicalName = ConnectionReferenceLogicalName
+                            connectionReferenceLogicalName = value.ConnectionReferenceLogicalName
                         },
                         api = new
                         {
-                            name = ApiName
+                            name = value.ApiName
                         }
                     }
                 },
-                definition = new
+                definition = new Dictionary<string, object>
                 {
-                    @schema = "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
-                    contentVersion = "1.0.0.0",
-                    parameters = new
+                    ["$schema"] = "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    ["contentVersion"] = "1.0.0.0",
+                    ["parameters"] = new Dictionary<string, object>
                     {
-                        @connections = new { defaultValue = new { }, type = "Object" },
-                        @authentication = new { defaultValue = new { }, type = "SecureObject" }
+                        ["$connections"] = new { defaultValue = new { }, type = "Object" },
+                        ["$authentication"] = new { defaultValue = new { }, type = "SecureObject" }
                     },
-                    triggers = new
+                    ["triggers"] = new
                     {
                         manual = new
                         {
@@ -97,19 +129,19 @@ public class AIDocument
                             inputs = new
                             {
                                 method = "POST",
-                                schema = InputSchema,
+                                schema = value.InputSchema,
                                 triggerAuthenticationType = "All"
                             }
                         }
                     },
-                    actions = new
+                    ["actions"] = new
                     {
                         Try = new
                         {
                             type = "Scope",
                             actions = new
                             {
-                                Action = ActionSchema
+                                Action = value.ActionSchema
                             }
                         },
                         SuccessResponse = new
@@ -122,10 +154,7 @@ public class AIDocument
                                 headers = new { Content_Type = "application/json" },
                                 body = "@outputs('Action')?['body']"
                             },
-                            runAfter = new
-                            {
-                                Try = new[] { "Succeeded" }
-                            }
+                            runAfter = new { Try = new[] { "Succeeded" } }
                         },
                         Catch = new
                         {
@@ -144,32 +173,13 @@ public class AIDocument
                                     }
                                 }
                             },
-                            runAfter = new
-                            {
-                                Try = new[] { "Failed" }
-                            }
+                            runAfter = new { Try = new[] { "Failed" } }
                         }
                     }
                 }
             }
         };
 
-        return JsonSerializer.Serialize(fullDefinition, GetJsonSerializerOptions());
-    }
-
-    private static JsonSerializerOptions? jsonSerializerOptions = null;
-
-    private static JsonSerializerOptions GetJsonSerializerOptions()
-    {
-        if (jsonSerializerOptions != null)
-            return jsonSerializerOptions;
-
-        jsonSerializerOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
-        return jsonSerializerOptions;
+        JsonSerializer.Serialize(writer, fullDefinition, options);
     }
 }

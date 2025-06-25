@@ -13,11 +13,18 @@ public class SpecWorkflow
     private readonly KernelProcess _process;
     private readonly Guid _documentId;
     private readonly AIDocumentService _documentService;
+    private readonly Kernel _kernel;
 
     public SpecWorkflow(AIDocumentService documentService, Guid documentId)
     {
         _documentId = documentId;
         _documentService = documentService;
+
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton(documentService)
+            .BuildServiceProvider();
+
+        _kernel = new Kernel(serviceProvider);
         var process = new ProcessBuilder("GenerateEmailMarkdown");
 
         var askForIdStep = process.AddStepFromType<AskForApiIdStep>();
@@ -31,15 +38,13 @@ public class SpecWorkflow
     
     public async Task<AIDocument> UpdateApiIdAsync(string apiId)
     {
-        AIDocument document = _documentService.GetAIDocument(_documentId)!;
-
-        await _process.StartAsync(new Kernel(), new KernelProcessEvent
+        await _process.StartAsync(_kernel, new KernelProcessEvent
         {
             Id = SpecWorkflowEvents.AskForApiId,
             Data = new AskForApiIdInput
             {
                 ApiId = apiId,
-                Document = document
+                DocumentId = _documentId
             },
         });
 

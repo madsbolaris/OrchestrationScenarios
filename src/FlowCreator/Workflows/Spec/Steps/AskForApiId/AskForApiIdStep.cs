@@ -13,10 +13,12 @@ public sealed class AskForApiIdStep(AIDocumentService documentService) : KernelP
     [KernelFunction("ask")]
     public void Ask(KernelProcessStepContext context, AskForApiIdInput input)
     {
-        documentService.TryUpdateAIDocument(input.Document.Id, doc =>
+        documentService.TryUpdateAIDocument(input.DocumentId, doc =>
         {
             doc.ApiId = input.ApiId;
             return doc;
         });
+
+
     }
 }

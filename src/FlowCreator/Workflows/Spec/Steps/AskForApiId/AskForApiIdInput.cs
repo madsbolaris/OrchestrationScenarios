@@ -11,5 +11,5 @@ public class AskForApiIdInput
     public required string ApiId { get; set; }
 
     [JsonPropertyName("document")]
-    public required AIDocument Document { get; set; }
+    public required Guid DocumentId { get; set; }
 }
