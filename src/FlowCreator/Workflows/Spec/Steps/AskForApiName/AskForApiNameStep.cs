@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using FlowCreator.Models;
 using System.Text.Json.Nodes;
 using FlowCreator.Workflows.Spec.Steps.CreateTrigger;
+using FlowCreator.Workflows.Spec.Steps.CreateAction;
 
 namespace FlowCreator.Workflows.Spec.Steps.AskForApiName;
 
@@ -119,5 +120,10 @@ public sealed class AskForApiNameStep(AIDocumentService documentService, IOption
                 DocumentId = input.DocumentId
             });
         }
+
+        await context.EmitEventAsync(SpecWorkflowEvents.SaveFlow, new SaveFlowInput
+        {
+            DocumentId = doc.Id
+        });
     }
 }

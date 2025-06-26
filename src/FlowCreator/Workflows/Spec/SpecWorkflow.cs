@@ -44,6 +44,7 @@ public class SpecWorkflow
         var askForConnectionReferenceLogicalName = builder.AddStepFromType<AskForConnectionReferenceLogicalNameStep>();
         var createTrigger = builder.AddStepFromType<CreateTriggerStep>();
         var createAction = builder.AddStepFromType<CreateActionStep>();
+        var saveFlow = builder.AddStepFromType<SaveFlowStep>();
 
         var askForApiNameExternalHandler = builder.AddProxyStep("askForApiNameHandler", [
             SpecWorkflowExternalTopics.RelayError,
@@ -82,11 +83,23 @@ public class SpecWorkflow
         askForApiName.OnEvent(SpecWorkflowEvents.CreateTrigger)
             .SendEventTo(new ProcessFunctionTargetBuilder(createTrigger, "create"));
 
+        askForApiName.OnEvent(SpecWorkflowEvents.SaveFlow)
+            .SendEventTo(new ProcessFunctionTargetBuilder(saveFlow, "save"));
+
         askForOperationId.OnEvent(SpecWorkflowEvents.CreateTrigger)
             .SendEventTo(new ProcessFunctionTargetBuilder(createTrigger, "create"));
 
+        askForOperationId.OnEvent(SpecWorkflowEvents.SaveFlow)
+            .SendEventTo(new ProcessFunctionTargetBuilder(saveFlow, "save"));
+
         createTrigger.OnEvent(SpecWorkflowEvents.CreateAction)
             .SendEventTo(new ProcessFunctionTargetBuilder(createAction, "create"));
+
+        createTrigger.OnEvent(SpecWorkflowEvents.SaveFlow)
+            .SendEventTo(new ProcessFunctionTargetBuilder(saveFlow, "save"));
+
+        createAction.OnEvent(SpecWorkflowEvents.SaveFlow)
+            .SendEventTo(new ProcessFunctionTargetBuilder(saveFlow, "save"));
 
         askForApiName.OnEvent(SpecWorkflowEvents.EmitError)
             .EmitExternalEvent(askForApiNameExternalHandler, SpecWorkflowExternalTopics.RelayError);

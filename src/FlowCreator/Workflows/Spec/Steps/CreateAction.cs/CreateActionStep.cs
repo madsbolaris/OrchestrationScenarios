@@ -51,5 +51,10 @@ public sealed class CreateActionStep(AIDocumentService documentService) : Kernel
             d.ActionSchema = action;
             return d;
         });
+
+        await context.EmitEventAsync(SpecWorkflowEvents.SaveFlow, new SaveFlowInput
+        {
+            DocumentId = doc.Id
+        });
     }
 }

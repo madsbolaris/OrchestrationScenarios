@@ -8,6 +8,7 @@ using Azure.Identity;
 using Microsoft.Xrm.Sdk.Query;
 using Azure.Core;
 using FlowCreator.Workflows.Spec.Steps.CreateTrigger;
+using FlowCreator.Workflows.Spec.Steps.CreateAction;
 
 namespace FlowCreator.Workflows.Spec.Steps.AskForConnectionReferenceLogicalName;
 
@@ -58,6 +59,12 @@ public sealed class AskForConnectionReferenceLogicalNameStep(
         {
             doc.ConnectionReferenceLogicalName = logicalName;
             return doc;
+        });
+
+        var doc = documentService.GetAIDocument(input.DocumentId);
+        await context.EmitEventAsync(SpecWorkflowEvents.SaveFlow, new SaveFlowInput
+        {
+            DocumentId = doc.Id
         });
     }
 }

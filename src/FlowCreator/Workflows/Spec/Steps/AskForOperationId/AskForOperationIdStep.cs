@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using Microsoft.Extensions.Options;
 using FlowCreator.Models;
 using FlowCreator.Workflows.Spec.Steps.CreateTrigger;
+using FlowCreator.Workflows.Spec.Steps.CreateAction;
 
 namespace FlowCreator.Workflows.Spec.Steps.AskForOperationId;
 
@@ -82,10 +83,16 @@ public sealed class AskForOperationIdStep(AIDocumentService documentService, IOp
             doc.OperationId = input.OperationId;
             return doc;
         });
-        
-        
+
+
         // get document
         var doc = documentService.GetAIDocument(input.DocumentId)!;
+        
+        await context.EmitEventAsync(SpecWorkflowEvents.SaveFlow, new SaveFlowInput
+        {
+            DocumentId = doc.Id
+        });
+        
         if (doc.ApiId is not null && doc.ApiName is not null && doc.OperationId is not null)
         {
             await context.EmitEventAsync(SpecWorkflowEvents.CreateTrigger, new CreateTriggerInput

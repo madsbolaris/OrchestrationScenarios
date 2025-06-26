@@ -109,6 +109,12 @@ public sealed class CreateTriggerStep(AIDocumentService documentService, IOption
             return doc;
         });
 
+        
+        await context.EmitEventAsync(SpecWorkflowEvents.SaveFlow, new SaveFlowInput
+        {
+            DocumentId = input.DocumentId
+        });
+
         await context.EmitEventAsync(SpecWorkflowEvents.CreateAction, new CreateActionInput
         {
             DocumentId = input.DocumentId
