@@ -83,7 +83,10 @@ public class ToolCallManager
             {
                 ConversationId = "", // to be set by caller
                 MessageId = messageId,
-                Delta = new StartStreamingOperation<ToolMessageDelta>(new ToolMessageDelta())
+                Delta = new StartStreamingOperation<ToolMessageDelta>(new ToolMessageDelta()
+                {
+                    ToolCallId = fnCallContent.ToolCallId
+                })
             };
 
             yield return new ChatMessageUpdate<ToolMessageDelta>

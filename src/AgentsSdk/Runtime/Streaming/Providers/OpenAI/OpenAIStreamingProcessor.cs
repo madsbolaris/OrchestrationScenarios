@@ -40,9 +40,10 @@ public static class OpenAIStreamingProcessor
                     if (outputItem.Item is FunctionCallResponseItem fnCall)
                     {
                         var fnCallContent = toolCallManager.RegisterCall(fnCall.Id, fnCall.FunctionName);
-                        yield return MessageUpdateFactory.Set(conversationId, currentMessageId, new AgentMessageDelta
+                        yield return AIContentUpdateFactory.Start(currentMessageId, 0, new ToolCallContentDelta
                         {
-                            Content = [fnCallContent]
+                            ToolCallId = fnCall.Id,
+                            Name = fnCall.FunctionName
                         });
                     }
                     break;
@@ -106,7 +107,10 @@ public static class OpenAIStreamingProcessor
                     yield return MessageUpdateFactory.End<AgentMessageDelta>(conversationId, webStart.ItemId);
                     currentMessageId = null;
 
-                    yield return MessageUpdateFactory.Start<ToolMessageDelta>(conversationId, webStart.ItemId);
+                    yield return MessageUpdateFactory.Start(conversationId, webStart.ItemId, new ToolMessageDelta
+                    {
+                        ToolCallId = webStart.ItemId
+                    });
                     break;
 
                 case StreamingResponseWebSearchCallCompletedUpdate webEnd:

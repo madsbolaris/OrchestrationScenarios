@@ -14,7 +14,7 @@ public class AgentRunner(IStreamingAgentClient client)
     public async Task RunAsync(Agent agent, List<ChatMessage>? allMessages = null)
     {
         var stream = GetStreamingUpdates(agent, allMessages);
-        await ConsoleRenderHelper.DisplayConversationAsync(allMessages, stream);
+        await ConsoleRenderHelper.DisplayConversationAsync([], stream);
 
         // allMessages ??= [];
         // int agentIndex = allMessages.FindIndex(m => m is AgentMessage);
@@ -33,24 +33,37 @@ public class AgentRunner(IStreamingAgentClient client)
 
         async IAsyncEnumerable<StreamingUpdate> Stream()
         {
-            var done = false;
+            var prepended = false;
 
-            if (agent.Instructions != null && agent.Instructions.Count > 0)
+            try
             {
-                messages.InsertRange(0, agent.Instructions);
-            }
-
-            while (!done)
-            {
-                await foreach (var update in client.RunStreamingAsync(agent, messages))
+                if (agent.Instructions != null && agent.Instructions.Count > 0)
                 {
-                    yield return update;
+                    messages.InsertRange(0, agent.Instructions);
+                    prepended = true;
+                }
 
-                    if (update is RunUpdate { Delta: EndStreamingOperation<RunDelta> })
+                var done = false;
+
+                while (!done)
+                {
+                    await foreach (var update in client.RunStreamingAsync(agent, messages))
                     {
-                        done = true;
-                        break;
+                        yield return update;
+
+                        if (update is RunUpdate { Delta: EndStreamingOperation<RunDelta> })
+                        {
+                            done = true;
+                            break;
+                        }
                     }
+                }
+            }
+            finally
+            {
+                if (prepended)
+                {
+                    messages.RemoveRange(0, agent.Instructions!.Count);
                 }
             }
         }

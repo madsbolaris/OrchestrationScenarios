@@ -10,6 +10,21 @@ namespace AgentsSdk.Helpers;
 
 public static class ConsoleRenderHelper
 {
+    private static readonly Dictionary<string, string> _toolCallIdMap = new();
+    private static int _toolCallIdCounter = 1;
+
+    private static string GetShortToolCallId(string longId)
+    {
+        if (!_toolCallIdMap.TryGetValue(longId, out var shortId))
+        {
+            shortId = _toolCallIdCounter.ToString("D4");
+            _toolCallIdMap[longId] = shortId;
+            _toolCallIdCounter++;
+        }
+        return shortId;
+    }
+
+
     public static async Task DisplayStreamAsync(IAsyncEnumerable<StreamingUpdate> stream)
     {
         await foreach (var part in stream)
@@ -25,7 +40,11 @@ public static class ConsoleRenderHelper
                     break;
 
                 case AIContentUpdate<TextContentDelta> ai when ai.Delta is { } delta:
-                    HandleContentDelta(delta);
+                    HandleTextContentDelta(delta);
+                    break;
+
+                case AIContentUpdate<ToolCallContentDelta> ai when ai.Delta is { } delta:
+                    HandleToolCallContentDelta(delta);
                     break;
             }
         }
@@ -53,7 +72,8 @@ public static class ConsoleRenderHelper
                 break;
 
             case ToolCallContent call:
-                WriteWrapped($"tool-call name=\"{call.Name}\"", call.Arguments?.ToString());
+                var shortId = GetShortToolCallId(call.ToolCallId);
+                WriteWrapped($"tool-call name=\"{call.Name}\" id=\"{shortId}\"", call.Arguments?.ToString());
                 break;
 
             case ToolResultContent result:
@@ -67,7 +87,15 @@ public static class ConsoleRenderHelper
         switch (delta)
         {
             case StartStreamingOperation<T> start:
-                WriteTagOpen(start.Value?.GetType());
+                if (start.Value is ToolMessageDelta toolMessageDelta)
+                {
+                    var shortId = GetShortToolCallId(toolMessageDelta.ToolCallId);
+                    WriteTagOpen(toolMessageDelta.GetType(), $"for=\"{shortId}\"");
+                }
+                else
+                {
+                    WriteTagOpen(start.Value?.GetType());
+                }
                 break;
 
             case SetStreamingOperation<T> set when set.TypedValue?.Content is { Count: > 0 } contentList:
@@ -81,7 +109,7 @@ public static class ConsoleRenderHelper
         }
     }
 
-    private static void HandleContentDelta(StreamingOperation<TextContentDelta> delta)
+    private static void HandleTextContentDelta(StreamingOperation<TextContentDelta> delta)
     {
         switch (delta)
         {
@@ -99,6 +127,35 @@ public static class ConsoleRenderHelper
         }
     }
 
+    private static void HandleToolCallContentDelta(StreamingOperation<ToolCallContentDelta> delta)
+    {
+        switch (delta)
+        {
+            case StartStreamingOperation<ToolCallContentDelta> start:
+                if (start.Value is ToolCallContentDelta toolCall)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    var shortId = GetShortToolCallId(toolCall.ToolCallId);
+                    var tag = $"<tool-call name=\"{toolCall.Name}\" id=\"{shortId}\">";
+                    Console.Write(tag);
+                    Console.ResetColor();
+                }
+                break;
+
+            case AppendStreamingOperation<ToolCallContentDelta> append:
+                Console.Write(append.Value);
+                break;
+
+            case EndStreamingOperation<ToolCallContentDelta>:
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("</tool-call>");
+                Console.ResetColor();
+                break;
+        }
+    }
+
+
+
     private static void WriteWrapped(string tag, string? content)
     {
         Console.ForegroundColor = ConsoleColor.Yellow;
@@ -113,15 +170,20 @@ public static class ConsoleRenderHelper
         Console.ResetColor();
     }
 
-    private static void WriteTagOpen(Type? type)
+    public static void WriteTagOpen(Type? type, string? attributes = null)
     {
         if (type == null) return;
         Console.ForegroundColor = GetColor(type);
-        Console.Write($"<{GetTag(type)}>");
+        Console.Write($"<{GetTag(type)}");
+        if (!string.IsNullOrEmpty(attributes))
+        {
+            Console.Write($" {attributes}");
+        }
+        Console.Write(">");
         Console.ResetColor();
     }
 
-    private static void WriteTagClose(Type? type)
+    public static void WriteTagClose(Type? type)
     {
         if (type == null) return;
         Console.ForegroundColor = GetColor(type);

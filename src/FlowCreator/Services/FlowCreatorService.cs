@@ -1,3 +1,4 @@
+using AgentsSdk.Helpers;
 using AgentsSdk.Models.Messages;
 using AgentsSdk.Models.Messages.Content;
 using AgentsSdk.Models.Messages.Types;
@@ -18,10 +19,35 @@ public class FlowCreatorService(AIDocumentService documentService, AgentRunner r
         while (true)
         {
             await runner.RunAsync(copilot, messages);
-            Console.Write("<user>");
-            var input = Console.ReadLine();
-            Console.WriteLine("</user>");
+            ConsoleRenderHelper.WriteTagOpen(typeof(UserMessage));
 
+            string input = string.Empty;
+            int startLeft = Console.CursorLeft;
+            ConsoleKeyInfo key;
+
+            while ((key = Console.ReadKey(true)).Key != ConsoleKey.Enter)
+            {
+                if (key.Key == ConsoleKey.Backspace)
+                {
+                    if (input.Length > 0 && Console.CursorLeft > startLeft)
+                    {
+                        input = input[..^1];
+                        Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+                        Console.Write(' ');
+                        Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+                    }
+                    continue;
+                }
+
+                if (!char.IsControl(key.KeyChar))
+                {
+                    Console.Write(key.KeyChar);
+                    input += key.KeyChar;
+                }
+            }
+
+            ConsoleRenderHelper.WriteTagClose(typeof(UserMessage));
+            
             if (string.IsNullOrWhiteSpace(input))
             {
                 break;

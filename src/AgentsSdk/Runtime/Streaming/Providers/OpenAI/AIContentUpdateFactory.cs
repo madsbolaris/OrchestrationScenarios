@@ -19,6 +19,20 @@ public static class AIContentUpdateFactory
         };
     }
 
+    public static AIContentUpdate<TDelta> Start<TDelta>(
+        string messageId,
+        int index,
+        TDelta delta)
+        where TDelta : AIContentDelta, new()
+    {
+        return new AIContentUpdate<TDelta>
+        {
+            MessageId = messageId,
+            Index = index,
+            Delta = new StartStreamingOperation<TDelta>(delta)
+        };
+    }
+
     public static AIContentUpdate<TDelta> Append<TDelta>(
         string messageId,
         int index,
