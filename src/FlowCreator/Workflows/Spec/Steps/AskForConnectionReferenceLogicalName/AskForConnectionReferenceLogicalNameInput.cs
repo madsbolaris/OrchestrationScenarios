@@ -7,7 +7,7 @@ namespace FlowCreator.Workflows.Spec.Steps.AskForConnectionReferenceLogicalName;
 
 public class AskForConnectionReferenceLogicalNameInput
 {
-    [JsonPropertyName("document")]
+    [JsonPropertyName("documentId")]
     public required Guid DocumentId { get; set; }
 
     [JsonPropertyName("ConnectionReferenceLogicalName")]

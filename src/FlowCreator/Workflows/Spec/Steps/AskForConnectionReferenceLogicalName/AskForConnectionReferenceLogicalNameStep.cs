@@ -3,12 +3,11 @@
 using Microsoft.SemanticKernel;
 using FlowCreator.Services;
 using Microsoft.Extensions.Options;
-using FlowCreator.Models;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Azure.Identity;
 using Microsoft.Xrm.Sdk.Query;
-using Microsoft.Xrm.Sdk;
 using Azure.Core;
+using FlowCreator.Workflows.Spec.Steps.CreateTrigger;
 
 namespace FlowCreator.Workflows.Spec.Steps.AskForConnectionReferenceLogicalName;
 
@@ -17,7 +16,7 @@ public sealed class AskForConnectionReferenceLogicalNameStep(
     IOptions<DataverseSettings> dataverseOptions) : KernelProcessStep
 {
     [KernelFunction("ask")]
-    public async Task Ask(KernelProcessStepContext context, AskForConnectionReferenceLogicalNameInput input)
+    public async Task AskAsync(KernelProcessStepContext context, AskForConnectionReferenceLogicalNameInput input)
     {
         var dataverse = dataverseOptions.Value;
         var logicalName = input.ConnectionReferenceLogicalName;
@@ -26,7 +25,7 @@ public sealed class AskForConnectionReferenceLogicalNameStep(
         async Task<string> TokenProviderAsync(string resourceUrl)
         {
             var resource = new Uri(resourceUrl).GetComponents(UriComponents.SchemeAndServer, UriFormat.UriEscaped);
-            var token = await credential.GetTokenAsync(new TokenRequestContext([ $"{resource}/.default" ]));
+            var token = await credential.GetTokenAsync(new TokenRequestContext([$"{resource}/.default"]));
             return token.Token;
         }
 
@@ -55,7 +54,7 @@ public sealed class AskForConnectionReferenceLogicalNameStep(
         }
 
         // Update the document if the connection reference exists
-            documentService.TryUpdateAIDocument(input.DocumentId, doc =>
+        documentService.TryUpdateAIDocument(input.DocumentId, doc =>
         {
             doc.ConnectionReferenceLogicalName = logicalName;
             return doc;

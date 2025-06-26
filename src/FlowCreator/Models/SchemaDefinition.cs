@@ -32,21 +32,10 @@ namespace FlowCreator.Models
 
         public class SchemaProperty
         {
-            private string? _type;
-            private string? _description;
-
-            public string Type
-            {
-                get => _type ?? "PROPERTY_TYPE";
-                set => _type = value;
-            }
-
-            public string Description
-            {
-                get => _description ?? "PROPERTY_DESCRIPTION";
-                set => _description = value;
-            }
+            public string? Type { get; set; }
+            public string? Description { get; set; }
         }
+
 
     }
 }

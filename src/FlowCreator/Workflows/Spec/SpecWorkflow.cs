@@ -1,19 +1,20 @@
 using System.ComponentModel;
-using FlowCreator.Models;
 using FlowCreator.Services;
 using FlowCreator.Workflows.Spec.Steps.AskForOperationId;
 using FlowCreator.Workflows.Spec.Steps.AskForApiName;
 using FlowCreator.Workflows.Spec.Channels;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
-using Microsoft.Extensions.Options;
 using System.Text.Json;
 using FlowCreator.Workflows.Spec.Steps.AskForConnectionReferenceLogicalName;
+using FlowCreator.Workflows.Spec.Steps.CreateTrigger;
+using Microsoft.SemanticKernel.Process.Models;
+using FlowCreator.Workflows.Spec.Steps.CreateAction;
 
 namespace FlowCreator.Workflows.Spec;
 
 public class SpecWorkflow
 {
+    private KernelProcessStateMetadata? _kernelProcessStateMetadata = null;
     private readonly KernelProcess _process;
     private readonly Guid _documentId;
     private readonly AIDocumentService _documentService;
@@ -38,11 +39,13 @@ public class SpecWorkflow
     {
         var builder = new ProcessBuilder("GenerateFlow");
 
-        var askForId = builder.AddStepFromType<AskForApiNameStep>();
+        var askForApiName = builder.AddStepFromType<AskForApiNameStep>();
         var askForOperationId = builder.AddStepFromType<AskForOperationIdStep>();
         var askForConnectionReferenceLogicalName = builder.AddStepFromType<AskForConnectionReferenceLogicalNameStep>();
+        var createTrigger = builder.AddStepFromType<CreateTriggerStep>();
+        var createAction = builder.AddStepFromType<CreateActionStep>();
 
-        var askForIdExternalHandler = builder.AddProxyStep("askForIdHandler", [
+        var askForApiNameExternalHandler = builder.AddProxyStep("askForApiNameHandler", [
             SpecWorkflowExternalTopics.RelayError,
             SpecWorkflowExternalTopics.RelayHelp
         ]);
@@ -57,8 +60,18 @@ public class SpecWorkflow
             SpecWorkflowExternalTopics.RelayHelp
         ]);
 
+        var createTriggerExternalHandler = builder.AddProxyStep("createTriggerHandler", [
+            SpecWorkflowExternalTopics.RelayError,
+            SpecWorkflowExternalTopics.RelayHelp
+        ]);
+
+        var createActionExternalHandler = builder.AddProxyStep("createActionHandler", [
+            SpecWorkflowExternalTopics.RelayError,
+            SpecWorkflowExternalTopics.RelayHelp
+        ]);
+
         builder.OnInputEvent(SpecWorkflowEvents.AskForApiName)
-            .SendEventTo(new ProcessFunctionTargetBuilder(askForId, "ask"));
+            .SendEventTo(new ProcessFunctionTargetBuilder(askForApiName, "ask"));
 
         builder.OnInputEvent(SpecWorkflowEvents.AskForOperationId)
             .SendEventTo(new ProcessFunctionTargetBuilder(askForOperationId, "ask"));
@@ -66,11 +79,20 @@ public class SpecWorkflow
         builder.OnInputEvent(SpecWorkflowEvents.AskForConnectionReferenceLogicalName)
             .SendEventTo(new ProcessFunctionTargetBuilder(askForConnectionReferenceLogicalName, "ask"));
 
-        askForId.OnEvent(SpecWorkflowEvents.EmitError)
-            .EmitExternalEvent(askForIdExternalHandler, SpecWorkflowExternalTopics.RelayError);
+        askForApiName.OnEvent(SpecWorkflowEvents.CreateTrigger)
+            .SendEventTo(new ProcessFunctionTargetBuilder(createTrigger, "create"));
 
-        askForId.OnEvent(SpecWorkflowEvents.EmitHelp)
-            .EmitExternalEvent(askForIdExternalHandler, SpecWorkflowExternalTopics.RelayHelp);
+        askForOperationId.OnEvent(SpecWorkflowEvents.CreateTrigger)
+            .SendEventTo(new ProcessFunctionTargetBuilder(createTrigger, "create"));
+
+        createTrigger.OnEvent(SpecWorkflowEvents.CreateAction)
+            .SendEventTo(new ProcessFunctionTargetBuilder(createAction, "create"));
+
+        askForApiName.OnEvent(SpecWorkflowEvents.EmitError)
+            .EmitExternalEvent(askForApiNameExternalHandler, SpecWorkflowExternalTopics.RelayError);
+
+        askForApiName.OnEvent(SpecWorkflowEvents.EmitHelp)
+            .EmitExternalEvent(askForApiNameExternalHandler, SpecWorkflowExternalTopics.RelayHelp);
 
         askForOperationId.OnEvent(SpecWorkflowEvents.EmitError)
             .EmitExternalEvent(askForOperationIdExternalHandler, SpecWorkflowExternalTopics.RelayError);
@@ -83,6 +105,18 @@ public class SpecWorkflow
 
         askForConnectionReferenceLogicalName.OnEvent(SpecWorkflowEvents.EmitHelp)
             .EmitExternalEvent(askForConnectionReferenceLogicalNameExternalHandler, SpecWorkflowExternalTopics.RelayHelp);
+
+        createTrigger.OnEvent(SpecWorkflowEvents.EmitError)
+            .EmitExternalEvent(createTriggerExternalHandler, SpecWorkflowExternalTopics.RelayError);
+
+        createTrigger.OnEvent(SpecWorkflowEvents.EmitHelp)
+            .EmitExternalEvent(createTriggerExternalHandler, SpecWorkflowExternalTopics.RelayHelp);
+
+        createAction.OnEvent(SpecWorkflowEvents.EmitError)
+            .EmitExternalEvent(createActionExternalHandler, SpecWorkflowExternalTopics.RelayError);
+
+        createAction.OnEvent(SpecWorkflowEvents.EmitHelp)
+            .EmitExternalEvent(createActionExternalHandler, SpecWorkflowExternalTopics.RelayHelp);
 
         return builder.Build();
     }
@@ -117,7 +151,7 @@ public class SpecWorkflow
     {
         var helpChannel = new HelpHandlerChannel();
 
-        await _process.StartAsync(_kernel, new KernelProcessEvent
+        var context = await _process.StartAsync(_kernel, new KernelProcessEvent
         {
             Id = eventId,
             Data = input

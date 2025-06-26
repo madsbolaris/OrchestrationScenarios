@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using FlowCreator.Models;
 using System.Text.Json.Nodes;
+using FlowCreator.Workflows.Spec.Steps.CreateTrigger;
 
 namespace FlowCreator.Workflows.Spec.Steps.AskForApiName;
 
 public sealed class AskForApiNameStep(AIDocumentService documentService, IOptions<AaptConnectorsSettings> settings) : KernelProcessStep
 {
     [KernelFunction("ask")]
-    public async Task Ask(KernelProcessStepContext context, AskForApiNameInput input)
+    public async Task AskAsync(KernelProcessStepContext context, AskForApiNameInput input)
     {
         // Define the path to the JSON file
         var filePath = Path.Combine(settings.Value.FolderPath, "src/source/tools/DocGenerator/SampleRequestResponses/PowerApps.json");
@@ -48,7 +49,7 @@ public sealed class AskForApiNameStep(AIDocumentService documentService, IOption
             return;
         }
 
-         // Remove "shared_" prefix if it exists
+        // Remove "shared_" prefix if it exists
         var connectorName = apiName.StartsWith("shared_")
             ? apiName[7..]
             : apiName;
@@ -108,5 +109,15 @@ public sealed class AskForApiNameStep(AIDocumentService documentService, IOption
             doc.ApiName = apiName;
             return doc;
         });
+
+        // get document
+        var doc = documentService.GetAIDocument(input.DocumentId)!;
+        if (doc.ApiId is not null && doc.ApiName is not null && doc.OperationId is not null)
+        {
+            await context.EmitEventAsync(SpecWorkflowEvents.CreateTrigger, new CreateTriggerInput
+            {
+                DocumentId = input.DocumentId
+            });
+        }
     }
 }

@@ -25,17 +25,8 @@ namespace FlowCreator.Models
             [JsonPropertyName("host")]
             public FlowHost Host { get; set; } = new();
 
-            private Dictionary<string, object>? _parameters;
-
             [JsonPropertyName("parameters")]
-            public Dictionary<string, object> Parameters
-            {
-                get => _parameters ?? new Dictionary<string, object>
-        {
-            { "PARAMETER_NAME", "@triggerBody()?['PARAMETER_NAME']" }
-        };
-                set => _parameters = value;
-            }
+            public Dictionary<string, object>? Parameters { get; set; }
 
             [JsonPropertyName("authentication")]
             public object? Authentication { get; set; }
@@ -45,37 +36,23 @@ namespace FlowCreator.Models
                 return new FlowActionInputs
                 {
                     Host = this.Host.Clone(),
-                    Parameters = new Dictionary<string, object>(this.Parameters),
+                    Parameters = this.Parameters != null
+                        ? new Dictionary<string, object>(this.Parameters)
+                        : null,
                     Authentication = this.Authentication
                 };
             }
 
             public class FlowHost
             {
-                private string? _connectionName;
-                private string? _operationId;
-                private string? _apiId;
-
                 [JsonPropertyName("connectionName")]
-                public string? ConnectionName
-                {
-                    get => _connectionName ?? "CONNECTION_NAME";
-                    set => _connectionName = value;
-                }
+                public string? ConnectionName { get; set; }
 
                 [JsonPropertyName("operationId")]
-                public string? OperationId
-                {
-                    get => _operationId ?? "OPERATION_ID";
-                    set => _operationId = value;
-                }
+                public string? OperationId { get; set; }
 
                 [JsonPropertyName("apiId")]
-                public string? ApiId
-                {
-                    get => _apiId ?? "API_ID";
-                    set => _apiId = value;
-                }
+                public string? ApiId { get; set; }
 
                 public FlowHost Clone()
                 {
@@ -88,5 +65,6 @@ namespace FlowCreator.Models
                 }
             }
         }
+
     }
 }

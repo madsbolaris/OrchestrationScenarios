@@ -60,7 +60,6 @@ namespace FlowCreator.Services
             {
                 Id = source.Id,
                 Version = source.Version,
-                SwaggerFile = source.SwaggerFile,
                 ConnectionReferenceLogicalName = source.ConnectionReferenceLogicalName,
                 ApiName = source.ApiName,
                 ApiId = source.ApiId,

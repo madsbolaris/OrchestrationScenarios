@@ -12,9 +12,6 @@ public class AIDocument
     [JsonPropertyName("version")]
     public int Version { get; set; } = 0;
 
-    [JsonPropertyName("swaggerFile")]
-    public string SwaggerFile { get; set; } = string.Empty;
-
     [JsonPropertyName("connectionReferenceLogicalName")]
     public string? ConnectionReferenceLogicalName { get; set; }
 
@@ -26,9 +23,9 @@ public class AIDocument
 
     // Helper properties for accessing ActionSchema.Inputs.Host values
     [JsonIgnore]
-    public string ApiName
+    public string? ApiName
     {
-        get => ActionSchema?.Inputs?.Host?.ConnectionName ?? string.Empty;
+        get => ActionSchema?.Inputs?.Host?.ConnectionName;
         set
         {
             if (ActionSchema?.Inputs?.Host != null)
@@ -37,9 +34,9 @@ public class AIDocument
     }
 
     [JsonIgnore]
-    public string OperationId
+    public string? OperationId
     {
-        get => ActionSchema?.Inputs?.Host?.OperationId ?? string.Empty;
+        get => ActionSchema?.Inputs?.Host?.OperationId;
         set
         {
             if (ActionSchema?.Inputs?.Host != null)
@@ -48,9 +45,9 @@ public class AIDocument
     }
 
     [JsonIgnore]
-    public string ApiId
+    public string? ApiId
     {
-        get => ActionSchema?.Inputs?.Host?.ApiId ?? string.Empty;
+        get => ActionSchema?.Inputs?.Host?.ApiId;
         set
         {
             if (ActionSchema?.Inputs?.Host != null)
@@ -98,7 +95,7 @@ public class AIDocumentConverter : JsonConverter<AIDocument>
             {
                 connectionReferences = new Dictionary<string, object>
                 {
-                    [value.ApiName] = new
+                    [value.ApiName ?? "CONNECTION_NAME"] = new
                     {
                         runtimeSource = "embedded",
                         connection = new
@@ -107,7 +104,7 @@ public class AIDocumentConverter : JsonConverter<AIDocument>
                         },
                         api = new
                         {
-                            name = value.ApiName
+                            name = value.ApiName ?? "CONNECTION_NAME"
                         }
                     }
                 },
@@ -129,7 +126,7 @@ public class AIDocumentConverter : JsonConverter<AIDocument>
                             inputs = new
                             {
                                 method = "POST",
-                                schema = value.InputSchema,
+                                schema = AddSchemaDefaults(value.InputSchema),
                                 triggerAuthenticationType = "All"
                             }
                         }
@@ -141,7 +138,7 @@ public class AIDocumentConverter : JsonConverter<AIDocument>
                             type = "Scope",
                             actions = new
                             {
-                                Action = value.ActionSchema
+                                Action = AddActionDefaults(value.ActionSchema)
                             }
                         },
                         SuccessResponse = new
@@ -182,4 +179,49 @@ public class AIDocumentConverter : JsonConverter<AIDocument>
 
         JsonSerializer.Serialize(writer, fullDefinition, options);
     }
+
+    private static FlowAction AddActionDefaults(FlowAction action)
+    {
+        var clone = action.Clone();
+
+        clone.Inputs.Host.ConnectionName ??= "CONNECTION_NAME";
+        clone.Inputs.Host.OperationId ??= "OPERATION_ID";
+        clone.Inputs.Host.ApiId ??= "API_ID";
+
+        if (clone.Inputs.Parameters == null || clone.Inputs.Parameters.Count == 0)
+        {
+            clone.Inputs.Parameters = new Dictionary<string, object>
+            {
+                { "PARAMETER_NAME", "@triggerBody()?['PARAMETER_NAME']" }
+            };
+        }
+
+        return clone;
+    }
+
+
+    private static SchemaDefinition AddSchemaDefaults(SchemaDefinition schema)
+    {
+        if (schema.Properties == null || schema.Properties.Count == 0)
+        {
+            schema.Properties = new Dictionary<string, SchemaDefinition.SchemaProperty>
+            {
+                { "PARAMETER_NAME", new SchemaDefinition.SchemaProperty
+                    {
+                        Type = "PROPERTY_TYPE",
+                        Description = "PROPERTY_DESCRIPTION"
+                    }
+                }
+            };
+        }
+
+        foreach (var prop in schema.Properties.Values)
+        {
+            prop.Type ??= "PROPERTY_TYPE";
+            prop.Description ??= "PROPERTY_DESCRIPTION";
+        }
+
+        return schema;
+    }
+
 }

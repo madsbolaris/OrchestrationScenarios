@@ -7,7 +7,7 @@ namespace FlowCreator.Workflows.Spec.Steps.AskForOperationId;
 
 public class AskForOperationIdInput
 {
-    [JsonPropertyName("document")]
+    [JsonPropertyName("documentId")]
     public required Guid DocumentId { get; set; }
 
     [JsonPropertyName("operationId")]

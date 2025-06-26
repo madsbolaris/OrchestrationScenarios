@@ -5,13 +5,14 @@ using FlowCreator.Services;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Options;
 using FlowCreator.Models;
+using FlowCreator.Workflows.Spec.Steps.CreateTrigger;
 
 namespace FlowCreator.Workflows.Spec.Steps.AskForOperationId;
 
 public sealed class AskForOperationIdStep(AIDocumentService documentService, IOptions<AaptConnectorsSettings> settings) : KernelProcessStep
 {
     [KernelFunction("ask")]
-    public async Task Ask(KernelProcessStepContext context, AskForOperationIdInput input)
+    public async Task AskAsync(KernelProcessStepContext context, AskForOperationIdInput input)
     {
         // Load the document to get the API ID
         var document = documentService.GetAIDocument(input.DocumentId);
@@ -81,5 +82,16 @@ public sealed class AskForOperationIdStep(AIDocumentService documentService, IOp
             doc.OperationId = input.OperationId;
             return doc;
         });
+        
+        
+        // get document
+        var doc = documentService.GetAIDocument(input.DocumentId)!;
+        if (doc.ApiId is not null && doc.ApiName is not null && doc.OperationId is not null)
+        {
+            await context.EmitEventAsync(SpecWorkflowEvents.CreateTrigger, new CreateTriggerInput
+            {
+                DocumentId = input.DocumentId
+            });
+        }
     }
 }

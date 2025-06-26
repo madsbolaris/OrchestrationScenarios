@@ -3,13 +3,10 @@ using System.ComponentModel;
 using System.Text.Json.Serialization;
 using FlowCreator.Models;
 
-namespace FlowCreator.Workflows.Spec.Steps.AskForApiName;
+namespace FlowCreator.Workflows.Spec.Steps.CreateAction;
 
-public class AskForApiNameInput
+public class CreateActionInput
 {
     [JsonPropertyName("documentId")]
     public required Guid DocumentId { get; set; }
-
-    [JsonPropertyName("apiName")]
-    public required string ApiName { get; set; }
 }
