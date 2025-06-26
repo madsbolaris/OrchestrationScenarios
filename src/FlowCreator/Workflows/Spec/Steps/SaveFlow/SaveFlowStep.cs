@@ -4,7 +4,7 @@ using Microsoft.SemanticKernel;
 using FlowCreator.Services;
 using System.Text.Json;
 
-namespace FlowCreator.Workflows.Spec.Steps.CreateAction;
+namespace FlowCreator.Workflows.Spec.Steps.SaveFlow;
 
 public sealed class SaveFlowStep(AIDocumentService documentService) : KernelProcessStep
 {

@@ -9,6 +9,8 @@ using FlowCreator.Models;
 using System.Text.Json.Nodes;
 using FlowCreator.Workflows.Spec.Steps.CreateTrigger;
 using FlowCreator.Workflows.Spec.Steps.CreateAction;
+using FlowCreator.Workflows.Spec.Steps.SaveFlow;
+using FlowCreator.Workflows.Spec.Steps.LoadExistingFlow;
 
 namespace FlowCreator.Workflows.Spec.Steps.AskForApiName;
 
@@ -111,19 +113,13 @@ public sealed class AskForApiNameStep(AIDocumentService documentService, IOption
             return doc;
         });
 
-        // get document
         var doc = documentService.GetAIDocument(input.DocumentId)!;
         if (doc.ApiId is not null && doc.ApiName is not null && doc.OperationId is not null)
         {
-            await context.EmitEventAsync(SpecWorkflowEvents.CreateTrigger, new CreateTriggerInput
+            await context.EmitEventAsync(SpecWorkflowEvents.LoadExistingFlow, new LoadExistingFlowInput
             {
                 DocumentId = input.DocumentId
             });
         }
-
-        await context.EmitEventAsync(SpecWorkflowEvents.SaveFlow, new SaveFlowInput
-        {
-            DocumentId = doc.Id
-        });
     }
 }

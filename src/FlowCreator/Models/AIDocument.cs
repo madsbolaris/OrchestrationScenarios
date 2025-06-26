@@ -82,9 +82,119 @@ public class AIDocumentConverter : JsonConverter<AIDocument>
 {
     public override AIDocument? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        // Optional: implement deserialization if needed
-        throw new NotSupportedException("Deserialization is not supported for AIDocument.");
+        using var document = JsonDocument.ParseValue(ref reader);
+        var root = document.RootElement;
+
+        var result = new AIDocument();
+
+        var props = root.GetProperty("properties");
+
+        // Extract connection reference
+        if (props.TryGetProperty("connectionReferences", out var connRefs) && connRefs.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var connRef in connRefs.EnumerateObject())
+            {
+                var name = connRef.Name;
+                var connObj = connRef.Value;
+
+                var connRefName = connObj.GetProperty("connection")
+                                        .GetProperty("connectionReferenceLogicalName")
+                                        .GetString();
+                var apiName = connObj.GetProperty("api")
+                                    .GetProperty("name")
+                                    .GetString();
+
+                result.ApiName = (apiName != "CONNECTION_NAME") ? apiName : null;
+                result.ConnectionReferenceLogicalName = (connRefName != "CONNECTION_REFERENCE_NAME") ? connRefName : null;
+                break;
+            }
+        }
+
+        // Extract definition
+        if (props.TryGetProperty("definition", out var def))
+        {
+            // INPUT SCHEMA
+            var triggerInputs = def.GetProperty("triggers")
+                                .GetProperty("manual")
+                                .GetProperty("inputs");
+
+            if (triggerInputs.TryGetProperty("schema", out var schemaNode))
+            {
+                var inputSchema = new SchemaDefinition
+                {
+                    Type = "object",
+                    Properties = new Dictionary<string, SchemaDefinition.SchemaProperty>()
+                };
+
+                if (schemaNode.TryGetProperty("properties", out var propsNode))
+                {
+                    foreach (var prop in propsNode.EnumerateObject())
+                    {
+                        var type = prop.Value.GetProperty("type").GetString();
+                        var description = prop.Value.GetProperty("description").GetString();
+
+                        // Ignore hardcoded defaults
+                        if (type == "PROPERTY_TYPE" && description == "PROPERTY_DESCRIPTION")
+                            continue;
+
+                        inputSchema.Properties[prop.Name] = new SchemaDefinition.SchemaProperty
+                        {
+                            Type = type == "PROPERTY_TYPE" ? null : type,
+                            Description = description == "PROPERTY_DESCRIPTION" ? null : description
+                        };
+                    }
+                }
+
+                result.InputSchema = inputSchema;
+            }
+
+            // ACTION SCHEMA
+            var actionNode = def.GetProperty("actions")
+                .GetProperty("try")
+                .GetProperty("actions")
+                .GetProperty("action");
+
+            var hostNode = actionNode.GetProperty("inputs").GetProperty("host");
+            var operationId = hostNode.GetProperty("operationId").GetString();
+            var connectionName = hostNode.GetProperty("connectionName").GetString();
+            var apiId = hostNode.GetProperty("apiId").GetString();
+
+            var parametersNode = actionNode.GetProperty("inputs").GetProperty("parameters");
+
+            var parameters = new Dictionary<string, object>();
+            foreach (var param in parametersNode.EnumerateObject())
+            {
+                var expr = param.Value.GetString();
+                if (expr == "@triggerBody()?['PARAMETER_NAME']")
+                    continue;
+
+                parameters[param.Name] = expr!;
+            }
+
+            result.ActionSchema = new FlowAction
+            {
+                Inputs = new FlowAction.FlowActionInputs
+                {
+                    Host = new FlowAction.FlowActionInputs.FlowHost
+                    {
+                        ConnectionName = connectionName != "CONNECTION_NAME" ? connectionName : null,
+                        OperationId = operationId != "OPERATION_ID" ? operationId : null,
+                        ApiId = apiId != "API_ID" ? apiId : null
+                    },
+                    Parameters = parameters.Count > 0 ? parameters : null,
+                    Authentication = null
+                }
+            };
+
+            // Mirror operationId back to top-level helper
+            result.OperationId = result.ActionSchema.Inputs.Host.OperationId;
+            result.ApiId = result.ActionSchema.Inputs.Host.ApiId;
+            result.ApiName = result.ActionSchema.Inputs.Host.ConnectionName;
+        }
+
+        return result;
     }
+
 
     public override void Write(Utf8JsonWriter writer, AIDocument value, JsonSerializerOptions options)
     {

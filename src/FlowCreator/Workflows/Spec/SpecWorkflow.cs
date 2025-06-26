@@ -9,6 +9,8 @@ using FlowCreator.Workflows.Spec.Steps.AskForConnectionReferenceLogicalName;
 using FlowCreator.Workflows.Spec.Steps.CreateTrigger;
 using Microsoft.SemanticKernel.Process.Models;
 using FlowCreator.Workflows.Spec.Steps.CreateAction;
+using FlowCreator.Workflows.Spec.Steps.SaveFlow;
+using FlowCreator.Workflows.Spec.Steps.LoadExistingFlow;
 
 namespace FlowCreator.Workflows.Spec;
 
@@ -42,6 +44,7 @@ public class SpecWorkflow
         var askForApiName = builder.AddStepFromType<AskForApiNameStep>();
         var askForOperationId = builder.AddStepFromType<AskForOperationIdStep>();
         var askForConnectionReferenceLogicalName = builder.AddStepFromType<AskForConnectionReferenceLogicalNameStep>();
+        var LoadExistingFlow = builder.AddStepFromType<LoadExistingFlowStep>();
         var createTrigger = builder.AddStepFromType<CreateTriggerStep>();
         var createAction = builder.AddStepFromType<CreateActionStep>();
         var saveFlow = builder.AddStepFromType<SaveFlowStep>();
@@ -57,6 +60,11 @@ public class SpecWorkflow
         ]);
 
         var askForConnectionReferenceLogicalNameExternalHandler = builder.AddProxyStep("askForConnectionReferenceLogicalNameHandler", [
+            SpecWorkflowExternalTopics.RelayError,
+            SpecWorkflowExternalTopics.RelayHelp
+        ]);
+
+        var loadFlowExternalHandler = builder.AddProxyStep("loadFlowrHandler", [
             SpecWorkflowExternalTopics.RelayError,
             SpecWorkflowExternalTopics.RelayHelp
         ]);
@@ -80,17 +88,14 @@ public class SpecWorkflow
         builder.OnInputEvent(SpecWorkflowEvents.AskForConnectionReferenceLogicalName)
             .SendEventTo(new ProcessFunctionTargetBuilder(askForConnectionReferenceLogicalName, "ask"));
 
-        askForApiName.OnEvent(SpecWorkflowEvents.CreateTrigger)
+        askForApiName.OnEvent(SpecWorkflowEvents.LoadExistingFlow)
+            .SendEventTo(new ProcessFunctionTargetBuilder(LoadExistingFlow, "load"));
+
+        askForOperationId.OnEvent(SpecWorkflowEvents.LoadExistingFlow)
+            .SendEventTo(new ProcessFunctionTargetBuilder(LoadExistingFlow, "load"));
+
+        LoadExistingFlow.OnEvent(SpecWorkflowEvents.CreateTrigger)
             .SendEventTo(new ProcessFunctionTargetBuilder(createTrigger, "create"));
-
-        askForApiName.OnEvent(SpecWorkflowEvents.SaveFlow)
-            .SendEventTo(new ProcessFunctionTargetBuilder(saveFlow, "save"));
-
-        askForOperationId.OnEvent(SpecWorkflowEvents.CreateTrigger)
-            .SendEventTo(new ProcessFunctionTargetBuilder(createTrigger, "create"));
-
-        askForOperationId.OnEvent(SpecWorkflowEvents.SaveFlow)
-            .SendEventTo(new ProcessFunctionTargetBuilder(saveFlow, "save"));
 
         createTrigger.OnEvent(SpecWorkflowEvents.CreateAction)
             .SendEventTo(new ProcessFunctionTargetBuilder(createAction, "create"));
@@ -118,6 +123,12 @@ public class SpecWorkflow
 
         askForConnectionReferenceLogicalName.OnEvent(SpecWorkflowEvents.EmitHelp)
             .EmitExternalEvent(askForConnectionReferenceLogicalNameExternalHandler, SpecWorkflowExternalTopics.RelayHelp);
+
+        LoadExistingFlow.OnEvent(SpecWorkflowEvents.EmitError)
+            .EmitExternalEvent(loadFlowExternalHandler, SpecWorkflowExternalTopics.RelayError);
+
+        LoadExistingFlow.OnEvent(SpecWorkflowEvents.EmitHelp)
+            .EmitExternalEvent(loadFlowExternalHandler, SpecWorkflowExternalTopics.RelayHelp);
 
         createTrigger.OnEvent(SpecWorkflowEvents.EmitError)
             .EmitExternalEvent(createTriggerExternalHandler, SpecWorkflowExternalTopics.RelayError);

@@ -105,6 +105,7 @@ public static class ConsoleRenderHelper
 
             case EndStreamingOperation<T> end:
                 WriteTagClose(end.Value?.GetType());
+                Console.WriteLine(); // Ensure a new line after closing tag
                 break;
         }
     }
@@ -148,7 +149,7 @@ public static class ConsoleRenderHelper
 
             case EndStreamingOperation<ToolCallContentDelta>:
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("</tool-call>");
+                Console.Write("</tool-call>");
                 Console.ResetColor();
                 break;
         }
@@ -187,7 +188,7 @@ public static class ConsoleRenderHelper
     {
         if (type == null) return;
         Console.ForegroundColor = GetColor(type);
-        Console.WriteLine($"</{GetTag(type)}>");
+        Console.Write($"</{GetTag(type)}>");
         Console.ResetColor();
     }
 
