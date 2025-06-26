@@ -11,7 +11,6 @@ using AgentsSdk.Runtime;
 using AgentsSdk.Models;
 using AgentsSdk.Runtime.Streaming;
 using AgentsSdk.Runtime.Streaming.Providers.OpenAI;
-using FlowCreator.Agents;
 
 // Entry point
 class Program
@@ -42,6 +41,8 @@ class Program
                 
                 // Bind and register OpenAI configuration
                 services.Configure<OpenAISettings>(context.Configuration.GetSection("OpenAI"));
+                services.Configure<AaptConnectorsSettings>(context.Configuration.GetSection("AaptConnectors"));
+                services.Configure<DataverseSettings>(context.Configuration.GetSection("Dataverse"));
 
                 services.AddSingleton<IStreamingAgentClient, OpenAIStreamingClient>();
                 services.AddSingleton<AIDocumentService>();

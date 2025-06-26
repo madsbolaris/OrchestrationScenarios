@@ -2,11 +2,13 @@ using System.ComponentModel;
 using FlowCreator.Models;
 using FlowCreator.Services;
 using FlowCreator.Workflows.Spec.Steps.AskForOperationId;
-using FlowCreator.Workflows.Spec.Steps.AskForApiId;
-using FlowCreator.Workflows.Spec;
+using FlowCreator.Workflows.Spec.Steps.AskForApiName;
+using FlowCreator.Workflows.Spec.Channels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
+using FlowCreator.Workflows.Spec.Steps.AskForConnectionReferenceLogicalName;
 
 namespace FlowCreator.Workflows.Spec;
 
@@ -16,105 +18,129 @@ public class SpecWorkflow
     private readonly Guid _documentId;
     private readonly AIDocumentService _documentService;
     private readonly Kernel _kernel;
-    private readonly JsonSerializerOptions? _jsonSerializerOptions;
+    private readonly JsonSerializerOptions? _jsonOptions;
 
-    public SpecWorkflow(AIDocumentService documentService, Guid documentId, JsonSerializerOptions? jsonSerializerOptions = null)
+    public SpecWorkflow(
+        IServiceProvider serviceProvider,
+        AIDocumentService documentService,
+        Guid documentId,
+        JsonSerializerOptions? jsonOptions = null)
     {
         _documentId = documentId;
         _documentService = documentService;
-        _jsonSerializerOptions = jsonSerializerOptions;
-
-        var serviceProvider = new ServiceCollection()
-            .AddSingleton(documentService)
-            .BuildServiceProvider();
+        _jsonOptions = jsonOptions;
 
         _kernel = new Kernel(serviceProvider);
-        var processBuilder = new ProcessBuilder("GenerateFlow");
-
-        var askForIdStep = processBuilder.AddStepFromType<AskForApiIdStep>();
-        var errorHandler = processBuilder.AddProxyStep(id: "errorHandler", [SpecWorkflowExternalTopics.RelayError]);
-
-        processBuilder
-            .OnInputEvent(SpecWorkflowEvents.AskForApiId)
-            .SendEventTo(new ProcessFunctionTargetBuilder(askForIdStep, "ask"));
-
-        askForIdStep
-            .OnEvent(SpecWorkflowEvents.EmitError)
-            .EmitExternalEvent(errorHandler, SpecWorkflowExternalTopics.RelayError);
-
-        _process = processBuilder.Build();
+        _process = BuildProcess();
     }
 
-    public async Task<string> UpdateApiIdAsync(
-        [Description("The name of the API provided by the user; should begin with `shared_`. If given a full path, just provide the last part after the last `/`; the function will then resolve it to the correct API.")] string apiId
-    )
+    private KernelProcess BuildProcess()
     {
-        var externalMessageChannel = new ErrorHandlerChannel();
-        var context = await _process.StartAsync(_kernel, new KernelProcessEvent
-        {
-            Id = SpecWorkflowEvents.AskForApiId,
-            Data = new AskForApiIdInput
-            {
-                ApiId = apiId,
-                DocumentId = _documentId
-            },
-        }, externalMessageChannel);
+        var builder = new ProcessBuilder("GenerateFlow");
 
-        if (externalMessageChannel.GetErrors().Count > 0)
-        {
-            return string.Join("\n", externalMessageChannel.GetErrors());
-        }
+        var askForId = builder.AddStepFromType<AskForApiNameStep>();
+        var askForOperationId = builder.AddStepFromType<AskForOperationIdStep>();
+        var askForConnectionReferenceLogicalName = builder.AddStepFromType<AskForConnectionReferenceLogicalNameStep>();
 
-        return JsonSerializer.Serialize(
-            _documentService.GetAIDocument(_documentId),
-            _jsonSerializerOptions
-        );
+        var askForIdExternalHandler = builder.AddProxyStep("askForIdHandler", [
+            SpecWorkflowExternalTopics.RelayError,
+            SpecWorkflowExternalTopics.RelayHelp
+        ]);
+
+        var askForOperationIdExternalHandler = builder.AddProxyStep("askForOperationIdHandler", [
+            SpecWorkflowExternalTopics.RelayError,
+            SpecWorkflowExternalTopics.RelayHelp
+        ]);
+
+        var askForConnectionReferenceLogicalNameExternalHandler = builder.AddProxyStep("askForConnectionReferenceLogicalNameHandler", [
+            SpecWorkflowExternalTopics.RelayError,
+            SpecWorkflowExternalTopics.RelayHelp
+        ]);
+
+        builder.OnInputEvent(SpecWorkflowEvents.AskForApiName)
+            .SendEventTo(new ProcessFunctionTargetBuilder(askForId, "ask"));
+
+        builder.OnInputEvent(SpecWorkflowEvents.AskForOperationId)
+            .SendEventTo(new ProcessFunctionTargetBuilder(askForOperationId, "ask"));
+
+        builder.OnInputEvent(SpecWorkflowEvents.AskForConnectionReferenceLogicalName)
+            .SendEventTo(new ProcessFunctionTargetBuilder(askForConnectionReferenceLogicalName, "ask"));
+
+        askForId.OnEvent(SpecWorkflowEvents.EmitError)
+            .EmitExternalEvent(askForIdExternalHandler, SpecWorkflowExternalTopics.RelayError);
+
+        askForId.OnEvent(SpecWorkflowEvents.EmitHelp)
+            .EmitExternalEvent(askForIdExternalHandler, SpecWorkflowExternalTopics.RelayHelp);
+
+        askForOperationId.OnEvent(SpecWorkflowEvents.EmitError)
+            .EmitExternalEvent(askForOperationIdExternalHandler, SpecWorkflowExternalTopics.RelayError);
+
+        askForOperationId.OnEvent(SpecWorkflowEvents.EmitHelp)
+            .EmitExternalEvent(askForOperationIdExternalHandler, SpecWorkflowExternalTopics.RelayHelp);
+
+        askForConnectionReferenceLogicalName.OnEvent(SpecWorkflowEvents.EmitError)
+            .EmitExternalEvent(askForConnectionReferenceLogicalNameExternalHandler, SpecWorkflowExternalTopics.RelayError);
+
+        askForConnectionReferenceLogicalName.OnEvent(SpecWorkflowEvents.EmitHelp)
+            .EmitExternalEvent(askForConnectionReferenceLogicalNameExternalHandler, SpecWorkflowExternalTopics.RelayHelp);
+
+        return builder.Build();
     }
 
-    public async Task<AIDocument> UpdateOperationIdAsync(string operationId)
+    [KernelFunction("update_api_id")]
+    [Description("Must be called whenever the user provides the API name. This function will use the API name to also get the API ID.")]
+    public Task<string> UpdateApiNameAsync(
+        [Description("The name of the API provided by the user; should begin with `shared_`. If given a full path, just provide the last part after the last `/`; the function will then resolve it to the correct API.")]
+        string apiName)
     {
+        var input = new AskForApiNameInput { ApiName = apiName, DocumentId = _documentId };
+        return RunStepAsync(SpecWorkflowEvents.AskForApiName, input);
+    }
+
+    [KernelFunction("update_operation_id")]
+    [Description("Must be called whenever the user provides the operation ID. You'll get a list of valid operation IDs from UpdateApiNameAsync")]
+    public Task<string> UpdateOperationIdAsync(string operationId)
+    {
+        var input = new AskForOperationIdInput { OperationId = operationId, DocumentId = _documentId };
+        return RunStepAsync(SpecWorkflowEvents.AskForOperationId, input);
+    }
+
+    [KernelFunction("update_connection_reference_logical_name")]
+    [Description("Must be called whenever the user provides the connection reference logical name. This function will validate the logical name against the Dataverse environment and update the document accordingly.")]
+    public Task<string> UpdateConnectionReferenceLogicalNameAsync(string logicalName)
+    {
+        var input = new AskForConnectionReferenceLogicalNameInput { ConnectionReferenceLogicalName = logicalName, DocumentId = _documentId };
+        return RunStepAsync(SpecWorkflowEvents.AskForConnectionReferenceLogicalName, input);
+    }
+
+    private async Task<string> RunStepAsync(string eventId, object input)
+    {
+        var helpChannel = new HelpHandlerChannel();
+
         await _process.StartAsync(_kernel, new KernelProcessEvent
         {
-            Id = SpecWorkflowEvents.AskForOperationId,
-            Data = new AskForOperationIdInput
-            {
-                OperationId = operationId,
-                DocumentId = _documentId
-            },
-        });
+            Id = eventId,
+            Data = input
+        }, helpChannel);
 
-        return _documentService.GetAIDocument(_documentId)!;
-    }
-}
+        var output = new List<string>();
 
-
-public class ErrorHandlerChannel : IExternalKernelProcessMessageChannel
-{
-    private List<string> _errors = [];
-
-    public Task EmitExternalEventAsync(string externalTopicEvent, KernelProcessProxyMessage message)
-    {
-        if (externalTopicEvent == SpecWorkflowExternalTopics.RelayError)
+        if (helpChannel.GetHelpContent() is { Count: > 0 } help)
         {
-            if (message.EventData!.Content is string errorMessage)
-            {
-                _errors.Add(JsonSerializer.Deserialize<string>(errorMessage)!);
-            }
+            output.Add("## Help Content:");
+            output.AddRange(help);
         }
-        return Task.CompletedTask;
-    }
 
-    public IReadOnlyList<string> GetErrors() => _errors.AsReadOnly();
+        if (helpChannel.GetErrors() is { Count: > 0 } errors)
+        {
+            output.Add("## Errors:");
+            output.AddRange(errors);
+            return string.Join("\n", output);
+        }
 
-    public ValueTask Initialize()
-    {
-        _errors = new List<string>();
-        return ValueTask.CompletedTask;
-    }
+        var docJson = JsonSerializer.Serialize(_documentService.GetAIDocument(_documentId), _jsonOptions);
+        output.Insert(0, "## Document:\n" + docJson);
 
-    public ValueTask Uninitialize()
-    {
-        _errors.Clear();
-        return ValueTask.CompletedTask;
+        return string.Join("\n", output);
     }
 }

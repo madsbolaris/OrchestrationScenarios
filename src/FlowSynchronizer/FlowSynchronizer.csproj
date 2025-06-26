@@ -21,6 +21,8 @@
     <None Include="Resources\Flows\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj" />
+  </ItemGroup>
 
 </Project>

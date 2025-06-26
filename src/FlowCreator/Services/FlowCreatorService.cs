@@ -7,6 +7,8 @@ using FlowCreator.Models;
 using FlowCreator.Services;
 using Microsoft.Extensions.Hosting;
 
+namespace FlowCreator.Services;
+
 public class FlowCreatorService(AIDocumentService documentService, AgentRunner runner, CopilotFactory copilotFactory, IHostApplicationLifetime lifetime) : IHostedService
 {
 

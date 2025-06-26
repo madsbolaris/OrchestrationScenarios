@@ -6,7 +6,9 @@ namespace FlowCreator.Workflows.Spec;
 /// </summary>
 public static class SpecWorkflowEvents
 {
-    public static readonly string AskForApiId = nameof(AskForApiId);
+    public static readonly string AskForApiName = nameof(AskForApiName);
     public static readonly string AskForOperationId = nameof(AskForOperationId);
+    public static readonly string AskForConnectionReferenceLogicalName = nameof(AskForConnectionReferenceLogicalName);
     public static readonly string EmitError = nameof(EmitError);
+    public static readonly string EmitHelp = nameof(EmitHelp);
 }

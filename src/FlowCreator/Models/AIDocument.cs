@@ -103,7 +103,7 @@ public class AIDocumentConverter : JsonConverter<AIDocument>
                         runtimeSource = "embedded",
                         connection = new
                         {
-                            connectionReferenceLogicalName = value.ConnectionReferenceLogicalName
+                            connectionReferenceLogicalName = value.ConnectionReferenceLogicalName ?? "CONNECTION_REFERENCE_NAME"
                         },
                         api = new
                         {

@@ -19,10 +19,12 @@
 		<PackageReference Include="Microsoft.SemanticKernel.Agents.Abstractions " Version="1.52.0" />
 		<PackageReference Include="Microsoft.SemanticKernel.Process.Core" Version="1.52.0-alpha" />
 		<PackageReference Include="Microsoft.SemanticKernel.Process.LocalRuntime" Version="1.52.0-alpha" /> 
+    <PackageReference Include="Microsoft.PowerPlatform.Dataverse.Client" Version="1.2.9" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\AgentsSdk\AgentsSdk.csproj" />
+    <ProjectReference Include="..\Common\Common.csproj" />
   </ItemGroup>
 
 </Project>

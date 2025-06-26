@@ -7,4 +7,5 @@ namespace FlowCreator.Workflows.Spec;
 public static class SpecWorkflowExternalTopics
 {
     public static readonly string RelayError = nameof(RelayError);
+    public static readonly string RelayHelp = nameof(RelayHelp);
 }

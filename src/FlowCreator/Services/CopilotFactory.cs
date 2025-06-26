@@ -1,46 +1,47 @@
 
 
+using AgentsSdk.Models.Agents;
 using AgentsSdk.Models.Agents.Models.OpenAI;
 using AgentsSdk.Models.Messages.Content;
 using AgentsSdk.Models.Messages.Types;
 using AgentsSdk.Models.Tools.ToolDefinitions.Function;
-using FlowCreator.Agents;
+using FlowCreator.Models;
 using FlowCreator.Workflows.Spec;
+using Microsoft.Extensions.Options;
 
 namespace FlowCreator.Services;
 
-public class CopilotFactory(AIDocumentService aIDocumentService)
+public class CopilotFactory(AIDocumentService aIDocumentService, IServiceProvider serviceProvider)
 {
-
-    public Copilot CreateCopilot(Guid id)
+    public Agent CreateCopilot(Guid id)
     {
-        var specWorkflow = new SpecWorkflow(aIDocumentService, id);
+        var specWorkflow = new SpecWorkflow(serviceProvider, aIDocumentService, id);
 
-        return new(specWorkflow)
+        return new()
         {
             DisplayName = "Copilot",
-            Description = "This agent help the user create a new flow",
-            Model = new OpenAIAgentModel
-            {
-                Id = "gpt-4.1"
-            },
+            Description = "This agent helps the user create a new flow",
+            Model = new OpenAIAgentModel { Id = "gpt-4.1" },
             Instructions =
             [
                 new SystemMessage
                 {
-                    Content =  [new TextContent() { Text = """
-                    You will help a user create a new Power Automate flow that wraps a single action. To create this flow, you need to:
-                    1. Set the API ID
-                    """ }]
+                    Content = [
+                        new TextContent
+                        {
+                            Text = """
+                            You will help a user create a new Power Automate flow that wraps a single action. To create this flow, you need to:
+                            1. Set the API ID
+                            2. Set the operation ID
+                            """
+                        }
+                    ]
                 }
             ],
             Tools = [
-                new FunctionToolDefinition
-                {
-                    Name = "AskForApiId",
-                    Description = "Ask the user for the ID of the API they want to use.",
-                    Method = specWorkflow.UpdateApiIdAsync
-                }
+                FunctionToolDefinition.CreateToolDefinitionFromObjectMethod(specWorkflow, nameof(SpecWorkflow.UpdateApiNameAsync)),
+                FunctionToolDefinition.CreateToolDefinitionFromObjectMethod(specWorkflow, nameof(SpecWorkflow.UpdateOperationIdAsync)),
+                FunctionToolDefinition.CreateToolDefinitionFromObjectMethod(specWorkflow, nameof(SpecWorkflow.UpdateConnectionReferenceLogicalNameAsync))
             ]
         };
     }
