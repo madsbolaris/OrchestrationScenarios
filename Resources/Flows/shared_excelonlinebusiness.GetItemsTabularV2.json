@@ -34,33 +34,37 @@
             "schema": {
               "type": "object",
               "properties": {
-                "source": {
+                "dataset": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\n            - \"me\"\n            - \"SharePoint Site URL\"\n            - \"users/someone's UPN\"\n            - \"groups/group Id\"\n            - \"sites/SharePoint Site URL:/teams/team name:\" (the colons are required)"
-                },
-                "drive": {
-                  "type": "string",
-                  "description": "Select a document library from the drop-down."
-                },
-                "file": {
-                  "type": "string",
-                  "description": "Select an Excel file through File Browse."
+                  "description": "Dataset."
                 },
                 "table": {
                   "type": "string",
-                  "description": "Select a table from the drop-down."
+                  "description": "Table name."
                 },
-                "idColumn": {
+                "pkColumn": {
                   "type": "string",
-                  "description": "Select a column from the drop-down."
+                  "description": "PK column name."
                 },
-                "id": {
-                  "type": "string",
-                  "description": "Enter the key value."
+                "isGeneratedColumn": {
+                  "type": "boolean",
+                  "description": "Is PK column generated."
                 },
-                "dateTimeFormat": {
+                "$filter": {
                   "type": "string",
-                  "description": "DateTime Format."
+                  "description": "An ODATA filter query to restrict the entries returned (e.g. stringColumn eq 'string' OR numberColumn lt 123)."
+                },
+                "$orderby": {
+                  "type": "string",
+                  "description": "An ODATA orderBy query for specifying the order of entries."
+                },
+                "$top": {
+                  "type": "integer",
+                  "description": "Total number of entries to retrieve (default = all)."
+                },
+                "$skip": {
+                  "type": "integer",
+                  "description": "The number of entries to skip (default = 0)."
                 }
               }
             },
@@ -77,17 +81,18 @@
               "inputs": {
                 "host": {
                   "connectionName": "shared_excelonlinebusiness",
-                  "operationId": "GetItem",
+                  "operationId": "GetItemsTabularV2",
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
                 },
                 "parameters": {
-                  "source": "@triggerBody()?['source']",
-                  "drive": "@triggerBody()?['drive']",
-                  "file": "@triggerBody()?['file']",
+                  "dataset": "@triggerBody()?['dataset']",
                   "table": "@triggerBody()?['table']",
-                  "idColumn": "@triggerBody()?['idColumn']",
-                  "id": "@triggerBody()?['id']",
-                  "dateTimeFormat": "@triggerBody()?['dateTimeFormat']"
+                  "pkColumn": "@triggerBody()?['pkColumn']",
+                  "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']",
+                  "$filter": "@triggerBody()?['$filter']",
+                  "$orderby": "@triggerBody()?['$orderby']",
+                  "$top": "@triggerBody()?['$top']",
+                  "$skip": "@triggerBody()?['$skip']"
                 },
                 "authentication": null
               }

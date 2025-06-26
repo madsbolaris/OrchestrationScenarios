@@ -6,6 +6,8 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Crm.Sdk.Messages;
 using System.Text.Json;
+using System.Threading.Tasks;
+using System.ServiceModel;
 
 namespace FlowSynchronizer;
 
@@ -20,13 +22,13 @@ public class FlowSynchronizerService
 
     public async Task RunAsync()
     {
-        var svc = ConnectToDataverseAsync();
+        var svc = ConnectToDataverse();
         Console.WriteLine("Connected to Dataverse.");
-        await SyncFlowsToSolution(svc);
+        await SyncFlowsToSolutionAsync(svc);
         Console.WriteLine("All flows synchronized.");
     }
 
-    private ServiceClient ConnectToDataverseAsync()
+    private ServiceClient ConnectToDataverse()
     {
         var credential = new ClientSecretCredential(_dataverse.TenantId, _dataverse.ClientId, _dataverse.ClientSecret);
 
@@ -43,9 +45,9 @@ public class FlowSynchronizerService
         return svc;
     }
 
-    private async Task SyncFlowsToSolution(ServiceClient svc)
+    private async Task SyncFlowsToSolutionAsync(ServiceClient svc)
     {
-        var solutionFlows = GetFlowsInSolution(svc);
+        var solutionFlows = await GetFlowsInSolutionAsync(svc);
         var flowFiles = Directory.GetFiles("Resources/Flows", "*.json")
             .Select(path => (Path.GetFileNameWithoutExtension(path), path, File.GetLastWriteTimeUtc(path)))
             .ToList();
@@ -61,14 +63,30 @@ public class FlowSynchronizerService
                     continue;
                 }
 
-                svc.Update(new Entity("workflow", flowInfo.flowId) { ["clientdata"] = json });
-                Console.WriteLine($"Updated: {flowName} (ID: {flowInfo.flowId})");
+                try
+                {
+                    await svc.UpdateAsync(new Entity("workflow", flowInfo.flowId) { ["clientdata"] = json });
+                    Console.WriteLine($"Updated: {flowName} (ID: {flowInfo.flowId})");
+                }
+                catch (FaultException<OrganizationServiceFault> ex)
+                {
+                    Console.WriteLine($"Error updating flow '{flowName}': {ex.Message}");
+                    continue;
+                }
             }
             else
             {
-                var newId = CreateOrUpdateFlow(svc, flowName, json, _dataverse.SolutionUniqueName);
-                ActivateFlow(svc, newId);
-                Console.WriteLine($"Created & Activated: {flowName} ({newId})");
+                try
+                {
+                    var newId = await CreateOrUpdateFlowAsync(svc, flowName, json, _dataverse.SolutionUniqueName);
+                    await ActivateFlowAsync(svc, newId);
+                    Console.WriteLine($"Created & Activated: {flowName} ({newId})");
+                }
+                catch (FaultException<OrganizationServiceFault> ex)
+                {
+                    Console.WriteLine($"Error creating/updating flow '{flowName}': {ex.Message}");
+                    continue;
+                }
             }
         }
 
@@ -76,13 +94,13 @@ public class FlowSynchronizerService
         {
             if (!flowFiles.Any(f => f.Item1.Equals(flowName, StringComparison.OrdinalIgnoreCase)))
             {
-                svc.Delete("workflow", flowId);
+                await svc.DeleteAsync("workflow", flowId);
                 Console.WriteLine($"Deleted: {flowName} ({flowId})");
             }
         }
     }
 
-    private Dictionary<string, (Guid flowId, DateTime modifiedOn)> GetFlowsInSolution(ServiceClient svc)
+    private async Task<Dictionary<string, (Guid flowId, DateTime modifiedOn)>> GetFlowsInSolutionAsync(ServiceClient svc)
     {
         // First get solution ID
         var solutionQuery = new QueryExpression("solution")
@@ -97,7 +115,7 @@ public class FlowSynchronizerService
             }
         };
 
-        var solutionResult = svc.RetrieveMultiple(solutionQuery);
+        var solutionResult = await svc.RetrieveMultipleAsync(solutionQuery);
         if (solutionResult.Entities.Count == 0)
             throw new Exception($"Solution '{_dataverse.SolutionUniqueName}' not found.");
 
@@ -117,7 +135,7 @@ public class FlowSynchronizerService
             }
         };
 
-        var componentResult = svc.RetrieveMultiple(componentQuery);
+        var componentResult = await svc.RetrieveMultipleAsync(componentQuery);
         var flowIds = componentResult.Entities.Select(e => (Guid)e["objectid"]).ToList();
         if (flowIds.Count == 0)
             return new Dictionary<string, (Guid, DateTime)>();
@@ -135,7 +153,7 @@ public class FlowSynchronizerService
             }
         };
 
-        var result = svc.RetrieveMultiple(query);
+        var result = await svc.RetrieveMultipleAsync(query);
         return result.Entities
             .Where(e => e.Contains("name"))
             .ToDictionary(
@@ -149,7 +167,7 @@ public class FlowSynchronizerService
     }
 
 
-    private static Guid CreateOrUpdateFlow(ServiceClient svc, string flowName, string clientDataJson, string solutionUniqueName)
+    private static async Task<Guid> CreateOrUpdateFlowAsync(ServiceClient svc, string flowName, string clientDataJson, string solutionUniqueName)
     {
         var query = new QueryExpression("workflow")
         {
@@ -160,11 +178,11 @@ public class FlowSynchronizerService
             }
         };
 
-        var existing = svc.RetrieveMultiple(query);
+        var existing = await svc.RetrieveMultipleAsync(query);
         if (existing.Entities.Count > 0)
         {
             var existingFlow = existing.Entities[0];
-            svc.Update(new Entity("workflow", existingFlow.Id) { ["clientdata"] = clientDataJson });
+            await svc.UpdateAsync(new Entity("workflow", existingFlow.Id) { ["clientdata"] = clientDataJson });
             Console.WriteLine($"Updated existing flow: {existingFlow.Id}");
             return existingFlow.Id;
         }
@@ -179,7 +197,7 @@ public class FlowSynchronizerService
                 ["clientdata"] = clientDataJson
             };
 
-            var newFlowId = svc.Create(newFlow); 
+            var newFlowId = await svc.CreateAsync(newFlow); 
 
             var addReq = new AddSolutionComponentRequest
             {
@@ -188,19 +206,19 @@ public class FlowSynchronizerService
                 SolutionUniqueName = solutionUniqueName
             };
 
-            svc.Execute(addReq);
+            await svc.ExecuteAsync(addReq);
 
             return newFlowId;
         }
     }
 
-    private static void ActivateFlow(ServiceClient svc, Guid workflowId)
+    private static async Task ActivateFlowAsync(ServiceClient svc, Guid workflowId)
     {
         var activate = new Entity("workflow", workflowId)
         {
             ["statecode"] = new OptionSetValue(1)
         };
-        svc.Update(activate);
+        await svc.UpdateAsync(activate);
     }
 
     private static async Task<string> GetFlowCallbackUrlAsync(string flowId)

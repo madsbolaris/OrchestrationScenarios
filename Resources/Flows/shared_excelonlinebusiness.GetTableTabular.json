@@ -34,33 +34,13 @@
             "schema": {
               "type": "object",
               "properties": {
-                "source": {
+                "dataset": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\n            - \"me\"\n            - \"SharePoint Site URL\"\n            - \"users/someone's UPN\"\n            - \"groups/group Id\"\n            - \"sites/SharePoint Site URL:/teams/team name:\" (the colons are required)"
-                },
-                "drive": {
-                  "type": "string",
-                  "description": "Select a document library from the drop-down."
-                },
-                "file": {
-                  "type": "string",
-                  "description": "Select an Excel file through File Browse."
+                  "description": "Dataset."
                 },
                 "table": {
                   "type": "string",
-                  "description": "Select a table from the drop-down."
-                },
-                "idColumn": {
-                  "type": "string",
-                  "description": "Select a column from the drop-down."
-                },
-                "id": {
-                  "type": "string",
-                  "description": "Enter the key value."
-                },
-                "dateTimeFormat": {
-                  "type": "string",
-                  "description": "DateTime Format."
+                  "description": "Table name."
                 }
               }
             },
@@ -77,17 +57,12 @@
               "inputs": {
                 "host": {
                   "connectionName": "shared_excelonlinebusiness",
-                  "operationId": "GetItem",
+                  "operationId": "GetTableTabular",
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
                 },
                 "parameters": {
-                  "source": "@triggerBody()?['source']",
-                  "drive": "@triggerBody()?['drive']",
-                  "file": "@triggerBody()?['file']",
-                  "table": "@triggerBody()?['table']",
-                  "idColumn": "@triggerBody()?['idColumn']",
-                  "id": "@triggerBody()?['id']",
-                  "dateTimeFormat": "@triggerBody()?['dateTimeFormat']"
+                  "dataset": "@triggerBody()?['dataset']",
+                  "table": "@triggerBody()?['table']"
                 },
                 "authentication": null
               }

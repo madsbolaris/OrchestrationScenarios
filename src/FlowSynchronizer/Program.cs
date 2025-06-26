@@ -18,4 +18,5 @@ var host = Host.CreateDefaultBuilder(args)
     .Build();
 
 var service = host.Services.GetRequiredService<FlowSynchronizerService>();
+
 await service.RunAsync();

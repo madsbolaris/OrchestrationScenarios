@@ -34,33 +34,25 @@
             "schema": {
               "type": "object",
               "properties": {
-                "source": {
+                "dataset": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\n            - \"me\"\n            - \"SharePoint Site URL\"\n            - \"users/someone's UPN\"\n            - \"groups/group Id\"\n            - \"sites/SharePoint Site URL:/teams/team name:\" (the colons are required)"
-                },
-                "drive": {
-                  "type": "string",
-                  "description": "Select a document library from the drop-down."
-                },
-                "file": {
-                  "type": "string",
-                  "description": "Select an Excel file through File Browse."
+                  "description": "Dataset."
                 },
                 "table": {
                   "type": "string",
-                  "description": "Select a table from the drop-down."
+                  "description": "Table name."
                 },
-                "idColumn": {
+                "pkColumn": {
                   "type": "string",
-                  "description": "Select a column from the drop-down."
+                  "description": "PK column name."
                 },
                 "id": {
                   "type": "string",
-                  "description": "Enter the key value."
+                  "description": "Unique identifier of row to retrieve."
                 },
-                "dateTimeFormat": {
-                  "type": "string",
-                  "description": "DateTime Format."
+                "isGeneratedColumn": {
+                  "type": "boolean",
+                  "description": "Is PK column generated."
                 }
               }
             },
@@ -77,17 +69,15 @@
               "inputs": {
                 "host": {
                   "connectionName": "shared_excelonlinebusiness",
-                  "operationId": "GetItem",
+                  "operationId": "GetItemTabular",
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
                 },
                 "parameters": {
-                  "source": "@triggerBody()?['source']",
-                  "drive": "@triggerBody()?['drive']",
-                  "file": "@triggerBody()?['file']",
+                  "dataset": "@triggerBody()?['dataset']",
                   "table": "@triggerBody()?['table']",
-                  "idColumn": "@triggerBody()?['idColumn']",
+                  "pkColumn": "@triggerBody()?['pkColumn']",
                   "id": "@triggerBody()?['id']",
-                  "dateTimeFormat": "@triggerBody()?['dateTimeFormat']"
+                  "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']"
                 },
                 "authentication": null
               }

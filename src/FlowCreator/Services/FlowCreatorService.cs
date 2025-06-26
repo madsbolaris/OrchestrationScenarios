@@ -9,14 +9,13 @@ using Microsoft.Extensions.Hosting;
 
 namespace FlowCreator.Services;
 
-public class FlowCreatorService(AIDocumentService documentService, AgentRunner runner, CopilotFactory copilotFactory, IHostApplicationLifetime lifetime) : IHostedService
+public class FlowCreatorService(FlowDefinitionService flowDocumentService, AgentRunner runner, CopilotFactory copilotFactory, IHostApplicationLifetime lifetime) : IHostedService
 {
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         var messages = new List<ChatMessage>();
-        var document = documentService.AddAIDocument(new AIDocument());
-        var copilot = copilotFactory.CreateCopilot(document.Id);
+        var copilot = copilotFactory.CreateCopilot();
 
         while (true)
         {
@@ -49,6 +48,7 @@ public class FlowCreatorService(AIDocumentService documentService, AgentRunner r
             }
 
             ConsoleRenderHelper.WriteTagClose(typeof(UserMessage));
+            Console.WriteLine();
             
             if (string.IsNullOrWhiteSpace(input))
             {

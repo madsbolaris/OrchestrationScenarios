@@ -32,7 +32,10 @@ namespace FlowCreator.Models
 
         public class SchemaProperty
         {
+            [JsonPropertyName("type")]
             public string? Type { get; set; }
+
+            [JsonPropertyName("description")]
             public string? Description { get; set; }
         }
 

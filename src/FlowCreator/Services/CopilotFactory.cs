@@ -6,16 +6,16 @@ using AgentsSdk.Models.Messages.Content;
 using AgentsSdk.Models.Messages.Types;
 using AgentsSdk.Models.Tools.ToolDefinitions.Function;
 using FlowCreator.Models;
-using FlowCreator.Workflows.Spec;
+using FlowCreator.Workflows.FlowCreation;
 using Microsoft.Extensions.Options;
 
 namespace FlowCreator.Services;
 
-public class CopilotFactory(AIDocumentService aIDocumentService, IServiceProvider serviceProvider)
+public class CopilotFactory(IServiceProvider serviceProvider)
 {
-    public Agent CreateCopilot(Guid id)
+    public Agent CreateCopilot()
     {
-        var specWorkflow = new SpecWorkflow(serviceProvider, aIDocumentService, id);
+        var specWorkflow = new SpecWorkflow(serviceProvider);
 
         return new()
         {

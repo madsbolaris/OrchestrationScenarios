@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using FlowCreator.Models;
 using FlowCreator.Services;
-using FlowCreator.Workflows.Spec;
+using FlowCreator.Workflows.FlowCreation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -45,7 +45,7 @@ class Program
                 services.Configure<DataverseSettings>(context.Configuration.GetSection("Dataverse"));
 
                 services.AddSingleton<IStreamingAgentClient, OpenAIStreamingClient>();
-                services.AddSingleton<AIDocumentService>();
+                services.AddSingleton<FlowDefinitionService>();
                 services.AddSingleton<CopilotFactory>();
                 services.AddSingleton<AgentRunner>();
                 services.AddSingleton(new JsonSerializerOptions
