@@ -6,7 +6,6 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Crm.Sdk.Messages;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.ServiceModel;
 
 namespace FlowSynchronizer;

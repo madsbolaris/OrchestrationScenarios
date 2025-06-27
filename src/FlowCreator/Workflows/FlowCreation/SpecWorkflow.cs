@@ -43,6 +43,7 @@ public class SpecWorkflow
         var askForOperationId = builder.AddStepFromType<AskForOperationIdStep>();
         var askForConnectionReferenceLogicalName = builder.AddStepFromType<AskForConnectionReferenceLogicalNameStep>();
         var loadExistingFlow = builder.AddStepFromType<LoadExistingFlowStep>();
+        var createSummary = builder.AddStepFromType<CreateSummaryStep>();
         var createTrigger = builder.AddStepFromType<CreateTriggerStep>();
         var createAction = builder.AddStepFromType<CreateActionStep>();
 
@@ -62,6 +63,11 @@ public class SpecWorkflow
         ]);
 
         var loadFlowHandler = builder.AddProxyStep("loadFlowHandler", [
+            SpecWorkflowExternalTopics.RelayError,
+            SpecWorkflowExternalTopics.RelayHelp
+        ]);
+
+        var createSummaryHandler = builder.AddProxyStep("createSummaryHandler", [
             SpecWorkflowExternalTopics.RelayError,
             SpecWorkflowExternalTopics.RelayHelp
         ]);
@@ -91,7 +97,10 @@ public class SpecWorkflow
         askForOperationId.OnEvent(SpecWorkflowEvents.LoadExistingFlow)
             .SendEventTo(new ProcessFunctionTargetBuilder(loadExistingFlow, "load"));
 
-        loadExistingFlow.OnEvent(SpecWorkflowEvents.CreateTrigger)
+        loadExistingFlow.OnEvent(SpecWorkflowEvents.CreateSummary)
+            .SendEventTo(new ProcessFunctionTargetBuilder(createSummary, "create"));
+
+        createSummary.OnEvent(SpecWorkflowEvents.CreateTrigger)
             .SendEventTo(new ProcessFunctionTargetBuilder(createTrigger, "create"));
 
         createTrigger.OnEvent(SpecWorkflowEvents.CreateAction)
@@ -109,6 +118,9 @@ public class SpecWorkflow
 
         loadExistingFlow.OnEvent(SpecWorkflowEvents.EmitError).EmitExternalEvent(loadFlowHandler, SpecWorkflowExternalTopics.RelayError);
         loadExistingFlow.OnEvent(SpecWorkflowEvents.EmitHelp).EmitExternalEvent(loadFlowHandler, SpecWorkflowExternalTopics.RelayHelp);
+
+        createSummary.OnEvent(SpecWorkflowEvents.EmitError).EmitExternalEvent(createSummaryHandler, SpecWorkflowExternalTopics.RelayError);
+        createSummary.OnEvent(SpecWorkflowEvents.EmitHelp).EmitExternalEvent(createSummaryHandler, SpecWorkflowExternalTopics.RelayHelp);
 
         createTrigger.OnEvent(SpecWorkflowEvents.EmitError).EmitExternalEvent(createTriggerHandler, SpecWorkflowExternalTopics.RelayError);
         createTrigger.OnEvent(SpecWorkflowEvents.EmitHelp).EmitExternalEvent(createTriggerHandler, SpecWorkflowExternalTopics.RelayHelp);

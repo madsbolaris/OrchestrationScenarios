@@ -6,6 +6,12 @@ namespace FlowCreator.Models;
 [JsonConverter(typeof(FlowDefinitionConverter))]
 public class FlowDefinition
 {
+    [JsonPropertyName("summar")]
+    public string? Summary { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
     [JsonPropertyName("version")]
     public int Version { get; set; } = 0;
 
@@ -85,6 +91,16 @@ public class FlowDefinitionConverter : JsonConverter<FlowDefinition>
         var result = new FlowDefinition();
 
         var props = root.GetProperty("properties");
+
+        // Extract summary and description
+        if (props.TryGetProperty("summary", out var summaryNode))
+        {
+            result.Summary = summaryNode.GetString();
+        }
+        if (props.TryGetProperty("description", out var descriptionNode))
+        {
+            result.Description = descriptionNode.GetString();
+        }
 
         // Extract connection reference
         if (props.TryGetProperty("connectionReferences", out var connRefs) && connRefs.ValueKind == JsonValueKind.Object)
@@ -200,6 +216,8 @@ public class FlowDefinitionConverter : JsonConverter<FlowDefinition>
             schemaVersion = "1.0.0.0",
             properties = new
             {
+                summary = value.Summary ?? "FLOW_SUMMARY",
+                description = value.Description ?? "FLOW_DESCRIPTION",
                 connectionReferences = new Dictionary<string, object>
                 {
                     [value.ApiName ?? "CONNECTION_NAME"] = new
@@ -295,7 +313,7 @@ public class FlowDefinitionConverter : JsonConverter<FlowDefinition>
         clone.Inputs.Host.OperationId ??= "OPERATION_ID";
         clone.Inputs.Host.ApiId ??= "API_ID";
 
-        if (clone.Inputs.Parameters == null || clone.Inputs.Parameters.Count == 0)
+        if (clone.Inputs.Parameters == null)
         {
             clone.Inputs.Parameters = new Dictionary<string, object>
             {

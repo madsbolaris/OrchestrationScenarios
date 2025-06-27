@@ -1,6 +1,8 @@
 {
   "schemaVersion": "1.0.0.0",
   "properties": {
+    "summary": "Get a row",
+    "description": "Get a row using a key column.",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",

@@ -19,7 +19,7 @@ public sealed class LoadExistingFlowStep(
 
         if (loaded == null)
         {
-            await context.EmitEventAsync(SpecWorkflowEvents.CreateTrigger, new CreateTriggerInput());
+            await context.EmitEventAsync(SpecWorkflowEvents.CreateSummary, new CreateSummaryInput());
             return;
         }
 

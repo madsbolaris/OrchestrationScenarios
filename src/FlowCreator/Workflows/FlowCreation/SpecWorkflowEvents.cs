@@ -10,6 +10,7 @@ public static class SpecWorkflowEvents
     public static readonly string AskForOperationId = nameof(AskForOperationId);
     public static readonly string AskForConnectionReferenceLogicalName = nameof(AskForConnectionReferenceLogicalName);
     public static readonly string LoadExistingFlow = nameof(LoadExistingFlow);
+    public static readonly string CreateSummary = nameof(CreateSummary);
     public static readonly string CreateTrigger = nameof(CreateTrigger);
     public static readonly string CreateAction = nameof(CreateAction);
     public static readonly string SaveFlow = nameof(SaveFlow);

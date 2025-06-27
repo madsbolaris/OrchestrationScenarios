@@ -1,6 +1,8 @@
 {
   "schemaVersion": "1.0.0.0",
   "properties": {
+    "summary": "List rows present in a table",
+    "description": "List rows present in a table.",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",

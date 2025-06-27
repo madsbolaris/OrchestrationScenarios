@@ -1,6 +1,8 @@
 {
   "schemaVersion": "1.0.0.0",
   "properties": {
+    "summary": "FLOW_SUMMARY",
+    "description": "FLOW_DESCRIPTION",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",
@@ -33,9 +35,7 @@
             "method": "POST",
             "schema": {
               "type": "object",
-              "properties": {
-                "PARAMETER_NAME": {}
-              }
+              "properties": {}
             },
             "triggerAuthenticationType": "All"
           }
