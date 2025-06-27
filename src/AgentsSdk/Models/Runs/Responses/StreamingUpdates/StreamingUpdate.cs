@@ -13,5 +13,5 @@ public abstract class StreamingUpdate
 public abstract class StreamingUpdate<T> : StreamingUpdate
 {
     [JsonPropertyName("d")]
-    public StreamingOperation<T>? Delta { get; set; }
+    public required StreamingOperation<T> Delta { get; set; }
 }

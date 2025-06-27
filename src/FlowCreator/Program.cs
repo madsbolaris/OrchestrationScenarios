@@ -1,16 +1,15 @@
 ﻿using System.Text.Json;
 using FlowCreator.Models;
 using FlowCreator.Services;
-using FlowCreator.Workflows.FlowCreation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
 using Microsoft.Extensions.Logging;
 using AgentsSdk.Runtime;
-using AgentsSdk.Models;
 using AgentsSdk.Runtime.Streaming;
 using AgentsSdk.Runtime.Streaming.Providers.OpenAI;
+using AgentsSdk.Models.Settings;
 
 // Entry point
 class Program
@@ -47,7 +46,7 @@ class Program
                 services.AddSingleton<IStreamingAgentClient, OpenAIStreamingClient>();
                 services.AddSingleton<FlowDefinitionService>();
                 services.AddSingleton<CopilotFactory>();
-                services.AddSingleton<AgentRunner>();
+                services.AddSingleton<AgentRunner<OpenAIStreamingClient>>();
                 services.AddSingleton(new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,

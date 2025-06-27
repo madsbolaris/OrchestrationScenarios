@@ -25,7 +25,7 @@ public class ScenarioRunnerService : IHostedService
                 s.Name.Equals(args[0], StringComparison.OrdinalIgnoreCase));
 
             if (scenario != null)
-                await scenario.RunCopilotStudioAsync();
+                await scenario.RunOpenAIAsync();
             else
                 Console.WriteLine($"Scenario '{args[0]}' not found.");
 
@@ -43,7 +43,7 @@ public class ScenarioRunnerService : IHostedService
         {
             Console.Clear();
 
-            await scenarios[choice - 1].RunCopilotStudioAsync();
+            await scenarios[choice - 1].RunOpenAIAsync();
         }
         else
         {

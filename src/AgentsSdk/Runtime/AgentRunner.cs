@@ -11,18 +11,10 @@ namespace AgentsSdk.Runtime;
 
 public class AgentRunner<T>(T client) where T : IStreamingAgentClient
 {
-    public async Task RunAsync(Agent agent, List<ChatMessage>? allMessages = null)
+    public async Task RunAsync(Agent agent, List<ChatMessage> allMessages)
     {
         var stream = GetStreamingUpdates(agent, allMessages);
-        await ConsoleRenderHelper.DisplayConversationAsync([], stream);
-
-        // allMessages ??= [];
-        // int agentIndex = allMessages.FindIndex(m => m is AgentMessage);
-
-        // var inputMessages = allMessages.Take(agentIndex).ToList();
-        // var stream = GetStreamingUpdates(agent, inputMessages);
-
-        // await ConsoleRenderHelper.DisplayConversationAsync(inputMessages, stream);
+        await ConsoleRenderHelper.DisplayStreamAsync(stream);
     }
 
     private IAsyncEnumerable<StreamingUpdate> GetStreamingUpdates(

@@ -3,13 +3,14 @@ using AgentsSdk.Models.Messages;
 using AgentsSdk.Models.Messages.Content;
 using AgentsSdk.Models.Messages.Types;
 using AgentsSdk.Runtime;
+using AgentsSdk.Runtime.Streaming.Providers.OpenAI;
 using FlowCreator.Models;
 using FlowCreator.Services;
 using Microsoft.Extensions.Hosting;
 
 namespace FlowCreator.Services;
 
-public class FlowCreatorService(FlowDefinitionService flowDocumentService, AgentRunner runner, CopilotFactory copilotFactory, IHostApplicationLifetime lifetime) : IHostedService
+public class FlowCreatorService(AgentRunner<OpenAIStreamingClient> runner, CopilotFactory copilotFactory, IHostApplicationLifetime lifetime) : IHostedService
 {
 
     public async Task StartAsync(CancellationToken cancellationToken)
