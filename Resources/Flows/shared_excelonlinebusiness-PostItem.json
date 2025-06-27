@@ -1,4 +1,5 @@
 {
+  "callbackUrl": "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8ed37fc1c04d477f8935211c33eed921/triggers/manual/paths/invoke/?api-version=1\u0026tenantId=tId\u0026environmentName=5a7d35b7-29b3-e0ec-a289-8fd0ce3aab0a\u0026sp=%2Ftriggers%2Fmanual%2Frun\u0026sv=1.0\u0026sig=cvsDZkaAXsJcAk-zk_jw0UVE13WBYrl2RhwIV8uSRrw",
   "schemaVersion": "1.0.0.0",
   "properties": {
     "summary": "Update or insert a row",
@@ -38,7 +39,7 @@
               "properties": {
                 "source": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\r\n            - \"me\"\r\n            - \"SharePoint Site URL\"\r\n            - \"users/someone's UPN\"\r\n            - \"groups/group Id\"\r\n            - \"sites/SharePoint Site URL:/teams/team name:\" (the colons are required)"
+                  "description": "Select from the drop-down or specify one of the following:\r\n            - \u0022me\u0022\r\n            - \u0022SharePoint Site URL\u0022\r\n            - \u0022users/someone\u0027s UPN\u0022\r\n            - \u0022groups/group Id\u0022\r\n            - \u0022sites/SharePoint Site URL:/teams/team name:\u0022 (the colons are required)"
                 },
                 "drive": {
                   "type": "string",
@@ -87,14 +88,14 @@
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
                 },
                 "parameters": {
-                  "source": "@triggerBody()?['source']",
-                  "drive": "@triggerBody()?['drive']",
-                  "file": "@triggerBody()?['file']",
-                  "table": "@triggerBody()?['table']",
-                  "idColumn": "@triggerBody()?['idColumn']",
-                  "item": "@triggerBody()?['item']",
-                  "mode": "@triggerBody()?['mode']",
-                  "dateTimeFormat": "@triggerBody()?['dateTimeFormat']"
+                  "source": "@triggerBody()?[\u0027source\u0027]",
+                  "drive": "@triggerBody()?[\u0027drive\u0027]",
+                  "file": "@triggerBody()?[\u0027file\u0027]",
+                  "table": "@triggerBody()?[\u0027table\u0027]",
+                  "idColumn": "@triggerBody()?[\u0027idColumn\u0027]",
+                  "item": "@triggerBody()?[\u0027item\u0027]",
+                  "mode": "@triggerBody()?[\u0027mode\u0027]",
+                  "dateTimeFormat": "@triggerBody()?[\u0027dateTimeFormat\u0027]"
                 },
                 "authentication": null
               }
@@ -109,7 +110,7 @@
             "headers": {
               "content_Type": "application/json"
             },
-            "body": "@outputs('Action')?['body']"
+            "body": "@outputs(\u0027Action\u0027)?[\u0027body\u0027]"
           },
           "runAfter": {
             "try": [
@@ -128,7 +129,7 @@
                 "headers": {
                   "content_Type": "application/json"
                 },
-                "body": "@outputs('Action')?['body']"
+                "body": "@outputs(\u0027Action\u0027)?[\u0027body\u0027]"
               }
             }
           },

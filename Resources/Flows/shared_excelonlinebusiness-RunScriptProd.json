@@ -1,4 +1,5 @@
 {
+  "callbackUrl": "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/506d97a2186a4461a6c12a7055f5ab50/triggers/manual/paths/invoke/?api-version=1\u0026tenantId=tId\u0026environmentName=5a7d35b7-29b3-e0ec-a289-8fd0ce3aab0a\u0026sp=%2Ftriggers%2Fmanual%2Frun\u0026sv=1.0\u0026sig=bKWiyNsmp6gfflfiCSJC4wUet1LFfFAC085pGRYaxow",
   "schemaVersion": "1.0.0.0",
   "properties": {
     "summary": "Run script",
@@ -38,7 +39,7 @@
               "properties": {
                 "source": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\r\n              - \"me\"\r\n              - \"SharePoint Site URL\"\r\n              - \"users/someone's UPN\"\r\n              - \"groups/group Id\"\r\n              - \"sites/SharePoint Site URL:/teams/team name:\" (colons are required)."
+                  "description": "Select from the drop-down or specify one of the following:\r\n              - \u0022me\u0022\r\n              - \u0022SharePoint Site URL\u0022\r\n              - \u0022users/someone\u0027s UPN\u0022\r\n              - \u0022groups/group Id\u0022\r\n              - \u0022sites/SharePoint Site URL:/teams/team name:\u0022 (colons are required)."
                 },
                 "drive": {
                   "type": "string",
@@ -54,7 +55,7 @@
                 },
                 "ScriptParameters": {
                   "type": "object",
-                  "description": "Provide the Office Script's parameters."
+                  "description": "Provide the Office Script\u0027s parameters."
                 }
               }
             },
@@ -75,11 +76,11 @@
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
                 },
                 "parameters": {
-                  "source": "@triggerBody()?['source']",
-                  "drive": "@triggerBody()?['drive']",
-                  "file": "@triggerBody()?['file']",
-                  "scriptId": "@triggerBody()?['scriptId']",
-                  "ScriptParameters": "@triggerBody()?['ScriptParameters']"
+                  "source": "@triggerBody()?[\u0027source\u0027]",
+                  "drive": "@triggerBody()?[\u0027drive\u0027]",
+                  "file": "@triggerBody()?[\u0027file\u0027]",
+                  "scriptId": "@triggerBody()?[\u0027scriptId\u0027]",
+                  "ScriptParameters": "@triggerBody()?[\u0027ScriptParameters\u0027]"
                 },
                 "authentication": null
               }
@@ -94,7 +95,7 @@
             "headers": {
               "content_Type": "application/json"
             },
-            "body": "@outputs('Action')?['body']"
+            "body": "@outputs(\u0027Action\u0027)?[\u0027body\u0027]"
           },
           "runAfter": {
             "try": [
@@ -113,7 +114,7 @@
                 "headers": {
                   "content_Type": "application/json"
                 },
-                "body": "@outputs('Action')?['body']"
+                "body": "@outputs(\u0027Action\u0027)?[\u0027body\u0027]"
               }
             }
           },

@@ -158,7 +158,7 @@ public class AgentSynchronizerService(ServiceClient svc, IOptions<DataverseSetti
         var schemaName = $"{prefix}_Agent-{agentName}";
         var botName = $"Agent-{agentName}";
         var configPath = Path.Combine(folderPath, "configuration.json");
-        var yamlPath = Directory.GetFiles(folderPath, "*.yaml").FirstOrDefault() ?? throw new FileNotFoundException("YAML file not found.");
+        var yamlPath = Directory.GetFiles(folderPath, "*.tool.yaml").FirstOrDefault() ?? throw new FileNotFoundException("YAML file not found.");
 
         var config = await File.ReadAllTextAsync(configPath);
         var yaml = await File.ReadAllTextAsync(yamlPath);

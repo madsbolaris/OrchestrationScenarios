@@ -1,4 +1,5 @@
 {
+  "callbackUrl": "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/17e68815fabd4ff096d78983c93a30a2/triggers/manual/paths/invoke/?api-version=1\u0026tenantId=tId\u0026environmentName=5a7d35b7-29b3-e0ec-a289-8fd0ce3aab0a\u0026sp=%2Ftriggers%2Fmanual%2Frun\u0026sv=1.0\u0026sig=rxKjxMMSCzkjyvXPvj7knaZsG-IFlfBAKsWKkhvZ2sQ",
   "schemaVersion": "1.0.0.0",
   "properties": {
     "summary": "Get rows (V2)",
@@ -54,7 +55,7 @@
                 },
                 "$filter": {
                   "type": "string",
-                  "description": "An ODATA filter query to restrict the entries returned (e.g. stringColumn eq 'string' OR numberColumn lt 123)."
+                  "description": "An ODATA filter query to restrict the entries returned (e.g. stringColumn eq \u0027string\u0027 OR numberColumn lt 123)."
                 },
                 "$orderby": {
                   "type": "string",
@@ -87,14 +88,14 @@
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
                 },
                 "parameters": {
-                  "dataset": "@triggerBody()?['dataset']",
-                  "table": "@triggerBody()?['table']",
-                  "pkColumn": "@triggerBody()?['pkColumn']",
-                  "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']",
-                  "$filter": "@triggerBody()?['$filter']",
-                  "$orderby": "@triggerBody()?['$orderby']",
-                  "$top": "@triggerBody()?['$top']",
-                  "$skip": "@triggerBody()?['$skip']"
+                  "dataset": "@triggerBody()?[\u0027dataset\u0027]",
+                  "table": "@triggerBody()?[\u0027table\u0027]",
+                  "pkColumn": "@triggerBody()?[\u0027pkColumn\u0027]",
+                  "isGeneratedColumn": "@triggerBody()?[\u0027isGeneratedColumn\u0027]",
+                  "$filter": "@triggerBody()?[\u0027$filter\u0027]",
+                  "$orderby": "@triggerBody()?[\u0027$orderby\u0027]",
+                  "$top": "@triggerBody()?[\u0027$top\u0027]",
+                  "$skip": "@triggerBody()?[\u0027$skip\u0027]"
                 },
                 "authentication": null
               }
@@ -109,7 +110,7 @@
             "headers": {
               "content_Type": "application/json"
             },
-            "body": "@outputs('Action')?['body']"
+            "body": "@outputs(\u0027Action\u0027)?[\u0027body\u0027]"
           },
           "runAfter": {
             "try": [
@@ -128,7 +129,7 @@
                 "headers": {
                   "content_Type": "application/json"
                 },
-                "body": "@outputs('Action')?['body']"
+                "body": "@outputs(\u0027Action\u0027)?[\u0027body\u0027]"
               }
             }
           },

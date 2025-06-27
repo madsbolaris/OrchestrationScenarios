@@ -1,0 +1,5 @@
+name: "Agent-ExcelOnlineBusiness-GetARow"
+description: "An agent that retrieves a specific row from an Excel Online Business spreadsheet."
+model: "gpt-4.1"
+tools:
+- name: "Microsoft.PowerPlatform.ExcelOnlineBusiness-GetARow"

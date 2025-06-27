@@ -41,6 +41,10 @@ public class FlowSynchronizerService(ServiceClient svc, IOptions<DataverseSettin
                 try
                 {
                     await svc.UpdateAsync(new Entity("workflow", flowInfo.flowId) { ["clientdata"] = json });
+
+                    var callbackUrl = await GetFlowCallbackUrlAsync(flowInfo.flowId.ToString());
+                    await UpdateFlowFileWithCallbackUrlAsync(path, callbackUrl);
+
                     Console.WriteLine($"Updated: {flowName} (ID: {flowInfo.flowId})");
                 }
                 catch (FaultException<OrganizationServiceFault> ex)
@@ -55,6 +59,10 @@ public class FlowSynchronizerService(ServiceClient svc, IOptions<DataverseSettin
                 {
                     var newId = await CreateOrUpdateFlowAsync(flowName, json, _dataverseSettings.FlowSolution);
                     await ActivateFlowAsync(newId);
+
+                    var callbackUrl = await GetFlowCallbackUrlAsync(newId.ToString());
+                    await UpdateFlowFileWithCallbackUrlAsync(path, callbackUrl);
+
                     Console.WriteLine($"Created & Activated: {flowName} ({newId})");
                 }
                 catch (FaultException<OrganizationServiceFault> ex)
@@ -63,6 +71,7 @@ public class FlowSynchronizerService(ServiceClient svc, IOptions<DataverseSettin
                     continue;
                 }
             }
+
         }
 
         foreach (var (flowName, (flowId, _)) in solutionFlows)
@@ -195,6 +204,33 @@ public class FlowSynchronizerService(ServiceClient svc, IOptions<DataverseSettin
         };
         await svc.UpdateAsync(activate);
     }
+
+    private static async Task UpdateFlowFileWithCallbackUrlAsync(string filePath, string callbackUrl)
+    {
+        var originalJson = await File.ReadAllTextAsync(filePath);
+        using var doc = JsonDocument.Parse(originalJson);
+        var root = doc.RootElement.Clone();
+
+        using var ms = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(ms, new JsonWriterOptions { Indented = true }))
+        {
+            writer.WriteStartObject();
+
+            // Inject callbackUrl
+            writer.WriteString("callbackUrl", callbackUrl);
+
+            // Copy all original properties
+            foreach (var prop in root.EnumerateObject())
+            {
+                prop.WriteTo(writer);
+            }
+
+            writer.WriteEndObject();
+        }
+
+        await File.WriteAllBytesAsync(filePath, ms.ToArray());
+    }
+
 
     private static async Task<string> GetFlowCallbackUrlAsync(string flowId)
     {
