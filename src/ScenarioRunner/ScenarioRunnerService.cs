@@ -29,7 +29,7 @@ public class ScenarioRunnerService : IHostedService
             else
                 Console.WriteLine($"Scenario '{args[0]}' not found.");
 
-            _lifetime.StopApplication(); // ✅ trigger shutdown
+            _lifetime.StopApplication();
             return;
         }
 
@@ -42,6 +42,7 @@ public class ScenarioRunnerService : IHostedService
             choice >= 1 && choice <= scenarios.Count)
         {
             Console.Clear();
+
             await scenarios[choice - 1].RunAsync();
         }
         else
@@ -49,7 +50,7 @@ public class ScenarioRunnerService : IHostedService
             Console.WriteLine("Invalid selection.");
         }
 
-        _lifetime.StopApplication(); // ✅ always trigger shutdown after scenario completes
+        _lifetime.StopApplication(); 
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

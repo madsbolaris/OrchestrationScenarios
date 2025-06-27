@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0.0",
   "properties": {
-    "summary": "FLOW_SUMMARY",
-    "description": "FLOW_DESCRIPTION",
+    "summary": "Get row",
+    "description": "Retrieves a single row from an Excel Online table.",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",
@@ -48,13 +48,13 @@
                   "type": "string",
                   "description": "PK column name."
                 },
-                "id": {
-                  "type": "string",
-                  "description": "Unique identifier of row to retrieve."
-                },
                 "isGeneratedColumn": {
                   "type": "boolean",
                   "description": "Is PK column generated."
+                },
+                "item": {
+                  "type": "object",
+                  "description": "Row to insert into the specified Excel Online table"
                 }
               }
             },
@@ -78,8 +78,8 @@
                   "dataset": "@triggerBody()?['dataset']",
                   "table": "@triggerBody()?['table']",
                   "pkColumn": "@triggerBody()?['pkColumn']",
-                  "id": "@triggerBody()?['id']",
-                  "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']"
+                  "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']",
+                  "item": "@triggerBody()?['item']"
                 },
                 "authentication": null
               }

@@ -89,7 +89,9 @@ public class FlowDefinitionService
     private bool TryPersistToDisk(FlowDefinition document)
     {
         // Ensure all required properties are set before saving
-        if (string.IsNullOrWhiteSpace(document.ApiName) ||
+        if (string.IsNullOrWhiteSpace(document.Summary) ||
+            string.IsNullOrWhiteSpace(document.Description) ||
+            string.IsNullOrWhiteSpace(document.ApiName) ||
             string.IsNullOrWhiteSpace(document.OperationId) ||
             string.IsNullOrWhiteSpace(document.ApiId) ||
             string.IsNullOrWhiteSpace(document.ConnectionReferenceLogicalName) ||

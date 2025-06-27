@@ -92,12 +92,13 @@ public sealed class CreateSummaryStep(
         {
             if (flowDocumentService.TryUpsertFlowDefinition(doc.ApiName, doc.OperationId, d =>
             {
-                d.InputSchema = schema;
+                d.Summary = doc.Summary;
+                d.Description = doc.Description;
                 return d;
             }, doc))
             {
                 await context.EmitEventAsync(SpecWorkflowEvents.EmitHelp,
-                    $"The flow definition for {doc.ApiName}-{doc.OperationId} has been saved with the updated input schema.");
+                    $"The flow definition for {doc.ApiName}-{doc.OperationId} has been saved with the updated summary.");
             }
         }
 

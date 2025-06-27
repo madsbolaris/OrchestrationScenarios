@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0.0",
   "properties": {
-    "summary": "FLOW_SUMMARY",
-    "description": "FLOW_DESCRIPTION",
+    "summary": "Delete row",
+    "description": "Deletes a row from an Excel Online table.",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",
@@ -50,7 +50,7 @@
                 },
                 "id": {
                   "type": "string",
-                  "description": "Unique identifier of the row to delete."
+                  "description": "Unique identifier of row to retrieve."
                 },
                 "isGeneratedColumn": {
                   "type": "boolean",

@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0.0",
   "properties": {
-    "summary": "FLOW_SUMMARY",
-    "description": "FLOW_DESCRIPTION",
+    "summary": "Get datasets metadata (V2)",
+    "description": "Get datasets metadata.",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",

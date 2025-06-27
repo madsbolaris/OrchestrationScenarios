@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0.0",
   "properties": {
-    "summary": "FLOW_SUMMARY",
-    "description": "FLOW_DESCRIPTION",
+    "summary": "Insert row",
+    "description": "Inserts a new row into an Excel Online table",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",
@@ -52,9 +52,21 @@
                   "type": "boolean",
                   "description": "Is PK column generated."
                 },
-                "item": {
-                  "type": "object",
-                  "description": "Row to insert into the specified Excel Online table"
+                "$filter": {
+                  "type": "string",
+                  "description": "An ODATA filter query to restrict the entries returned (e.g. stringColumn eq 'string' OR numberColumn lt 123)."
+                },
+                "$orderby": {
+                  "type": "string",
+                  "description": "An ODATA orderBy query for specifying the order of entries."
+                },
+                "$top": {
+                  "type": "integer",
+                  "description": "Total number of entries to retrieve (default = all)."
+                },
+                "$skip": {
+                  "type": "integer",
+                  "description": "The number of entries to skip (default = 0)."
                 }
               }
             },
@@ -79,7 +91,10 @@
                   "table": "@triggerBody()?['table']",
                   "pkColumn": "@triggerBody()?['pkColumn']",
                   "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']",
-                  "item": "@triggerBody()?['item']"
+                  "$filter": "@triggerBody()?['$filter']",
+                  "$orderby": "@triggerBody()?['$orderby']",
+                  "$top": "@triggerBody()?['$top']",
+                  "$skip": "@triggerBody()?['$skip']"
                 },
                 "authentication": null
               }

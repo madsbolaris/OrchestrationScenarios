@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0.0",
   "properties": {
-    "summary": "FLOW_SUMMARY",
-    "description": "FLOW_DESCRIPTION",
+    "summary": "Update row (V2)",
+    "description": "Updates an existing row in an Excel Online table.",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",
@@ -50,15 +50,11 @@
                 },
                 "id": {
                   "type": "string",
-                  "description": "Unique identifier of the row to update."
+                  "description": "Unique identifier of the row to delete."
                 },
                 "isGeneratedColumn": {
                   "type": "boolean",
                   "description": "Is PK column generated."
-                },
-                "item": {
-                  "type": "object",
-                  "description": "Row with updated values."
                 }
               }
             },
@@ -83,8 +79,7 @@
                   "table": "@triggerBody()?['table']",
                   "pkColumn": "@triggerBody()?['pkColumn']",
                   "id": "@triggerBody()?['id']",
-                  "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']",
-                  "item": "@triggerBody()?['item']"
+                  "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']"
                 },
                 "authentication": null
               }

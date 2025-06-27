@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0.0",
   "properties": {
-    "summary": "FLOW_SUMMARY",
-    "description": "FLOW_DESCRIPTION",
+    "summary": "Run script from SharePoint library",
+    "description": "Runs an Office Script against an Excel workbook. Use this action when the script is saved outside of the default location.",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",
@@ -36,33 +36,13 @@
             "schema": {
               "type": "object",
               "properties": {
-                "source": {
+                "dataset": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\r\n              - \"me\"\r\n              - \"SharePoint Site URL\"\r\n              - \"users/someone's UPN\"\r\n              - \"groups/group Id\"\r\n              - \"sites/SharePoint Site URL:/teams/team name:\" (colons are required)."
+                  "description": "Dataset."
                 },
-                "drive": {
+                "table": {
                   "type": "string",
-                  "description": "Select a document library from the drop-down."
-                },
-                "file": {
-                  "type": "string",
-                  "description": "Select an Excel workbook through File Browse."
-                },
-                "scriptSource": {
-                  "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\r\n            - \"me\"\r\n            - \"SharePoint Site URL\"\r\n            - \"users/someone's UPN\"\r\n            - \"groups/group Id\"\r\n            - \"sites/SharePoint Site URL:/teams/team name:\" (the colons are required)."
-                },
-                "scriptDrive": {
-                  "type": "string",
-                  "description": "Select the SharePoint library of your Office Script file (.osts) from the drop-down."
-                },
-                "scriptId": {
-                  "type": "string",
-                  "description": "Select an Office Script file (.osts) in a SharePoint library from the drop-down."
-                },
-                "ScriptParameters": {
-                  "type": "object",
-                  "description": "Provide parameters for the Office Script."
+                  "description": "Table name."
                 }
               }
             },
@@ -83,13 +63,8 @@
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
                 },
                 "parameters": {
-                  "source": "@triggerBody()?['source']",
-                  "drive": "@triggerBody()?['drive']",
-                  "file": "@triggerBody()?['file']",
-                  "scriptSource": "@triggerBody()?['scriptSource']",
-                  "scriptDrive": "@triggerBody()?['scriptDrive']",
-                  "scriptId": "@triggerBody()?['scriptId']",
-                  "ScriptParameters": "@triggerBody()?['ScriptParameters']"
+                  "dataset": "@triggerBody()?['dataset']",
+                  "table": "@triggerBody()?['table']"
                 },
                 "authentication": null
               }

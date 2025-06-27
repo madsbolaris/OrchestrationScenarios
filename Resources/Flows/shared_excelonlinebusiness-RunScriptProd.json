@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0.0",
   "properties": {
-    "summary": "FLOW_SUMMARY",
-    "description": "FLOW_DESCRIPTION",
+    "summary": "Run script",
+    "description": "Runs an Office Script against an Excel workbook. Use this action when the script is saved in the default location.",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",
@@ -46,15 +46,23 @@
                 },
                 "file": {
                   "type": "string",
-                  "description": "Select an Excel file through File Browse."
+                  "description": "Select an Excel workbook through File Browse."
+                },
+                "scriptSource": {
+                  "type": "string",
+                  "description": "Select from the drop-down or specify one of the following:\r\n            - \"me\"\r\n            - \"SharePoint Site URL\"\r\n            - \"users/someone's UPN\"\r\n            - \"groups/group Id\"\r\n            - \"sites/SharePoint Site URL:/teams/team name:\" (the colons are required)."
+                },
+                "scriptDrive": {
+                  "type": "string",
+                  "description": "Select the SharePoint library of your Office Script file (.osts) from the drop-down."
                 },
                 "scriptId": {
                   "type": "string",
-                  "description": "Select the Office Script you want to run from the drop-down."
+                  "description": "Select an Office Script file (.osts) in a SharePoint library from the drop-down."
                 },
                 "ScriptParameters": {
                   "type": "object",
-                  "description": "Provide the Office Script's parameters."
+                  "description": "Provide parameters for the Office Script."
                 }
               }
             },
@@ -78,6 +86,8 @@
                   "source": "@triggerBody()?['source']",
                   "drive": "@triggerBody()?['drive']",
                   "file": "@triggerBody()?['file']",
+                  "scriptSource": "@triggerBody()?['scriptSource']",
+                  "scriptDrive": "@triggerBody()?['scriptDrive']",
                   "scriptId": "@triggerBody()?['scriptId']",
                   "ScriptParameters": "@triggerBody()?['ScriptParameters']"
                 },

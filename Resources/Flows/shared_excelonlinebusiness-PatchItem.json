@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0.0",
   "properties": {
-    "summary": "FLOW_SUMMARY",
-    "description": "FLOW_DESCRIPTION",
+    "summary": "Update a row",
+    "description": "Update a row using a key column. The input value will overwrite the specified cells and columns left blank will not be updated. In order to append (instead of overwrite) a value, use the \"Get a row\" action to retrieve the content first.",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",
@@ -56,10 +56,6 @@
                   "type": "string",
                   "description": "Select a column from the drop-down."
                 },
-                "id": {
-                  "type": "string",
-                  "description": "Enter the key value."
-                },
                 "item": {
                   "type": "object",
                   "description": "Provide the item properties."
@@ -96,7 +92,6 @@
                   "file": "@triggerBody()?['file']",
                   "table": "@triggerBody()?['table']",
                   "idColumn": "@triggerBody()?['idColumn']",
-                  "id": "@triggerBody()?['id']",
                   "item": "@triggerBody()?['item']",
                   "mode": "@triggerBody()?['mode']",
                   "dateTimeFormat": "@triggerBody()?['dateTimeFormat']"
