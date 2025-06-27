@@ -6,5 +6,6 @@ using AgentsSdk.Models.Runs.Responses.StreamingUpdates;
 
 public interface IStreamingAgentClient
 {
-    IAsyncEnumerable<StreamingUpdate> RunStreamingAsync(Agent agent, List<ChatMessage> messages);
+    IAsyncEnumerable<StreamingUpdate> RunStreamingAsync(Agent agent, List<ChatMessage> messages, 
+        CancellationToken cancellationToken = default);
 }

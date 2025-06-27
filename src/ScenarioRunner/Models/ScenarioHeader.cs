@@ -27,7 +27,7 @@ public class AgentYamlConverter() : IYamlTypeConverter
         {
             parser.Consume<Scalar>();
             var agentName = scalar.Value;
-            var agentPath = Path.Combine(AgentsDirectory, agentName, "agent.yaml");
+            var agentPath = Path.Combine(AgentsDirectory, $"{agentName}.yaml");
 
             if (!File.Exists(agentPath))
                 throw new FileNotFoundException($"Agent definition not found at {agentPath}");

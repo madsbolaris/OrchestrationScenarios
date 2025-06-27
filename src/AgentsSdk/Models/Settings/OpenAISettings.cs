@@ -1,4 +1,4 @@
-namespace AgentsSdk.Models;
+namespace AgentsSdk.Models.Settings;
 
 public class OpenAISettings
 {

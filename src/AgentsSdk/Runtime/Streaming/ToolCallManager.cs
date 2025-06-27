@@ -7,7 +7,7 @@ using AgentsSdk.Models.Runs.Responses.Deltas;
 using AgentsSdk.Models.Messages.Types;
 using System.Text.Json;
 
-namespace AgentsSdk.Runtime.Streaming.Providers.OpenAI;
+namespace AgentsSdk.Runtime.Streaming;
 
 public class ToolCallManager
 {

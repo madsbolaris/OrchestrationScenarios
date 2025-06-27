@@ -5,6 +5,7 @@ using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Crm.Sdk.Messages;
 using System.ServiceModel;
 using YamlDotNet.RepresentationModel;
+using System.Text.Json;
 
 namespace AgentSynchronizer;
 
@@ -20,18 +21,15 @@ public class AgentSynchronizerService(ServiceClient svc, IOptions<DataverseSetti
 
     private async Task SyncAgentsToSolutionAsync()
     {
-        var localAgents = Directory.GetDirectories("Resources/Agents")
+        var localAgents = Directory.EnumerateFiles("Resources/Agents", "*.yaml", SearchOption.AllDirectories)
             .Select(path => new
             {
-                Name = "Agent-"+Path.GetFileName(path)!,
+                Name = Path.GetFileNameWithoutExtension(path),
                 Path = path,
-                ModifiedOn = Directory
-                    .EnumerateFiles(path, "*", SearchOption.AllDirectories)
-                    .Select(File.GetLastWriteTimeUtc)
-                    .DefaultIfEmpty(DateTime.MinValue)
-                    .Max()
+                ModifiedOn = File.GetLastWriteTimeUtc(path)
             })
             .ToList();
+
 
         var solutionBots = await GetBotsInSolutionAsync();
 
@@ -152,16 +150,46 @@ public class AgentSynchronizerService(ServiceClient svc, IOptions<DataverseSetti
             );
     }
 
-    private async Task<Guid> CreateOrUpdateAgentAsync(string agentName, string folderPath, Guid? existingBotId)
+    private async Task<Guid> CreateOrUpdateAgentAsync(string agentName, string yamlPath, Guid? existingBotId)
     {
-        var prefix = _dataverseSettings.Prefix;
-        var schemaName = $"{prefix}_Agent-{agentName}";
-        var botName = $"Agent-{agentName}";
-        var configPath = Path.Combine(folderPath, "configuration.json");
-        var yamlPath = Directory.GetFiles(folderPath, "*.tool.yaml").FirstOrDefault() ?? throw new FileNotFoundException("YAML file not found.");
+        var yamlContent = await File.ReadAllTextAsync(yamlPath);
+        var yaml = new YamlStream();
+        yaml.Load(new StringReader(yamlContent));
+        var root = (YamlMappingNode)yaml.Documents[0].RootNode;
 
-        var config = await File.ReadAllTextAsync(configPath);
-        var yaml = await File.ReadAllTextAsync(yamlPath);
+        string name = root.Children.ContainsKey(new YamlScalarNode("name"))
+            ? ((YamlScalarNode)root.Children[new YamlScalarNode("name")]).Value ?? agentName
+            : agentName;
+
+        string description = root.Children.ContainsKey(new YamlScalarNode("description"))
+            ? ((YamlScalarNode)root.Children[new YamlScalarNode("description")]).Value ?? ""
+            : "";
+
+        string model = root.Children.ContainsKey(new YamlScalarNode("model"))
+            ? ((YamlScalarNode)root.Children[new YamlScalarNode("model")]).Value ?? "gpt-4.1"
+            : "gpt-4.1";
+
+        // Parse tools
+        List<string> toolTypes = new();
+        if (root.Children.TryGetValue(new YamlScalarNode("tools"), out var toolsNode) &&
+            toolsNode is YamlSequenceNode toolSequence)
+        {
+            foreach (var toolItem in toolSequence)
+            {
+                if (toolItem is YamlMappingNode toolMap &&
+                    toolMap.Children.TryGetValue(new YamlScalarNode("type"), out var typeNode) &&
+                    typeNode is YamlScalarNode typeScalar &&
+                    !string.IsNullOrEmpty(typeScalar.Value))
+                {
+                    toolTypes.Add(typeScalar.Value);
+                }
+            }
+        }
+
+
+        var prefix = _dataverseSettings.Prefix;
+        var schemaName = $"{prefix}_{name}";
+        var botName = name;
 
         var bot = new Entity("bot")
         {
@@ -171,24 +199,7 @@ public class AgentSynchronizerService(ServiceClient svc, IOptions<DataverseSetti
             ["authenticationmode"] = new OptionSetValue(2),
             ["authenticationtrigger"] = new OptionSetValue(1),
             ["template"] = "default-2.1.0",
-            ["configuration"] = """
-            {
-                "$kind": "BotConfiguration",
-                "settings": {
-                    "GenerativeActionsEnabled": true
-                },
-                "aISettings": {
-                    "$kind": "AISettings",
-                    "useModelKnowledge": true,
-                    "isFileAnalysisEnabled": true,
-                    "isSemanticSearchEnabled": true,
-                    "optInUseLatestModels": false
-                },
-                "recognizer": {
-                    "$kind": "GenerativeAIRecognizer"
-                }
-            }
-            """
+            ["configuration"] = """{ "$kind": "BotConfiguration", "settings": { "GenerativeActionsEnabled": true }, "aISettings": { "$kind": "AISettings", "useModelKnowledge": true, "isFileAnalysisEnabled": true, "isSemanticSearchEnabled": true, "optInUseLatestModels": false }, "recognizer": { "$kind": "GenerativeAIRecognizer" } }"""
         };
 
         Guid botId;
@@ -209,55 +220,97 @@ public class AgentSynchronizerService(ServiceClient svc, IOptions<DataverseSetti
             });
         }
 
-        // Upsert botcomponent (topic)
-        var topicSchema = $"{schemaName}.{agentName}";
-        var topicName = $"{botName}.{agentName}";
-        var topicQuery = new QueryExpression("botcomponent")
+        foreach (var toolType in toolTypes)
         {
-            ColumnSet = new ColumnSet("botcomponentid"),
-            Criteria = { Conditions = { new ConditionExpression("schemaname", ConditionOperator.Equal, topicSchema) } }
-        };
+            var flowName = toolType.Replace("Microsoft.PowerPlatform.", "");
+            var flowPath = Path.Combine("Resources", "Flows", $"shared_{flowName}.json");
 
-        var topicResult = await svc.RetrieveMultipleAsync(topicQuery);
-        var topic = new Entity("botcomponent")
-        {
-            ["schemaname"] = topicSchema,
-            ["name"] = topicName,
-            ["componenttype"] = new OptionSetValue(9),
-            ["parentbotid"] = new EntityReference("bot", botId),
-            ["language"] = new OptionSetValue(1033),
-            ["data"] = yaml,
-            ["statecode"] = new OptionSetValue(0),
-            ["statuscode"] = new OptionSetValue(1)
-        };
+            if (!File.Exists(flowPath))
+                throw new FileNotFoundException($"Flow definition not found for tool: {toolType}");
 
-        Guid topicId;
-        if (topicResult.Entities.Count > 0)
-        {
-            topic.Id = topicResult.Entities[0].Id;
-            await svc.UpdateAsync(topic);
-            topicId = topic.Id;
-        }
-        else
-        {
-            topicId = await svc.CreateAsync(topic);
-            await svc.ExecuteAsync(new AddSolutionComponentRequest
+            using var stream = File.OpenRead(flowPath);
+            using var doc = await JsonDocument.ParseAsync(stream);
+            var props = doc.RootElement.GetProperty("properties");
+
+            var summary = props.GetProperty("summary").GetString()!;
+            var toolDesc = props.GetProperty("description").GetString()!;
+            var connRefs = props.GetProperty("connectionReferences").EnumerateObject().First();
+            var connectionLogicalName = connRefs.Value.GetProperty("connection").GetProperty("connectionReferenceLogicalName").GetString()!;
+            var operationId = props
+                .GetProperty("definition")
+                .GetProperty("actions")
+                .GetProperty("try")
+                .GetProperty("actions")
+                .GetProperty("action")
+                .GetProperty("inputs")
+                .GetProperty("host")
+                .GetProperty("operationId")
+                .GetString()!;
+
+            var topicSchema = $"{schemaName}.{flowName}";
+            var topicName = $"{botName}.{flowName}";
+
+            var topicQuery = new QueryExpression("botcomponent")
             {
-                ComponentId = topicId,
-                ComponentType = 10186,
-                SolutionUniqueName = _dataverseSettings.AgentSolution
-            });
+                ColumnSet = new ColumnSet("botcomponentid"),
+                Criteria = { Conditions = { new ConditionExpression("schemaname", ConditionOperator.Equal, topicSchema) } }
+            };
+
+            var topicResult = await svc.RetrieveMultipleAsync(topicQuery);
+            var topic = new Entity("botcomponent")
+            {
+                ["schemaname"] = topicSchema,
+                ["name"] = topicName,
+                ["componenttype"] = new OptionSetValue(9),
+                ["parentbotid"] = new EntityReference("bot", botId),
+                ["language"] = new OptionSetValue(1033),
+                ["data"] = $"""
+                    kind: TaskDialog
+                    modelDisplayName: {summary}
+                    modelDescription: {toolDesc}
+                    outputs:
+                      - propertyName: Response
+
+                    action:
+                        kind: InvokeConnectorTaskAction
+                        connectionReference: {connectionLogicalName}
+                        connectionProperties:
+                            mode: Invoker
+
+                        operationId: {operationId}
+
+                    outputMode: All
+                    """,
+                ["statecode"] = new OptionSetValue(0),
+                ["statuscode"] = new OptionSetValue(1)
+            };
+
+            Guid topicId;
+            if (topicResult.Entities.Count > 0)
+            {
+                topic.Id = topicResult.Entities[0].Id;
+                await svc.UpdateAsync(topic);
+                topicId = topic.Id;
+            }
+            else
+            {
+                topicId = await svc.CreateAsync(topic);
+                await svc.ExecuteAsync(new AddSolutionComponentRequest
+                {
+                    ComponentId = topicId,
+                    ComponentType = 10186,
+                    SolutionUniqueName = _dataverseSettings.AgentSolution
+                });
+            }
+
+            var connId = GetConnectionReferenceIdByLogicalName(connectionLogicalName);
+            var relationship = new Relationship("botcomponent_connectionreference");
+            await svc.AssociateAsync("botcomponent", topicId, relationship, [new EntityReference("connectionreference", connId)]);
         }
-
-        // Associate connection reference
-        var logicalName = GetConnectionReferenceLogicalName(yaml);
-        var connId = GetConnectionReferenceIdByLogicalName(logicalName);
-
-        var relationship = new Relationship("botcomponent_connectionreference");
-        await svc.AssociateAsync("botcomponent", topicId, relationship, [new EntityReference("connectionreference", connId)]);
 
         return botId;
     }
+
 
     private Guid GetConnectionReferenceIdByLogicalName(string logicalName)
     {
@@ -273,21 +326,4 @@ public class AgentSynchronizerService(ServiceClient svc, IOptions<DataverseSetti
 
         return results.Entities[0].Id;
     }
-
-    private static string GetConnectionReferenceLogicalName(string yamlContent)
-    {
-        var yaml = new YamlStream();
-        yaml.Load(new StringReader(yamlContent));
-
-        var root = (YamlMappingNode)yaml.Documents[0].RootNode;
-        if (root.Children.TryGetValue("action", out var actionNode) &&
-            actionNode is YamlMappingNode actionMapping &&
-            actionMapping.Children.TryGetValue("connectionReference", out var logicalNameNode))
-        {
-            return logicalNameNode.ToString();
-        }
-
-        throw new InvalidOperationException("connectionReference not found in YAML.");
-    }
-
 }

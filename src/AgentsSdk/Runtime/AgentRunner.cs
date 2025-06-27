@@ -9,7 +9,7 @@ using AgentsSdk.Runtime.Streaming;
 
 namespace AgentsSdk.Runtime;
 
-public class AgentRunner(IStreamingAgentClient client)
+public class AgentRunner<T>(T client) where T : IStreamingAgentClient
 {
     public async Task RunAsync(Agent agent, List<ChatMessage>? allMessages = null)
     {

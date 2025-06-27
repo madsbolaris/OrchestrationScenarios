@@ -1,20 +1,25 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
-using OpenAI;
-using OpenAI.Responses;
-using System.ClientModel;
-using AgentsSdk.Models;
 using AgentsSdk.Runtime.Streaming;
 using AgentsSdk.Runtime.Streaming.Providers.OpenAI;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using AgentsSdk.Runtime;
+using AgentsSdk.Models.Settings;
+using Common;
+using Microsoft.Extensions.Options;
+using AgentsSdk.Runtime.Streaming.Providers.CopilotStudio;
 
 namespace ScenarioRunner;
 
 class Program
 {
+    private static readonly AgentRunnerKey[] AgentRunnerKeys =
+    [
+        AgentRunnerKey.OpenAI,
+        AgentRunnerKey.CopilotStudio
+    ];
+
     public static async Task Main(string[] args)
     {
         var host = Host.CreateDefaultBuilder(args)
@@ -24,42 +29,72 @@ class Program
                     .SetBasePath(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..")))
                     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
             })
-            .ConfigureLogging((hostingContext, logging) =>
+            .ConfigureLogging(logging =>
             {
                 logging.ClearProviders();
-
-                // Add debug logger (shows up in VS/VS Code debug pane)
-                logging.AddDebug();
+                logging.AddDebug(); // VS/VS Code output
             })
             .ConfigureServices((context, services) =>
             {
-                // Bind and register OpenAI configuration
-                services.Configure<OpenAISettings>(context.Configuration.GetSection("OpenAI"));
-
-                services.AddSingleton<IStreamingAgentClient, OpenAIStreamingClient>();
-                services.AddSingleton<AgentRunner>();
-
-                // Register file-based scenarios
-                var tools = new Dictionary<string, Delegate>
-                {
-                    { "DateTime-Now", () => "2025-06-22 21:07:38" }
-                };
-
-                var scenarioFolder = Path.Combine(Directory.GetCurrentDirectory(), "Resources/Scenarios");
-                foreach (var file in Directory.EnumerateFiles(scenarioFolder, "*.liquid", SearchOption.AllDirectories))
-                {
-                    var name = Path.GetFileNameWithoutExtension(file).Replace('_', ' ');
-                    services.AddTransient<IScenario>(provider =>
-                    {
-                        var runner = provider.GetRequiredService<AgentRunner>();
-                        return new Runner(name, file, runner, tools);
-                    });
-                }
-
+                ConfigureSettings(context, services);
+                RegisterAgentClients(services);
+                RegisterAgentRunners(services);
+                RegisterHttpClient(services, context.Configuration);
+                RegisterScenarios(services);
                 services.AddHostedService<ScenarioRunnerService>();
             })
             .Build();
 
         await host.RunAsync();
+    }
+
+    private static void ConfigureSettings(HostBuilderContext context, IServiceCollection services)
+    {
+        services.Configure<OpenAISettings>(context.Configuration.GetSection("OpenAI"));
+        services.Configure<DataverseSettings>(context.Configuration.GetSection("Dataverse"));
+    }
+
+    private static void RegisterAgentClients(IServiceCollection services)
+    {
+        services.AddSingleton<OpenAIStreamingClient>();
+        services.AddSingleton<CopilotStudioStreamingClient>();
+    }
+
+    private static void RegisterAgentRunners(IServiceCollection services)
+    {
+        services.AddSingleton<AgentRunner<OpenAIStreamingClient>>();
+        services.AddSingleton<AgentRunner<CopilotStudioStreamingClient>>();
+    }
+
+    private static void RegisterHttpClient(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddHttpClient("mcs")
+            .ConfigurePrimaryHttpMessageHandler(sp =>
+            {
+                var settings = sp.GetRequiredService<IOptions<DataverseSettings>>().Value;
+                return new AddTokenHandler(settings);
+            });
+    }
+
+    private static void RegisterScenarios(IServiceCollection services)
+    {
+        var scenarioDir = Path.Combine(Directory.GetCurrentDirectory(), "Resources", "Scenarios");
+        if (!Directory.Exists(scenarioDir))
+            return;
+
+        var tools = new Dictionary<string, Delegate>
+        {
+            ["DateTime-Now"] = () => "2025-06-22 21:07:38"
+        };
+
+        foreach (var file in Directory.EnumerateFiles(scenarioDir, "*.liquid", SearchOption.AllDirectories))
+        {
+            var name = Path.GetFileNameWithoutExtension(file).Replace('_', ' ');
+
+            services.AddTransient<IScenario>((sp) =>
+            {
+                return new Runner(sp, name, file, tools);
+            });
+        }
     }
 }

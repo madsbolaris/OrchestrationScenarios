@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AgentsSdk\AgentsSdk.csproj" />
+    <ProjectReference Include="..\Common\Common.csproj" />
   </ItemGroup>
 
 </Project>

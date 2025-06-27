@@ -6,6 +6,7 @@ using AgentsSdk.Models.Runs.Responses.Deltas;
 using AgentsSdk.Models.Runs.Responses.Deltas.Content;
 using AgentsSdk.Models.Runs.Responses.StreamingUpdates;
 using AgentsSdk.Models.Messages;
+using AgentsSdk.Helpers;
 
 namespace AgentsSdk.Runtime.Streaming.Providers.OpenAI;
 

@@ -5,9 +5,10 @@ using AgentsSdk.Models.Agents;
 using AgentsSdk.Models.Runs.Responses.StreamingUpdates;
 using AgentsSdk.Models.Tools.ToolDefinitions.Function;
 using Microsoft.Extensions.Options;
-using AgentsSdk.Models;
 using System.ClientModel;
 using OpenAI;
+using AgentsSdk.Models.Settings;
+using System.Runtime.CompilerServices;
 
 namespace AgentsSdk.Runtime.Streaming.Providers.OpenAI;
 
@@ -15,7 +16,8 @@ public sealed class OpenAIStreamingClient(IOptions<OpenAISettings> settings) : I
 {
     public async IAsyncEnumerable<StreamingUpdate> RunStreamingAsync(
         Agent agent,
-        List<Models.Messages.ChatMessage> messages)
+        List<Models.Messages.ChatMessage> messages,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
 
         var responseItems = messages.SelectMany(ToResponseConverter.Convert).ToList();
@@ -42,7 +44,7 @@ public sealed class OpenAIStreamingClient(IOptions<OpenAISettings> settings) : I
             options: new OpenAIClientOptions()
         );
 
-        var response = client.CreateResponseStreamingAsync(responseItems, options);
+        var response = client.CreateResponseStreamingAsync(responseItems, options, cancellationToken: cancellationToken);
         var conversationId = messages.FirstOrDefault()?.ConversationId ?? Guid.NewGuid().ToString();
 
         await foreach (var update in OpenAIStreamingProcessor.ProcessAsync(
