@@ -1,0 +1,15 @@
+kind: TaskDialog
+modelDisplayName: Get a row
+modelDescription: Get a row using a key column.
+outputs:
+  - propertyName: Response
+
+action:
+  kind: InvokeConnectorTaskAction
+  connectionReference: mabolan_ExcelOnlineBusiness
+  connectionProperties:
+    mode: Invoker
+
+  operationId: GetItem
+
+outputMode: All

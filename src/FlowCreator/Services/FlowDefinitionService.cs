@@ -37,7 +37,7 @@ public class FlowDefinitionService
 
     public FlowDefinition? GetFlowDefinition(string apiName, string operationId)
     {
-        var filePath = Path.Combine(FlowDefinitionsDirectory, $"{apiName}.{operationId}.json");
+        var filePath = Path.Combine(FlowDefinitionsDirectory, $"{apiName}-{operationId}.json");
         if (!File.Exists(filePath))
             return null;
 
@@ -78,7 +78,7 @@ public class FlowDefinitionService
 
     public bool DeleteFlowDefinition(string apiName, string operationId)
     {
-        var filePath = Path.Combine(FlowDefinitionsDirectory, $"{apiName}.{operationId}.json");
+        var filePath = Path.Combine(FlowDefinitionsDirectory, $"{apiName}-{operationId}.json");
         if (!File.Exists(filePath))
             return false;
 
@@ -100,7 +100,7 @@ public class FlowDefinitionService
         }
 
         Directory.CreateDirectory(FlowDefinitionsDirectory);
-        var filePath = Path.Combine(FlowDefinitionsDirectory, $"{document.ApiName}.{document.OperationId}.json");
+        var filePath = Path.Combine(FlowDefinitionsDirectory, $"{document.ApiName}-{document.OperationId}.json");
 
         var options = new JsonSerializerOptions
         {

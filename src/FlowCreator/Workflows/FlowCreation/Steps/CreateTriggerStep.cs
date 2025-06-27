@@ -152,7 +152,7 @@ public sealed class CreateTriggerStep(
             }, doc))
             {
                 await context.EmitEventAsync(SpecWorkflowEvents.EmitHelp,
-                    $"The flow definition for {doc.ApiName}.{doc.OperationId} has been saved with the updated input schema.");
+                    $"The flow definition for {doc.ApiName}-{doc.OperationId} has been saved with the updated input schema.");
             }
         }
 

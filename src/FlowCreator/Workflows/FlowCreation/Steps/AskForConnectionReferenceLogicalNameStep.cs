@@ -79,7 +79,7 @@ public sealed class AskForConnectionReferenceLogicalNameStep(
             }, doc))
             {
                 await context.EmitEventAsync(SpecWorkflowEvents.EmitHelp,
-                    $"The flow definition for {doc.ApiName}.{doc.OperationId} has been saved with the connection reference of '{logicalName}'.");
+                    $"The flow definition for {doc.ApiName}-{doc.OperationId} has been saved with the connection reference of '{logicalName}'.");
             }
         }
     }

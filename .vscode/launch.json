@@ -1,0 +1,60 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Scenario Runner: All Scenarios",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-scenario-runner",
+      "program": "${workspaceFolder}/src/ScenarioRunner/bin/Debug/net9.0/ScenarioRunner.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Scenario Runner: Basic",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-scenario-runner",
+      "program": "${workspaceFolder}/src/ScenarioRunner/bin/Debug/net9.0/ScenarioRunner.dll",
+      "args": ["basic"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Agent Synchronizer: Sync Scenarios",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-agent-synchronizer",
+      "program": "${workspaceFolder}/src/AgentSynchronizer/bin/Debug/net9.0/AgentSynchronizer.dll",
+      "args": ["advanced"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Flow Creator: Create flow",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-flow-creator",
+      "program": "${workspaceFolder}/src/FlowCreator/bin/Debug/net9.0/FlowCreator.dll",
+      "args": ["advanced"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Flow Synchronizer: Sync Scenarios",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-flow-synchronizer",
+      "program": "${workspaceFolder}/src/FlowSynchronizer/bin/Debug/net9.0/FlowSynchronizer.dll",
+      "args": ["advanced"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    }
+  ]
+}

@@ -57,7 +57,7 @@ public sealed class CreateActionStep(
             }, doc))
             {
                 await context.EmitEventAsync(SpecWorkflowEvents.EmitHelp,
-                    $"The flow definition for {doc.ApiName}.{doc.OperationId} has been saved with the updated action schema'.");
+                    $"The flow definition for {doc.ApiName}-{doc.OperationId} has been saved with the updated action schema'.");
             }
         }
     }

@@ -11,43 +11,19 @@ using System.ServiceModel;
 
 namespace FlowSynchronizer;
 
-public class FlowSynchronizerService
+public class FlowSynchronizerService(ServiceClient svc, IOptions<DataverseSettings> dataverseOptions)
 {
-    private readonly DataverseSettings _dataverse;
-
-    public FlowSynchronizerService(IOptions<DataverseSettings> dataverseOptions)
-    {
-        _dataverse = dataverseOptions.Value;
-    }
+    private readonly DataverseSettings _dataverseSettings = dataverseOptions.Value;
 
     public async Task RunAsync()
     {
-        var svc = ConnectToDataverse();
-        Console.WriteLine("Connected to Dataverse.");
-        await SyncFlowsToSolutionAsync(svc);
+        await SyncFlowsToSolutionAsync();
         Console.WriteLine("All flows synchronized.");
     }
 
-    private ServiceClient ConnectToDataverse()
+    private async Task SyncFlowsToSolutionAsync()
     {
-        var credential = new ClientSecretCredential(_dataverse.TenantId, _dataverse.ClientId, _dataverse.ClientSecret);
-
-        async Task<string> TokenProvider(string resourceUrl)
-        {
-            var resource = new Uri(resourceUrl).GetComponents(UriComponents.SchemeAndServer, UriFormat.UriEscaped);
-            var token = await credential.GetTokenAsync(new TokenRequestContext([ $"{resource}/.default" ]));
-            return token.Token;
-        }
-
-        var svc = new ServiceClient(tokenProviderFunction: TokenProvider, instanceUrl: new Uri(_dataverse.EnvironmentUrl));
-        if (!svc.IsReady)
-            throw new Exception("Failed to connect to Dataverse.");
-        return svc;
-    }
-
-    private async Task SyncFlowsToSolutionAsync(ServiceClient svc)
-    {
-        var solutionFlows = await GetFlowsInSolutionAsync(svc);
+        var solutionFlows = await GetFlowsInSolutionAsync();
         var flowFiles = Directory.GetFiles("Resources/Flows", "*.json")
             .Select(path => (Path.GetFileNameWithoutExtension(path), path, File.GetLastWriteTimeUtc(path)))
             .ToList();
@@ -78,8 +54,8 @@ public class FlowSynchronizerService
             {
                 try
                 {
-                    var newId = await CreateOrUpdateFlowAsync(svc, flowName, json, _dataverse.SolutionUniqueName);
-                    await ActivateFlowAsync(svc, newId);
+                    var newId = await CreateOrUpdateFlowAsync(flowName, json, _dataverseSettings.FlowSolution);
+                    await ActivateFlowAsync(newId);
                     Console.WriteLine($"Created & Activated: {flowName} ({newId})");
                 }
                 catch (FaultException<OrganizationServiceFault> ex)
@@ -100,7 +76,7 @@ public class FlowSynchronizerService
         }
     }
 
-    private async Task<Dictionary<string, (Guid flowId, DateTime modifiedOn)>> GetFlowsInSolutionAsync(ServiceClient svc)
+    private async Task<Dictionary<string, (Guid flowId, DateTime modifiedOn)>> GetFlowsInSolutionAsync()
     {
         // First get solution ID
         var solutionQuery = new QueryExpression("solution")
@@ -110,14 +86,14 @@ public class FlowSynchronizerService
             {
                 Conditions =
                 {
-                    new ConditionExpression("uniquename", ConditionOperator.Equal, _dataverse.SolutionUniqueName)
+                    new ConditionExpression("uniquename", ConditionOperator.Equal, _dataverseSettings.FlowSolution)
                 }
             }
         };
 
         var solutionResult = await svc.RetrieveMultipleAsync(solutionQuery);
         if (solutionResult.Entities.Count == 0)
-            throw new Exception($"Solution '{_dataverse.SolutionUniqueName}' not found.");
+            throw new Exception($"Solution '{_dataverseSettings.FlowSolution}' not found.");
 
         var solutionId = solutionResult.Entities[0].Id;
 
@@ -138,7 +114,7 @@ public class FlowSynchronizerService
         var componentResult = await svc.RetrieveMultipleAsync(componentQuery);
         var flowIds = componentResult.Entities.Select(e => (Guid)e["objectid"]).ToList();
         if (flowIds.Count == 0)
-            return new Dictionary<string, (Guid, DateTime)>();
+            return [];
 
         // Retrieve workflows by ID
         var query = new QueryExpression("workflow")
@@ -167,7 +143,7 @@ public class FlowSynchronizerService
     }
 
 
-    private static async Task<Guid> CreateOrUpdateFlowAsync(ServiceClient svc, string flowName, string clientDataJson, string solutionUniqueName)
+    private async Task<Guid> CreateOrUpdateFlowAsync(string flowName, string clientDataJson, string flowSolution)
     {
         var query = new QueryExpression("workflow")
         {
@@ -203,7 +179,7 @@ public class FlowSynchronizerService
             {
                 ComponentType = 29,
                 ComponentId = newFlowId,
-                SolutionUniqueName = solutionUniqueName
+                SolutionUniqueName = flowSolution
             };
 
             await svc.ExecuteAsync(addReq);
@@ -212,7 +188,7 @@ public class FlowSynchronizerService
         }
     }
 
-    private static async Task ActivateFlowAsync(ServiceClient svc, Guid workflowId)
+    private async Task ActivateFlowAsync(Guid workflowId)
     {
         var activate = new Entity("workflow", workflowId)
         {

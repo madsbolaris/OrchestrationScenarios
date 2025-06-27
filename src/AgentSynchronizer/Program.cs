@@ -1,6 +1,6 @@
-﻿using Azure.Core;
+﻿using AgentSynchronizer;
+using Azure.Core;
 using Azure.Identity;
-using FlowSynchronizer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,7 +17,7 @@ var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         services.Configure<DataverseSettings>(context.Configuration.GetSection("Dataverse"));
-        services.AddSingleton<FlowSynchronizerService>();
+        services.AddSingleton<AgentSynchronizerService>();
         services.AddSingleton((sp) =>
         {
             var _dataverse = sp.GetRequiredService<IOptions<DataverseSettings>>().Value;
@@ -38,6 +38,6 @@ var host = Host.CreateDefaultBuilder(args)
     })
     .Build();
 
-var service = host.Services.GetRequiredService<FlowSynchronizerService>();
+var service = host.Services.GetRequiredService<AgentSynchronizerService>();
 
 await service.RunAsync();
