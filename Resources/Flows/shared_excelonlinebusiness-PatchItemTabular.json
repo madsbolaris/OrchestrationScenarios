@@ -50,11 +50,15 @@
                 },
                 "id": {
                   "type": "string",
-                  "description": "Unique identifier of the row to delete."
+                  "description": "Unique identifier of the row to update."
                 },
                 "isGeneratedColumn": {
                   "type": "boolean",
                   "description": "Is PK column generated."
+                },
+                "item": {
+                  "type": "object",
+                  "description": "Row with updated values."
                 }
               }
             },
@@ -79,7 +83,8 @@
                   "table": "@triggerBody()?['table']",
                   "pkColumn": "@triggerBody()?['pkColumn']",
                   "id": "@triggerBody()?['id']",
-                  "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']"
+                  "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']",
+                  "item": "@triggerBody()?['item']"
                 },
                 "authentication": null
               }

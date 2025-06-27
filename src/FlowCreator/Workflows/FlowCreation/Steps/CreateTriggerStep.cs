@@ -136,9 +136,6 @@ public sealed class CreateTriggerStep(
 
         workingFlowDefinitionService.UpdateCurrentFlowDefinition(d =>
         {
-            d.ApiName = doc.ApiName;
-            d.ApiId = doc.ApiId;
-            d.OperationId = doc.OperationId;
             d.InputSchema = schema;
             return d;
         });

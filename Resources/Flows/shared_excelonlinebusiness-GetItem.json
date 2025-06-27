@@ -38,7 +38,7 @@
               "properties": {
                 "source": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\n            - \"me\"\n            - \"SharePoint Site URL\"\n            - \"users/someone's UPN\"\n            - \"groups/group Id\"\n            - \"sites/SharePoint Site URL:/teams/team name:\" (the colons are required)"
+                  "description": "Select from the drop-down or specify one of the following:\r\n            - \"me\"\r\n            - \"SharePoint Site URL\"\r\n            - \"users/someone's UPN\"\r\n            - \"groups/group Id\"\r\n            - \"sites/SharePoint Site URL:/teams/team name:\" (the colons are required)"
                 },
                 "drive": {
                   "type": "string",

@@ -35,7 +35,16 @@
             "method": "POST",
             "schema": {
               "type": "object",
-              "properties": {}
+              "properties": {
+                "dataset": {
+                  "type": "string",
+                  "description": "Dataset."
+                },
+                "table": {
+                  "type": "string",
+                  "description": "Table name."
+                }
+              }
             },
             "triggerAuthenticationType": "All"
           }
@@ -53,7 +62,10 @@
                   "operationId": "GetTableTabular",
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
                 },
-                "parameters": {},
+                "parameters": {
+                  "dataset": "@triggerBody()?['dataset']",
+                  "table": "@triggerBody()?['table']"
+                },
                 "authentication": null
               }
             }

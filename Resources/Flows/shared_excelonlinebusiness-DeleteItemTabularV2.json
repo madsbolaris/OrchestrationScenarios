@@ -50,7 +50,7 @@
                 },
                 "id": {
                   "type": "string",
-                  "description": "Unique identifier of row to retrieve."
+                  "description": "Unique identifier of the row to delete."
                 },
                 "isGeneratedColumn": {
                   "type": "boolean",

@@ -56,6 +56,10 @@
                   "type": "string",
                   "description": "Select a column from the drop-down."
                 },
+                "id": {
+                  "type": "string",
+                  "description": "Enter the key value."
+                },
                 "item": {
                   "type": "object",
                   "description": "Provide the item properties."
@@ -92,6 +96,7 @@
                   "file": "@triggerBody()?['file']",
                   "table": "@triggerBody()?['table']",
                   "idColumn": "@triggerBody()?['idColumn']",
+                  "id": "@triggerBody()?['id']",
                   "item": "@triggerBody()?['item']",
                   "mode": "@triggerBody()?['mode']",
                   "dateTimeFormat": "@triggerBody()?['dateTimeFormat']"

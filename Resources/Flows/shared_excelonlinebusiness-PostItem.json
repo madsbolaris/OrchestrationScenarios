@@ -52,29 +52,17 @@
                   "type": "string",
                   "description": "Select a table from the drop-down."
                 },
-                "$filter": {
-                  "type": "string",
-                  "description": "An ODATA filter query to restrict the entries returned."
-                },
-                "$orderby": {
-                  "type": "string",
-                  "description": "An ODATA orderBy query for specifying the order of entries."
-                },
-                "$top": {
-                  "type": "integer",
-                  "description": "Total number of entries to retrieve (default = all)."
-                },
-                "$skip": {
-                  "type": "integer",
-                  "description": "The number of entries to skip (default = 0)."
-                },
-                "$select": {
-                  "type": "string",
-                  "description": "Comma-separated list of columns to retrieve (first 500 by default)."
-                },
                 "idColumn": {
                   "type": "string",
                   "description": "Select a column from the drop-down."
+                },
+                "item": {
+                  "type": "object",
+                  "description": "Provide the item properties."
+                },
+                "mode": {
+                  "type": "string",
+                  "description": "Mode of the operation."
                 },
                 "dateTimeFormat": {
                   "type": "string",
@@ -103,12 +91,9 @@
                   "drive": "@triggerBody()?['drive']",
                   "file": "@triggerBody()?['file']",
                   "table": "@triggerBody()?['table']",
-                  "$filter": "@triggerBody()?['$filter']",
-                  "$orderby": "@triggerBody()?['$orderby']",
-                  "$top": "@triggerBody()?['$top']",
-                  "$skip": "@triggerBody()?['$skip']",
-                  "$select": "@triggerBody()?['$select']",
                   "idColumn": "@triggerBody()?['idColumn']",
+                  "item": "@triggerBody()?['item']",
+                  "mode": "@triggerBody()?['mode']",
                   "dateTimeFormat": "@triggerBody()?['dateTimeFormat']"
                 },
                 "authentication": null

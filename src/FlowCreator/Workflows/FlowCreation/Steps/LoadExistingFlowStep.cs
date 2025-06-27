@@ -25,6 +25,8 @@ public sealed class LoadExistingFlowStep(
 
         workingFlowDefinitionService.UpdateCurrentFlowDefinition(d =>
         {
+            d.Summary = loaded.Summary;
+            d.Description = loaded.Description;
             d.ApiId = loaded.ApiId;
             d.ConnectionReferenceLogicalName = loaded.ConnectionReferenceLogicalName;
             d.InputSchema = loaded.InputSchema;

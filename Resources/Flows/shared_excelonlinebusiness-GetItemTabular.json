@@ -48,13 +48,13 @@
                   "type": "string",
                   "description": "PK column name."
                 },
+                "id": {
+                  "type": "string",
+                  "description": "Unique identifier of row to retrieve."
+                },
                 "isGeneratedColumn": {
                   "type": "boolean",
                   "description": "Is PK column generated."
-                },
-                "item": {
-                  "type": "object",
-                  "description": "Row to insert into the specified Excel Online table"
                 }
               }
             },
@@ -78,8 +78,8 @@
                   "dataset": "@triggerBody()?['dataset']",
                   "table": "@triggerBody()?['table']",
                   "pkColumn": "@triggerBody()?['pkColumn']",
-                  "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']",
-                  "item": "@triggerBody()?['item']"
+                  "id": "@triggerBody()?['id']",
+                  "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']"
                 },
                 "authentication": null
               }

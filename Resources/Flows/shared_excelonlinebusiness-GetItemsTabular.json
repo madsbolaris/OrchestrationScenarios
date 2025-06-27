@@ -39,6 +39,34 @@
                 "dataset": {
                   "type": "string",
                   "description": "Dataset."
+                },
+                "table": {
+                  "type": "string",
+                  "description": "Table name."
+                },
+                "pkColumn": {
+                  "type": "string",
+                  "description": "PK column name."
+                },
+                "isGeneratedColumn": {
+                  "type": "boolean",
+                  "description": "Is PK column generated."
+                },
+                "$filter": {
+                  "type": "string",
+                  "description": "An ODATA filter query to restrict the entries returned (e.g. stringColumn eq 'string' OR numberColumn lt 123)."
+                },
+                "$orderby": {
+                  "type": "string",
+                  "description": "An ODATA orderBy query for specifying the order of entries."
+                },
+                "$top": {
+                  "type": "integer",
+                  "description": "Total number of entries to retrieve (default = all)."
+                },
+                "$skip": {
+                  "type": "integer",
+                  "description": "The number of entries to skip (default = 0)."
                 }
               }
             },
@@ -59,7 +87,14 @@
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
                 },
                 "parameters": {
-                  "dataset": "@triggerBody()?['dataset']"
+                  "dataset": "@triggerBody()?['dataset']",
+                  "table": "@triggerBody()?['table']",
+                  "pkColumn": "@triggerBody()?['pkColumn']",
+                  "isGeneratedColumn": "@triggerBody()?['isGeneratedColumn']",
+                  "$filter": "@triggerBody()?['$filter']",
+                  "$orderby": "@triggerBody()?['$orderby']",
+                  "$top": "@triggerBody()?['$top']",
+                  "$skip": "@triggerBody()?['$skip']"
                 },
                 "authentication": null
               }

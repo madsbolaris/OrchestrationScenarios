@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0.0",
   "properties": {
-    "summary": "Update a row",
-    "description": "Update a row using a key column. The input value will overwrite the specified cells and columns left blank will not be updated. In order to append (instead of overwrite) a value, use the \"Get a row\" action to retrieve the content first.",
+    "summary": "",
+    "description": "",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",
@@ -36,29 +36,9 @@
             "schema": {
               "type": "object",
               "properties": {
-                "source": {
+                "dataset": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\r\n              - \"me\"\r\n              - \"SharePoint Site URL\"\r\n              - \"users/someone's UPN\"\r\n              - \"groups/group Id\"\r\n              - \"sites/SharePoint Site URL:/teams/team name:\" (colons are required)."
-                },
-                "drive": {
-                  "type": "string",
-                  "description": "Select a document library from the drop-down."
-                },
-                "file": {
-                  "type": "string",
-                  "description": "Select an Excel file through File Browse."
-                },
-                "table": {
-                  "type": "string",
-                  "description": "Select a table from the drop-down."
-                },
-                "item": {
-                  "type": "object",
-                  "description": "Row to add into the specified Excel table."
-                },
-                "dateTimeFormat": {
-                  "type": "string",
-                  "description": "DateTime Format."
+                  "description": "Dataset."
                 }
               }
             },
@@ -79,12 +59,7 @@
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
                 },
                 "parameters": {
-                  "source": "@triggerBody()?['source']",
-                  "drive": "@triggerBody()?['drive']",
-                  "file": "@triggerBody()?['file']",
-                  "table": "@triggerBody()?['table']",
-                  "item": "@triggerBody()?['item']",
-                  "dateTimeFormat": "@triggerBody()?['dateTimeFormat']"
+                  "dataset": "@triggerBody()?['dataset']"
                 },
                 "authentication": null
               }

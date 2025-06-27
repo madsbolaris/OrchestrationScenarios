@@ -76,9 +76,18 @@ public sealed class CreateSummaryStep(
         {
             doc.Summary = summaryNode.GetString();
         }
+        else
+        {
+            doc.Summary = string.Empty;
+        }
+
         if (operationObject.TryGetProperty("description", out var descriptionNode))
         {
             doc.Description = descriptionNode.GetString();
+        }
+        else
+        {
+            doc.Description = string.Empty;
         }
 
         workingFlowDefinitionService.UpdateCurrentFlowDefinition(d =>
