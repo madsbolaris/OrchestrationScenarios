@@ -39,27 +39,33 @@
               "properties": {
                 "source": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\r\n              - \u0022me\u0022\r\n              - \u0022SharePoint Site URL\u0022\r\n              - \u0022users/someone\u0027s UPN\u0022\r\n              - \u0022groups/group Id\u0022\r\n              - \u0022sites/SharePoint Site URL:/teams/team name:\u0022 (colons are required)."
+                  "description": "Select from the drop-down or specify one of the following:\r\n              - \u0022me\u0022\r\n              - \u0022SharePoint Site URL\u0022\r\n              - \u0022users/someone\u0027s UPN\u0022\r\n              - \u0022groups/group Id\u0022\r\n              - \u0022sites/SharePoint Site URL:/teams/team name:\u0022 (colons are required).",
+                  "required": false
                 },
                 "drive": {
                   "type": "string",
-                  "description": "Select a document library from the drop-down."
+                  "description": "Select a document library from the drop-down.",
+                  "required": false
                 },
                 "file": {
                   "type": "string",
-                  "description": "Select an Excel file through File Browse."
+                  "description": "Select an Excel file through File Browse.",
+                  "required": false
                 },
                 "table": {
                   "type": "string",
-                  "description": "Select a table from the drop-down."
+                  "description": "Select a table from the drop-down.",
+                  "required": false
                 },
                 "item": {
                   "type": "object",
-                  "description": "Row to add into the specified Excel table."
+                  "description": "Row to add into the specified Excel table.",
+                  "required": false
                 },
                 "dateTimeFormat": {
                   "type": "string",
-                  "description": "DateTime Format."
+                  "description": "DateTime Format.",
+                  "required": false
                 }
               }
             },

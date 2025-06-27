@@ -171,7 +171,24 @@ public class AgentSynchronizerService(ServiceClient svc, IOptions<DataverseSetti
             ["authenticationmode"] = new OptionSetValue(2),
             ["authenticationtrigger"] = new OptionSetValue(1),
             ["template"] = "default-2.1.0",
-            ["configuration"] = config
+            ["configuration"] = """
+            {
+                "$kind": "BotConfiguration",
+                "settings": {
+                    "GenerativeActionsEnabled": true
+                },
+                "aISettings": {
+                    "$kind": "AISettings",
+                    "useModelKnowledge": true,
+                    "isFileAnalysisEnabled": true,
+                    "isSemanticSearchEnabled": true,
+                    "optInUseLatestModels": false
+                },
+                "recognizer": {
+                    "$kind": "GenerativeAIRecognizer"
+                }
+            }
+            """
         };
 
         Guid botId;

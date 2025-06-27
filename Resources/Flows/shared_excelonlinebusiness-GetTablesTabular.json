@@ -39,7 +39,8 @@
               "properties": {
                 "dataset": {
                   "type": "string",
-                  "description": "Dataset."
+                  "description": "Dataset.",
+                  "required": false
                 }
               }
             },

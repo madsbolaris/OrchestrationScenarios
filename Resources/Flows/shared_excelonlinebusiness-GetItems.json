@@ -39,47 +39,58 @@
               "properties": {
                 "source": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\r\n            - \u0022me\u0022\r\n            - \u0022SharePoint Site URL\u0022\r\n            - \u0022users/someone\u0027s UPN\u0022\r\n            - \u0022groups/group Id\u0022\r\n            - \u0022sites/SharePoint Site URL:/teams/team name:\u0022 (the colons are required)"
+                  "description": "Select from the drop-down or specify one of the following:\r\n            - \u0022me\u0022\r\n            - \u0022SharePoint Site URL\u0022\r\n            - \u0022users/someone\u0027s UPN\u0022\r\n            - \u0022groups/group Id\u0022\r\n            - \u0022sites/SharePoint Site URL:/teams/team name:\u0022 (the colons are required)",
+                  "required": false
                 },
                 "drive": {
                   "type": "string",
-                  "description": "Select a document library from the drop-down."
+                  "description": "Select a document library from the drop-down.",
+                  "required": false
                 },
                 "file": {
                   "type": "string",
-                  "description": "Select an Excel file through File Browse."
+                  "description": "Select an Excel file through File Browse.",
+                  "required": false
                 },
                 "table": {
                   "type": "string",
-                  "description": "Select a table from the drop-down."
+                  "description": "Select a table from the drop-down.",
+                  "required": false
                 },
                 "$filter": {
                   "type": "string",
-                  "description": "An ODATA filter query to restrict the entries returned."
+                  "description": "An ODATA filter query to restrict the entries returned.",
+                  "required": false
                 },
                 "$orderby": {
                   "type": "string",
-                  "description": "An ODATA orderBy query for specifying the order of entries."
+                  "description": "An ODATA orderBy query for specifying the order of entries.",
+                  "required": false
                 },
                 "$top": {
                   "type": "integer",
-                  "description": "Total number of entries to retrieve (default = all)."
+                  "description": "Total number of entries to retrieve (default = all).",
+                  "required": false
                 },
                 "$skip": {
                   "type": "integer",
-                  "description": "The number of entries to skip (default = 0)."
+                  "description": "The number of entries to skip (default = 0).",
+                  "required": false
                 },
                 "$select": {
                   "type": "string",
-                  "description": "Comma-separated list of columns to retrieve (first 500 by default)."
+                  "description": "Comma-separated list of columns to retrieve (first 500 by default).",
+                  "required": false
                 },
                 "idColumn": {
                   "type": "string",
-                  "description": "Select a column from the drop-down."
+                  "description": "Select a column from the drop-down.",
+                  "required": false
                 },
                 "dateTimeFormat": {
                   "type": "string",
-                  "description": "DateTime Format."
+                  "description": "DateTime Format.",
+                  "required": false
                 }
               }
             },

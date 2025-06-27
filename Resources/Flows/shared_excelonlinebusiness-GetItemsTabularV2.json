@@ -39,35 +39,43 @@
               "properties": {
                 "dataset": {
                   "type": "string",
-                  "description": "Dataset."
+                  "description": "Dataset.",
+                  "required": false
                 },
                 "table": {
                   "type": "string",
-                  "description": "Table name."
+                  "description": "Table name.",
+                  "required": false
                 },
                 "pkColumn": {
                   "type": "string",
-                  "description": "PK column name."
+                  "description": "PK column name.",
+                  "required": false
                 },
                 "isGeneratedColumn": {
                   "type": "boolean",
-                  "description": "Is PK column generated."
+                  "description": "Is PK column generated.",
+                  "required": false
                 },
                 "$filter": {
                   "type": "string",
-                  "description": "An ODATA filter query to restrict the entries returned (e.g. stringColumn eq \u0027string\u0027 OR numberColumn lt 123)."
+                  "description": "An ODATA filter query to restrict the entries returned (e.g. stringColumn eq \u0027string\u0027 OR numberColumn lt 123).",
+                  "required": false
                 },
                 "$orderby": {
                   "type": "string",
-                  "description": "An ODATA orderBy query for specifying the order of entries."
+                  "description": "An ODATA orderBy query for specifying the order of entries.",
+                  "required": false
                 },
                 "$top": {
                   "type": "integer",
-                  "description": "Total number of entries to retrieve (default = all)."
+                  "description": "Total number of entries to retrieve (default = all).",
+                  "required": false
                 },
                 "$skip": {
                   "type": "integer",
-                  "description": "The number of entries to skip (default = 0)."
+                  "description": "The number of entries to skip (default = 0).",
+                  "required": false
                 }
               }
             },

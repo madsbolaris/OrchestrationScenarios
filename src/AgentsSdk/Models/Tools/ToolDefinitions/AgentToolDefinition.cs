@@ -43,6 +43,8 @@ public class AgentToolDefinitionConverter : JsonConverter<AgentToolDefinition>
         return type switch
         {
             "Microsoft.BingGrounding" => JsonSerializer.Deserialize<BingGroundingToolDefinition>(json, options),
+            _ when type.StartsWith("Microsoft.PowerPlatform") =>
+                new PowerPlatformToolDefinition(type),
             // Add more tool definitions here
             _ => throw new JsonException($"Unknown tool type '{type}'")
         };

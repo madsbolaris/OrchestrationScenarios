@@ -39,31 +39,38 @@
               "properties": {
                 "source": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\r\n              - \u0022me\u0022\r\n              - \u0022SharePoint Site URL\u0022\r\n              - \u0022users/someone\u0027s UPN\u0022\r\n              - \u0022groups/group Id\u0022\r\n              - \u0022sites/SharePoint Site URL:/teams/team name:\u0022 (colons are required)."
+                  "description": "Select from the drop-down or specify one of the following:\r\n              - \u0022me\u0022\r\n              - \u0022SharePoint Site URL\u0022\r\n              - \u0022users/someone\u0027s UPN\u0022\r\n              - \u0022groups/group Id\u0022\r\n              - \u0022sites/SharePoint Site URL:/teams/team name:\u0022 (colons are required).",
+                  "required": false
                 },
                 "drive": {
                   "type": "string",
-                  "description": "Select a document library from the drop-down."
+                  "description": "Select a document library from the drop-down.",
+                  "required": false
                 },
                 "file": {
                   "type": "string",
-                  "description": "Select an Excel workbook through File Browse."
+                  "description": "Select an Excel workbook through File Browse.",
+                  "required": false
                 },
                 "scriptSource": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\r\n            - \u0022me\u0022\r\n            - \u0022SharePoint Site URL\u0022\r\n            - \u0022users/someone\u0027s UPN\u0022\r\n            - \u0022groups/group Id\u0022\r\n            - \u0022sites/SharePoint Site URL:/teams/team name:\u0022 (the colons are required)."
+                  "description": "Select from the drop-down or specify one of the following:\r\n            - \u0022me\u0022\r\n            - \u0022SharePoint Site URL\u0022\r\n            - \u0022users/someone\u0027s UPN\u0022\r\n            - \u0022groups/group Id\u0022\r\n            - \u0022sites/SharePoint Site URL:/teams/team name:\u0022 (the colons are required).",
+                  "required": false
                 },
                 "scriptDrive": {
                   "type": "string",
-                  "description": "Select the SharePoint library of your Office Script file (.osts) from the drop-down."
+                  "description": "Select the SharePoint library of your Office Script file (.osts) from the drop-down.",
+                  "required": false
                 },
                 "scriptId": {
                   "type": "string",
-                  "description": "Select an Office Script file (.osts) in a SharePoint library from the drop-down."
+                  "description": "Select an Office Script file (.osts) in a SharePoint library from the drop-down.",
+                  "required": false
                 },
                 "ScriptParameters": {
                   "type": "object",
-                  "description": "Provide parameters for the Office Script."
+                  "description": "Provide parameters for the Office Script.",
+                  "required": false
                 }
               }
             },

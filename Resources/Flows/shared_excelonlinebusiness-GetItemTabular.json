@@ -39,23 +39,28 @@
               "properties": {
                 "dataset": {
                   "type": "string",
-                  "description": "Dataset."
+                  "description": "Dataset.",
+                  "required": false
                 },
                 "table": {
                   "type": "string",
-                  "description": "Table name."
+                  "description": "Table name.",
+                  "required": false
                 },
                 "pkColumn": {
                   "type": "string",
-                  "description": "PK column name."
+                  "description": "PK column name.",
+                  "required": false
                 },
                 "id": {
                   "type": "string",
-                  "description": "Unique identifier of row to retrieve."
+                  "description": "Unique identifier of row to retrieve.",
+                  "required": false
                 },
                 "isGeneratedColumn": {
                   "type": "boolean",
-                  "description": "Is PK column generated."
+                  "description": "Is PK column generated.",
+                  "required": false
                 }
               }
             },

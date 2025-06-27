@@ -37,6 +37,8 @@ namespace FlowCreator.Models
 
             [JsonPropertyName("description")]
             public string? Description { get; set; }
+            [JsonPropertyName("required")]
+            public bool Required { get; set; } = false;
         }
 
 

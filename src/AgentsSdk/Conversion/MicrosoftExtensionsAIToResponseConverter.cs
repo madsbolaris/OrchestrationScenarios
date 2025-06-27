@@ -1,21 +1,22 @@
 namespace AgentsSdk.Conversion;
 
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.AI;
 using OpenAI.Responses;
 
 internal static class MicrosoftExtensionsAIToResponseConverter
 {
-    public static ResponseTool Convert(AIFunction function) => ConvertFunction(function);
+    public static ResponseTool Convert(AIFunction function, JsonNode parameters) => ConvertFunction(function, parameters);
 
     public static IEnumerable<ResponseItem> Convert(ChatMessage message) => ConvertChatMessage(message);
 
-    private static ResponseTool ConvertFunction(AIFunction function)
+    private static ResponseTool ConvertFunction(AIFunction function, JsonNode parameters)
     {
         return ResponseTool.CreateFunctionTool(
             function.Name,
             function.Description,
-            BinaryData.FromString(function.JsonSchema.GetRawText())
+            BinaryData.FromString(parameters.ToJsonString())
         );
     }
 

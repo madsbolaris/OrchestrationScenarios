@@ -39,11 +39,13 @@
               "properties": {
                 "dataset": {
                   "type": "string",
-                  "description": "Dataset."
+                  "description": "Dataset.",
+                  "required": false
                 },
                 "table": {
                   "type": "string",
-                  "description": "Table name."
+                  "description": "Table name.",
+                  "required": false
                 }
               }
             },

@@ -24,6 +24,17 @@
       "stopAtEntry": false
     },
     {
+      "name": "Scenario Runner: Excel - Get row",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-scenario-runner",
+      "program": "${workspaceFolder}/src/ScenarioRunner/bin/Debug/net9.0/ScenarioRunner.dll",
+      "args": ["excel-getRow"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
       "name": "Agent Synchronizer: Sync Scenarios",
       "type": "coreclr",
       "request": "launch",

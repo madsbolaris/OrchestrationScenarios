@@ -6,8 +6,8 @@ using AgentsSdk.Models.Tools.ToolDefinitions.BingGrounding;
 using AgentsSdk.Models.Agents.Models.OpenAI;
 using AgentsSdk.Models.Tools.ToolDefinitions.Function;
 using AgentsSdk.Models.Tools.ToolDefinitions;
-using AgentsSdk.Models.Scenarios;
 using AgentsSdk.Parsing;
+using ScenarioRunner.Models;
 
 namespace ScenarioRunner;
 
@@ -28,38 +28,15 @@ public static class ScenarioLoader
         // Deserialize YAML
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
+            .WithTypeConverter(new AgentYamlConverter())
             .Build();
 
         var header = deserializer.Deserialize<ScenarioHeader>(yaml);
-
-
-        // Create agent
-        var agent = new Agent
-        {
-            DisplayName = header.Agent.Name,
-            Description = header.Agent.Description,
-            Model = new OpenAIAgentModel() { Id = header.Agent.Model },
-            Tools = header.Agent.Tools?.Select(t =>
-            {
-                return (AgentToolDefinition)(t.Name switch
-                {
-                    "Microsoft.BingGrounding.Search" => new BingGroundingToolDefinition(),
-                    _ => (object)new FunctionToolDefinition
-                    {
-                        Name = t.Name,
-                        Description = t.Description,
-                        Method = toolMethods.TryGetValue(t.Name, out var method)
-                            ? method
-                            : throw new InvalidOperationException($"No method found for tool '{t.Name}'")
-                    },
-                });
-            }).ToList()
-        };
-
+        
         // Parse messages
         var messages = PromptXmlParser.Parse(xml);
 
-        return (agent, messages);
+        return (header.Agent, messages);
     }
 
     private static string JoinWithDelimiter(this string[] parts, string delimiter) =>

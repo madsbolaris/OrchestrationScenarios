@@ -122,14 +122,16 @@ public sealed class CreateTriggerStep(
                     }
                 }
 
+                var required = param.TryGetProperty("required", out var requiredNode) &&
+                            requiredNode.ValueKind == JsonValueKind.True;
+
                 schema.Properties[name] = new SchemaDefinition.SchemaProperty
                 {
                     Type = type,
-                    Description = description
+                    Description = description,
+                    Required = required
                 };
             }
-
-
         }
 
         doc.InputSchema = schema;

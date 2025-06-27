@@ -209,19 +209,30 @@ public class FlowSynchronizerService(ServiceClient svc, IOptions<DataverseSettin
     {
         var originalJson = await File.ReadAllTextAsync(filePath);
         using var doc = JsonDocument.Parse(originalJson);
-        var root = doc.RootElement.Clone();
+        var root = doc.RootElement;
 
+        // If callbackUrl already exists and matches, skip update
+        if (root.TryGetProperty("callbackUrl", out var existingCallback))
+        {
+            if (existingCallback.GetString() == callbackUrl)
+            {
+                return; // Already present and correct
+            }
+        }
+
+        // Otherwise, rewrite the file with updated callbackUrl
         using var ms = new MemoryStream();
         using (var writer = new Utf8JsonWriter(ms, new JsonWriterOptions { Indented = true }))
         {
             writer.WriteStartObject();
 
-            // Inject callbackUrl
+            // Always write the callbackUrl first
             writer.WriteString("callbackUrl", callbackUrl);
 
-            // Copy all original properties
+            // Copy over all other properties except the existing callbackUrl (if any)
             foreach (var prop in root.EnumerateObject())
             {
+                if (prop.NameEquals("callbackUrl")) continue;
                 prop.WriteTo(writer);
             }
 
