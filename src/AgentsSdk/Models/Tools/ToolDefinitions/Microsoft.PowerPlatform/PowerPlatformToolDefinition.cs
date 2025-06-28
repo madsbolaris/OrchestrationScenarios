@@ -26,7 +26,7 @@ public class PowerPlatformToolDefinition : FunctionToolDefinition
 
         var flowFilePath = Path.Combine(
             Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "Resources", "Flows")),
-            $"shared_{apiName}-{operationId}.json");
+            $"{type}.json");
 
         if (!File.Exists(flowFilePath))
         {

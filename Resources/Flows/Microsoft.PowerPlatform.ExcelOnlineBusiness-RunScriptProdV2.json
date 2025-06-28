@@ -1,5 +1,5 @@
 {
-  "callbackUrl": "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/26c936d685d54478b0520b93b6d3b642/triggers/manual/paths/invoke/?api-version=1\u0026tenantId=tId\u0026environmentName=5a7d35b7-29b3-e0ec-a289-8fd0ce3aab0a\u0026sp=%2Ftriggers%2Fmanual%2Frun\u0026sv=1.0\u0026sig=0oDzNjoNIzRVa69fztUCygnVlJo8wG7UlBzt2cvyKBY",
+  "callbackUrl": "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/a36bafbb83f34ff2affb41debd4d7913/triggers/manual/paths/invoke/?api-version=1\u0026tenantId=tId\u0026environmentName=5a7d35b7-29b3-e0ec-a289-8fd0ce3aab0a\u0026sp=%2Ftriggers%2Fmanual%2Frun\u0026sv=1.0\u0026sig=MGrqmq-iE3P6FP7oWgPypNK99krsvLEtVv5iXvHYzi0",
   "schemaVersion": "1.0.0.0",
   "properties": {
     "summary": "Run script from SharePoint library",

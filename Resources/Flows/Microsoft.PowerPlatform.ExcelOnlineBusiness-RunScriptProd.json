@@ -1,5 +1,5 @@
 {
-  "callbackUrl": "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/506d97a2186a4461a6c12a7055f5ab50/triggers/manual/paths/invoke/?api-version=1\u0026tenantId=tId\u0026environmentName=5a7d35b7-29b3-e0ec-a289-8fd0ce3aab0a\u0026sp=%2Ftriggers%2Fmanual%2Frun\u0026sv=1.0\u0026sig=bKWiyNsmp6gfflfiCSJC4wUet1LFfFAC085pGRYaxow",
+  "callbackUrl": "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ccd949b5c35c4c3c9bf41ddaf0600cfd/triggers/manual/paths/invoke/?api-version=1\u0026tenantId=tId\u0026environmentName=5a7d35b7-29b3-e0ec-a289-8fd0ce3aab0a\u0026sp=%2Ftriggers%2Fmanual%2Frun\u0026sv=1.0\u0026sig=OjD__Ut3nsEJ7rG3d0ngV07almkjuyvP1F4eKxcS6IY",
   "schemaVersion": "1.0.0.0",
   "properties": {
     "summary": "Run script",
