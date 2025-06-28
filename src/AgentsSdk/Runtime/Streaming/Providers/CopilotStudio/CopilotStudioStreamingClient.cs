@@ -1,12 +1,10 @@
-using Microsoft.Extensions.AI;
 using AgentsSdk.Models.Agents;
 using AgentsSdk.Models.Runs.Responses.StreamingUpdates;
 using Microsoft.Extensions.Options;
 using Microsoft.Agents.CopilotStudio.Client;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Core.Models;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
+using AgentsSdk.Models.Messages.Content;
 
 namespace AgentsSdk.Runtime.Streaming.Providers.CopilotStudio;
 
@@ -20,13 +18,13 @@ public sealed class CopilotStudioStreamingClient(
         List<Models.Messages.ChatMessage> messages,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        Dictionary<string, AIFunction> aiFunctions = [];
+        Dictionary<string, Microsoft.Extensions.AI.AIFunction> aiFunctions = [];
 
         var client = new CopilotClient(
             settings: new()
             {
                 EnvironmentId = settings.Value.EnvironmentId,
-                SchemaName = "mabolan_Agent-ExcelOnlineBusiness-GetItem"
+                SchemaName = $"{settings.Value.Prefix}_{agent.Name}"
             },
             httpClientFactory,
             logger
@@ -44,15 +42,16 @@ public sealed class CopilotStudioStreamingClient(
 
         conversationId ??= Guid.NewGuid().ToString();
 
-        var response = client.AskQuestionAsync("""
-            Give me the value of this row
-            - source: me
-            - drive: b!weWC2WCKw0Cpsgu5Y_wRbWkAT9ROadtMtivYyfycom8cje9vd6I7TKSmuFgFyOa3
-            - file: 01BDXC5B2PAD276RNNFRBJ7QSG7PLXA5G3
-            - table: {7768D97E-C6EB-4A6D-9D81-7FAF86AF1894}
-            - idColumn: ID
-            - id: 1
-            """, conversationId, cancellationToken);
+        // check that first message is a user message
+        if (messages.Count == 0 || messages.First() is not Models.Messages.Types.UserMessage)
+        {
+            throw new InvalidOperationException("The first message must be a user message.");
+        }
+
+        var response = client.AskQuestionAsync(
+            string.Join("\n", messages.First().Content.Where(content => content is TextContent).Select(content => ((TextContent)content).Text)),
+            conversationId,
+            cancellationToken);
 
         await foreach (var update in CopilotStudioStreamingProcessor.ProcessAsync(
             response,

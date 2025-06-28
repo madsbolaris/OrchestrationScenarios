@@ -19,7 +19,7 @@ public class ScenarioRunnerService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var scenarios = _provider.GetServices<IScenario>().ToList();
+        var scenarios = _provider.GetServices<IScenario>().OrderBy(s => s.Name).ToList();
 
         Application.Init();
 

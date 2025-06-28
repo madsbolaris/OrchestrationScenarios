@@ -12,6 +12,7 @@ namespace AgentsSdk.Models.Agents;
 [JsonConverter(typeof(BaseAgentConverter<BaseAgent>))]
 public class BaseAgent
 {
+    public string? Name { get; set; } = default!;
     public string? DisplayName { get; set; } = default!;
     public string? Description { get; set; }
     public AgentModel Model { get; set; } = default!;
@@ -38,7 +39,8 @@ public class BaseAgentConverter<T> : JsonConverter<T> where T : BaseAgent, new()
 
         var agent = new T
         {
-            DisplayName = root.GetProperty("name").GetString() ?? throw new JsonException("Missing required property 'name'"),
+            Name = root.GetProperty("name").GetString() ?? throw new JsonException("Missing required property 'name'"),
+            DisplayName = root.GetProperty("displayName").GetString() ?? null,
             Description = root.TryGetProperty("description", out var descProp) ? descProp.GetString() : null,
             Model = model,
             Instructions = ParseInstructions(root, options),
@@ -68,7 +70,10 @@ public class BaseAgentConverter<T> : JsonConverter<T> where T : BaseAgent, new()
     {
         writer.WriteStartObject();
 
-        writer.WriteString("name", value.DisplayName);
+        writer.WriteString("name", value.Name);
+        
+        if (!string.IsNullOrWhiteSpace(value.DisplayName))
+            writer.WriteString("displayName", value.DisplayName);
 
         if (!string.IsNullOrWhiteSpace(value.Description))
             writer.WriteString("description", value.Description);

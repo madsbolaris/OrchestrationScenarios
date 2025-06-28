@@ -240,92 +240,135 @@ public class AgentSynchronizerService(ServiceClient svc, IOptions<DataverseSetti
             Console.WriteLine($"Deleted existing topic before update: {topic.Id}");
         }
 
-        foreach (var toolType in toolTypes)
+        if (root.Children.TryGetValue(new YamlScalarNode("tools"), out var toolsNodeYaml) &&
+            toolsNodeYaml is YamlSequenceNode toolsSequence)
         {
-            var flowPath = Path.Combine("Resources", "Flows", $"{toolType}.json");
-
-            if (!File.Exists(flowPath))
-                throw new FileNotFoundException($"Flow definition not found for tool: {toolType}");
-
-            using var stream = File.OpenRead(flowPath);
-            using var doc = await JsonDocument.ParseAsync(stream);
-            var props = doc.RootElement.GetProperty("properties");
-
-            var summary = props.GetProperty("summary").GetString()!;
-            var toolDesc = props.GetProperty("description").GetString()!;
-            var connRefs = props.GetProperty("connectionReferences").EnumerateObject().First();
-            var connectionLogicalName = connRefs.Value.GetProperty("connection").GetProperty("connectionReferenceLogicalName").GetString()!;
-            var operationId = props
-                .GetProperty("definition")
-                .GetProperty("actions")
-                .GetProperty("try")
-                .GetProperty("actions")
-                .GetProperty("action")
-                .GetProperty("inputs")
-                .GetProperty("host")
-                .GetProperty("operationId")
-                .GetString()!;
-
-            var topicSchema = $"{schemaName}.{toolType}";
-            var topicName = $"{botName}.{toolType}";
-
-            var topicQuery = new QueryExpression("botcomponent")
+            foreach (var toolYaml in toolsSequence.OfType<YamlMappingNode>())
             {
-                ColumnSet = new ColumnSet("botcomponentid"),
-                Criteria = { Conditions = { new ConditionExpression("schemaname", ConditionOperator.Equal, topicSchema) } }
-            };
+                if (!toolYaml.Children.TryGetValue(new YamlScalarNode("type"), out var typeNode) || typeNode is not YamlScalarNode typeScalar)
+                    continue;
 
-            var topicResult = await svc.RetrieveMultipleAsync(topicQuery);
-            var topic = new Entity("botcomponent")
-            {
-                ["schemaname"] = topicSchema,
-                ["name"] = topicName,
-                ["componenttype"] = new OptionSetValue(9),
-                ["parentbotid"] = new EntityReference("bot", botId),
-                ["language"] = new OptionSetValue(1033),
-                ["data"] = $"""
-                    kind: TaskDialog
-                    modelDisplayName: {summary}
-                    modelDescription: {toolDesc}
-                    outputs:
-                      - propertyName: Response
+                var toolType = typeScalar.Value!;
+                var flowPath = Path.Combine("Resources", "Flows", $"{toolType}.json");
 
-                    action:
-                        kind: InvokeConnectorTaskAction
-                        connectionReference: {connectionLogicalName}
-                        connectionProperties:
+                if (!File.Exists(flowPath))
+                    throw new FileNotFoundException($"Flow definition not found for tool: {toolType}");
+
+                using var stream = File.OpenRead(flowPath);
+                using var doc = await JsonDocument.ParseAsync(stream);
+                var props = doc.RootElement.GetProperty("properties");
+
+                var summary = props.GetProperty("summary").GetString()!;
+                var toolDesc = props.GetProperty("description").GetString()!;
+                var connRefs = props.GetProperty("connectionReferences").EnumerateObject().First();
+                var connectionLogicalName = connRefs.Value.GetProperty("connection").GetProperty("connectionReferenceLogicalName").GetString()!;
+                var operationId = props
+                    .GetProperty("definition")
+                    .GetProperty("actions")
+                    .GetProperty("try")
+                    .GetProperty("actions")
+                    .GetProperty("action")
+                    .GetProperty("inputs")
+                    .GetProperty("host")
+                    .GetProperty("operationId")
+                    .GetString()!;
+
+                // Construct ManualTaskInput blocks if inputs are provided
+                var inputLines = new List<string>();
+                if (toolYaml.Children.TryGetValue(new YamlScalarNode("inputs"), out var inputsNode) && inputsNode is YamlSequenceNode inputsSeq)
+                {
+                    foreach (var inputEntry in inputsSeq.OfType<YamlMappingNode>())
+                    {
+                        var prop = inputEntry[new YamlScalarNode("name")]?.ToString();
+
+                        var val = inputEntry.Children
+                            .FirstOrDefault(kvp => kvp.Key is YamlScalarNode key && key.Value == "value")
+                            .Value?.ToString();
+
+                        val ??= inputEntry.Children
+                                .FirstOrDefault(kvp => kvp.Key is YamlScalarNode key && key.Value == "default")
+                                .Value?.ToString();
+
+                        if (!string.IsNullOrWhiteSpace(prop) && val != null)
+                        {
+                            inputLines.Add($"""
+                                  - kind: ManualTaskInput
+                                    propertyName: {prop}
+                                    value: "{val}"
+                                
+                                """);
+                        }
+                    }
+                }
+
+                var inputsYaml = inputLines.Count > 0
+                    ? $"inputs:\n{string.Join("\n", inputLines)}"
+                    : "";
+
+                var topicSchema = $"{schemaName}.{toolType}";
+                var topicName = $"{botName}.{toolType}";
+
+                var topic = new Entity("botcomponent")
+                {
+                    ["schemaname"] = topicSchema,
+                    ["name"] = topicName,
+                    ["componenttype"] = new OptionSetValue(9),
+                    ["parentbotid"] = new EntityReference("bot", botId),
+                    ["language"] = new OptionSetValue(1033),
+                    ["data"] = $"""
+                        kind: TaskDialog
+                        {inputsYaml}
+                        modelDisplayName: {summary}
+                        modelDescription: {toolDesc}
+                        outputs:
+                          - propertyName: Response
+
+                        action:
+                          kind: InvokeConnectorTaskAction
+                          connectionReference: {connectionLogicalName}
+                          connectionProperties:
                             mode: Invoker
 
-                        operationId: {operationId}
+                          operationId: {operationId}
 
-                    outputMode: All
-                    """,
-                ["statecode"] = new OptionSetValue(0),
-                ["statuscode"] = new OptionSetValue(1)
-            };
+                        outputMode: All
+                        """,
+                    ["statecode"] = new OptionSetValue(0),
+                    ["statuscode"] = new OptionSetValue(1)
+                };
 
-            Guid topicId;
-            if (topicResult.Entities.Count > 0)
-            {
-                topic.Id = topicResult.Entities[0].Id;
-                await svc.UpdateAsync(topic);
-                topicId = topic.Id;
-            }
-            else
-            {
-                topicId = await svc.CreateAsync(topic);
-                await svc.ExecuteAsync(new AddSolutionComponentRequest
+                var topicQuery = new QueryExpression("botcomponent")
                 {
-                    ComponentId = topicId,
-                    ComponentType = 10186,
-                    SolutionUniqueName = _dataverseSettings.AgentSolution
-                });
-            }
+                    ColumnSet = new ColumnSet("botcomponentid"),
+                    Criteria = { Conditions = { new ConditionExpression("schemaname", ConditionOperator.Equal, topicSchema) } }
+                };
 
-            var connId = GetConnectionReferenceIdByLogicalName(connectionLogicalName);
-            var relationship = new Relationship("botcomponent_connectionreference");
-            await svc.AssociateAsync("botcomponent", topicId, relationship, [new EntityReference("connectionreference", connId)]);
+                var topicResult = await svc.RetrieveMultipleAsync(topicQuery);
+
+                Guid topicId;
+                if (topicResult.Entities.Count > 0)
+                {
+                    topic.Id = topicResult.Entities[0].Id;
+                    await svc.UpdateAsync(topic);
+                    topicId = topic.Id;
+                }
+                else
+                {
+                    topicId = await svc.CreateAsync(topic);
+                    await svc.ExecuteAsync(new AddSolutionComponentRequest
+                    {
+                        ComponentId = topicId,
+                        ComponentType = 10186,
+                        SolutionUniqueName = _dataverseSettings.AgentSolution
+                    });
+                }
+
+                var connId = GetConnectionReferenceIdByLogicalName(connectionLogicalName);
+                var relationship = new Relationship("botcomponent_connectionreference");
+                await svc.AssociateAsync("botcomponent", topicId, relationship, [new EntityReference("connectionreference", connId)]);
+            }
         }
+
 
         return botId;
     }

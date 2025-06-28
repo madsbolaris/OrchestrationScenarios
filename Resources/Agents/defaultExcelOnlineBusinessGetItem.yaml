@@ -1,0 +1,6 @@
+name: "defaultExcelOnlineBusinessGetItem"
+displayName: "Default Excel Online Business Get Item Agent"
+description: "An agent that retrieves a specific row from an Excel Online Business spreadsheet; the spreadsheet and tables are hardcoded in the agent definition."
+model: "gpt-4.1"
+tools:
+- type: "Microsoft.PowerPlatform.ExcelOnlineBusiness-GetItem"
