@@ -32,9 +32,17 @@ public sealed class CopilotStudioStreamingClient(
             logger
         );
 
+        string? conversationId = null;
+
         await foreach (var _ in client.StartConversationAsync(false, cancellationToken))
         {
+            if (_.Conversation is not null)
+            {
+                conversationId = _.Conversation.Id;
+            }
         }
+
+        conversationId ??= Guid.NewGuid().ToString();
 
         var response = client.AskQuestionAsync("""
             Give me the value of this row
@@ -44,12 +52,11 @@ public sealed class CopilotStudioStreamingClient(
             - table: {7768D97E-C6EB-4A6D-9D81-7FAF86AF1894}
             - idColumn: ID
             - id: 1
-            """, "fa599c0b-8d6c-4188-abd8-f345fac7cf0b", cancellationToken);
-        var conversationId = messages.FirstOrDefault()?.ConversationId ?? Guid.NewGuid().ToString();
+            """, conversationId, cancellationToken);
 
         await foreach (var update in CopilotStudioStreamingProcessor.ProcessAsync(
             response,
-            conversationId,
+            conversationId!,
             messages))
         {
             yield return update;

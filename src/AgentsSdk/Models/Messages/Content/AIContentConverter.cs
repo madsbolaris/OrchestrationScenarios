@@ -5,6 +5,7 @@ namespace AgentsSdk.Models.Messages.Content;
 
 public abstract class AIContent
 {
+    [JsonPropertyName("type")]
     public abstract string Type { get; }
 }
 

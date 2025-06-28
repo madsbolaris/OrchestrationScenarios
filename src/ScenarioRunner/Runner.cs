@@ -1,4 +1,6 @@
 using AgentsSdk.Models.Agents;
+using AgentsSdk.Models.Messages;
+using AgentsSdk.Models.Runs.Responses.StreamingUpdates;
 using AgentsSdk.Runtime;
 using AgentsSdk.Runtime.Streaming.Providers.CopilotStudio;
 using AgentsSdk.Runtime.Streaming.Providers.OpenAI;
@@ -15,7 +17,7 @@ public class Runner : IScenario
     private readonly Dictionary<string, Delegate> _tools;
 
     private Agent? _agent;
-    private List<AgentsSdk.Models.Messages.ChatMessage>? _messages;
+    private List<ChatMessage>? _messages;
 
     public string Name => _name;
 
@@ -37,15 +39,19 @@ public class Runner : IScenario
         }
     }
 
-    public async Task RunOpenAIAsync()
+    public IAsyncEnumerable<StreamingUpdate> RunOpenAIStream(CancellationToken cancellationToken = default)
     {
         EnsureLoaded();
-        await openAIClient.RunAsync(_agent!, _messages!);
+        var clonedMessages = _messages!.Select(m => m.Clone()).ToList();
+        return openAIClient.RunAsync(_agent!, clonedMessages, cancellationToken);
     }
 
-    public async Task RunCopilotStudioAsync()
+    public IAsyncEnumerable<StreamingUpdate> RunCopilotStudioStream(CancellationToken cancellationToken = default)
     {
         EnsureLoaded();
-        await copilotStudioClient.RunAsync(_agent!, _messages!);
+        var clonedMessages = _messages!.Select(m => m.Clone()).ToList();
+        return copilotStudioClient.RunAsync(_agent!, clonedMessages, cancellationToken);
     }
+
+
 }

@@ -14,12 +14,6 @@ namespace ScenarioRunner;
 
 class Program
 {
-    private static readonly AgentRunnerKey[] AgentRunnerKeys =
-    [
-        AgentRunnerKey.OpenAI,
-        AgentRunnerKey.CopilotStudio
-    ];
-
     public static async Task Main(string[] args)
     {
         var host = Host.CreateDefaultBuilder(args)

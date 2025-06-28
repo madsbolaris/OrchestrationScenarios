@@ -9,10 +9,30 @@ namespace AgentsSdk.Models.Messages;
 [JsonConverter(typeof(ChatMessageConverter))]
 public abstract class ChatMessage
 {
+    private static readonly JsonSerializerOptions CloneSerializerOptions = new()
+    {
+        Converters = { new ChatMessageConverter(), new AIContentConverter() },
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
+    [JsonPropertyName("messageId")]
     public string? MessageId { get; set; } = default!;
+
+    [JsonPropertyName("conversationId")]
     public string? ConversationId { get; set; } = default!;
+
+    [JsonPropertyName("content")]
     public List<AIContent> Content { get; set; } = default!;
+
+    [JsonPropertyName("createdAt")]
     public long? CreatedAt { get; set; }
+
+    public ChatMessage Clone()
+    {
+        var json = JsonSerializer.Serialize(this, CloneSerializerOptions);
+        return JsonSerializer.Deserialize<ChatMessage>(json, CloneSerializerOptions)!;
+    }
 }
 
 
@@ -138,4 +158,5 @@ public class ChatMessageConverter : JsonConverter<ChatMessage>
 
         writer.WriteEndObject();
     }
+
 }

@@ -24,55 +24,56 @@ namespace Common
         {
             ArgumentNullException.ThrowIfNull(settings);
 
-            ConnectionSettings connectionSettings = new()
-            {
-                Cloud = Microsoft.Agents.CopilotStudio.Client.Discovery.PowerPlatformCloud.Prod,
-                DirectConnectUrl = "",
-                EnvironmentId = settings.EnvironmentId
-            };
-
-            // Gets the correct scope for connecting to Copilot Studio based on the settings provided. 
-            string[] scopes = [CopilotClient.ScopeFromSettings(connectionSettings)];
-
-            // Setup a Public Client application for authentication.
-            IPublicClientApplication app = PublicClientApplicationBuilder.Create(settings.ClientId)
-                 .WithAuthority(AadAuthorityAudience.AzureAdMyOrg)
-                 .WithTenantId(settings.TenantId)
-                 .WithRedirectUri("http://localhost")
-                 .Build();
-
-            string currentDir = Path.Combine(AppContext.BaseDirectory, "mcs_client_console");
-
-            if (!Directory.Exists(currentDir))
-            {
-                Directory.CreateDirectory(currentDir);
-            }
-
-            StorageCreationPropertiesBuilder storageProperties = new("TokenCache", currentDir);
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                storageProperties.WithLinuxUnprotectedFile();
-            }
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                storageProperties.WithMacKeyChain(_keyChainServiceName, _keyChainAccountName);
-            }
-            MsalCacheHelper tokenCacheHelper = await MsalCacheHelper.CreateAsync(storageProperties.Build());
-            tokenCacheHelper.RegisterCache(app.UserTokenCache);
-
-            IAccount? account = (await app.GetAccountsAsync()).FirstOrDefault();
-
-            AuthenticationResult authResponse;
             try
             {
-                authResponse = await app.AcquireTokenSilent(scopes, account).ExecuteAsync(ct);
+                ConnectionSettings connectionSettings = new()
+                {
+                    Cloud = Microsoft.Agents.CopilotStudio.Client.Discovery.PowerPlatformCloud.Prod,
+                    DirectConnectUrl = "",
+                    EnvironmentId = settings.EnvironmentId
+                };
+
+                string[] scopes = [CopilotClient.ScopeFromSettings(connectionSettings)];
+
+                IPublicClientApplication app = PublicClientApplicationBuilder.Create(settings.ClientId)
+                    .WithAuthority(AadAuthorityAudience.AzureAdMyOrg)
+                    .WithTenantId(settings.TenantId)
+                    .WithRedirectUri("http://localhost")
+                    .Build();
+
+                string currentDir = Path.Combine(AppContext.BaseDirectory, "mcs_client_console");
+                if (!Directory.Exists(currentDir))
+                {
+                    Directory.CreateDirectory(currentDir);
+                }
+
+                StorageCreationPropertiesBuilder storageProperties = new("TokenCache", currentDir);
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    storageProperties.WithLinuxUnprotectedFile();
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    storageProperties.WithMacKeyChain(_keyChainServiceName, _keyChainAccountName);
+
+                MsalCacheHelper tokenCacheHelper = await MsalCacheHelper.CreateAsync(storageProperties.Build());
+                tokenCacheHelper.RegisterCache(app.UserTokenCache);
+
+                IAccount? account = (await app.GetAccountsAsync()).FirstOrDefault();
+
+                try
+                {
+                    return await app.AcquireTokenSilent(scopes, account).ExecuteAsync(ct);
+                }
+                catch (MsalUiRequiredException)
+                {
+                    return await app.AcquireTokenInteractive(scopes).ExecuteAsync(ct);
+                }
             }
-            catch (MsalUiRequiredException)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
-                authResponse = await app.AcquireTokenInteractive(scopes).ExecuteAsync(ct);
+                // Rethrow for upstream handler
+                throw;
             }
-            return authResponse;
         }
+
 
         /// <summary>
         /// Handles sending the request and adding the token to the request.
@@ -82,12 +83,22 @@ namespace Common
         /// <returns></returns>
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (request.Headers.Authorization is null)
+            try
             {
-                AuthenticationResult authResponse = await AuthenticateAsync(cancellationToken);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authResponse.AccessToken);
+                if (request.Headers.Authorization is null)
+                {
+                    AuthenticationResult authResponse = await AuthenticateAsync(cancellationToken);
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authResponse.AccessToken);
+                }
+
+                return await base.SendAsync(request, cancellationToken);
             }
-            return await base.SendAsync(request, cancellationToken);
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Rethrow to propagate cancellation correctly
+                throw;
+            }
         }
+
     }
 }

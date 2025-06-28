@@ -40,6 +40,27 @@
         "${workspaceFolder}/src/FlowSynchronizer/FlowSynchronizer.csproj"
       ],
       "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "reset-terminal",
+      "type": "shell",
+      "command": "reset",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": false,
+        "reveal": "never",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "prep-scenario-runner",
+      "dependsOn": [
+        "reset-terminal",
+        "reset-terminal",
+        "build-scenario-runner"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
     }
   ]
 }

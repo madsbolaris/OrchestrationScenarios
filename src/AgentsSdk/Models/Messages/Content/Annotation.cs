@@ -11,6 +11,7 @@ public class Annotation
     /// The ID of the tool call that produced the result being referenced by this annotation.
     /// Optional if the annotation references an external URL instead.
     /// </summary>
+    [JsonPropertyName("toolCallId")]
     public string? ToolCallId { get; set; }
 
     /// <summary>
@@ -25,15 +26,18 @@ public class Annotation
     /// A URL to an external resource that provides additional context or references the annotated content.
     /// Optional if referencing a tool call result.
     /// </summary>
+    [JsonPropertyName("url")]
     public string? Url { get; set; }
 
     /// <summary>
     /// The start index of the text span in the message content that this annotation applies to.
     /// </summary>
+    [JsonPropertyName("start")]
     public int? Start { get; set; }
 
     /// <summary>
     /// The end index of the text span in the message content that this annotation applies to.
     /// </summary>
+    [JsonPropertyName("end")]
     public int? End { get; set; }
 }

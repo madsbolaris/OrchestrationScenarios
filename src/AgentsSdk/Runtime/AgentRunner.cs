@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using AgentsSdk.Helpers;
 using AgentsSdk.Models.Agents;
 using AgentsSdk.Models.Messages;
@@ -11,19 +12,13 @@ namespace AgentsSdk.Runtime;
 
 public class AgentRunner<T>(T client) where T : IStreamingAgentClient
 {
-    public async Task RunAsync(Agent agent, List<ChatMessage> allMessages)
+    public IAsyncEnumerable<StreamingUpdate> RunAsync(Agent agent, List<ChatMessage> chatHistory, CancellationToken cancellationToken = default)
     {
-        var stream = GetStreamingUpdates(agent, allMessages);
-        await ConsoleRenderHelper.DisplayStreamAsync(stream);
-    }
+        return Stream(cancellationToken);
 
-    private IAsyncEnumerable<StreamingUpdate> GetStreamingUpdates(
-        Agent agent,
-        List<ChatMessage> messages)
-    {
-        return Stream();
-
-        async IAsyncEnumerable<StreamingUpdate> Stream()
+        async IAsyncEnumerable<StreamingUpdate> Stream(
+            [EnumeratorCancellation] CancellationToken cancellationToken = default
+        )
         {
             var prepended = false;
 
@@ -31,7 +26,7 @@ public class AgentRunner<T>(T client) where T : IStreamingAgentClient
             {
                 if (agent.Instructions != null && agent.Instructions.Count > 0)
                 {
-                    messages.InsertRange(0, agent.Instructions);
+                    chatHistory.InsertRange(0, agent.Instructions);
                     prepended = true;
                 }
 
@@ -39,7 +34,7 @@ public class AgentRunner<T>(T client) where T : IStreamingAgentClient
 
                 while (!done)
                 {
-                    await foreach (var update in client.RunStreamingAsync(agent, messages))
+                    await foreach (var update in client.RunStreamingAsync(agent, chatHistory, cancellationToken))
                     {
                         yield return update;
 
@@ -55,7 +50,7 @@ public class AgentRunner<T>(T client) where T : IStreamingAgentClient
             {
                 if (prepended)
                 {
-                    messages.RemoveRange(0, agent.Instructions!.Count);
+                    chatHistory.RemoveRange(0, agent.Instructions!.Count);
                 }
             }
         }
