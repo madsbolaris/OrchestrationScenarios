@@ -1,5 +1,8 @@
 using System.ComponentModel;
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using AgentsSdk.Conversion;
+using Microsoft.Extensions.AI;
 
 namespace AgentsSdk.Models.Tools.ToolDefinitions.Function;
 
@@ -45,11 +48,16 @@ public class FunctionToolDefinition : AgentToolDefinition
             methodInfo
         );
 
+        // Convert to AIFunction
+        var aiFunction = AIFunctionFactory.Create(methodDelegate, name, description);
+        var parameters = JsonNode.Parse(aiFunction.JsonSchema.GetRawText());
+
         return new FunctionToolDefinition
         {
             Name = name,
             Description = description,
-            Method = methodDelegate
+            Method = methodDelegate,
+            Parameters = parameters,
         };
     }
 }

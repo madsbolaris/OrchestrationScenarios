@@ -43,7 +43,7 @@ class Program
                 services.Configure<AaptConnectorsSettings>(context.Configuration.GetSection("AaptConnectors"));
                 services.Configure<DataverseSettings>(context.Configuration.GetSection("Dataverse"));
 
-                services.AddSingleton<IStreamingAgentClient, OpenAIStreamingClient>();
+                services.AddSingleton<OpenAIStreamingClient>();
                 services.AddSingleton<FlowDefinitionService>();
                 services.AddSingleton<CopilotFactory>();
                 services.AddSingleton<AgentRunner<OpenAIStreamingClient>>();

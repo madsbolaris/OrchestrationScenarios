@@ -5,6 +5,7 @@ using AgentsSdk.Models.Messages.Content;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using AgentsSdk.Models.Tools.ToolDefinitions;
+using AgentsSdk.Models.Tools.ToolDefinitions.Function;
 
 internal static class FunctionCallHelpers
 {
@@ -20,6 +21,7 @@ internal static class FunctionCallHelpers
 
         if (function.UnderlyingMethod!.GetParameters().Length == 1 &&
             function.UnderlyingMethod.GetParameters()[0].ParameterType == typeof(JsonNode) &&
+            function.UnderlyingMethod.GetParameters()[0].Name == "input" &&
             toolCall.Arguments is not null)
         {
             var jsonObject = new JsonObject();
@@ -51,6 +53,11 @@ internal static class FunctionCallHelpers
             if (tool.Type.EndsWith(toolCallName))
             {
                 return tool.Type;
+            }
+
+            if (tool is FunctionToolDefinition functionTool && functionTool.Name == toolCallName)
+            {
+                return functionTool.Name;
             }
         }
 
