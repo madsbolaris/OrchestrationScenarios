@@ -16,19 +16,18 @@ public class FlowDefinitionService
         foreach (var filePath in Directory.GetFiles(FlowDefinitionsDirectory, "*.json"))
         {
             var fileName = Path.GetFileNameWithoutExtension(filePath);
-            var parts = fileName.Split('.');
+            var parts = fileName.Split('-');
             if (parts.Length != 2)
                 continue;
 
-            var apiName = parts[0];
+            var rawApiName = parts[0];
             var operationId = parts[1];
 
             var json = File.ReadAllText(filePath);
             var definition = JsonSerializer.Deserialize<FlowDefinition>(json);
-
             if (definition != null)
             {
-                definition.ApiName = apiName;
+                definition.ApiName = ConvertToPublicApiName(rawApiName);
                 definition.OperationId = operationId;
                 yield return Clone(definition);
             }
@@ -37,7 +36,8 @@ public class FlowDefinitionService
 
     public FlowDefinition? GetFlowDefinition(string apiName, string operationId)
     {
-        var filePath = Path.Combine(FlowDefinitionsDirectory, $"{apiName}-{operationId}.json");
+        var internalApiName = ConvertToInternalApiName(apiName);
+        var filePath = Path.Combine(FlowDefinitionsDirectory, $"{internalApiName}-{operationId}.json");
         if (!File.Exists(filePath))
             return null;
 
@@ -78,7 +78,8 @@ public class FlowDefinitionService
 
     public bool DeleteFlowDefinition(string apiName, string operationId)
     {
-        var filePath = Path.Combine(FlowDefinitionsDirectory, $"{apiName}-{operationId}.json");
+        var internalApiName = ConvertToInternalApiName(apiName);
+        var filePath = Path.Combine(FlowDefinitionsDirectory, $"{internalApiName}-{operationId}.json");
         if (!File.Exists(filePath))
             return false;
 
@@ -88,7 +89,6 @@ public class FlowDefinitionService
 
     private bool TryPersistToDisk(FlowDefinition document)
     {
-        // Ensure all required properties are set before saving
         if (document.Summary == null ||
             document.Description == null ||
             string.IsNullOrWhiteSpace(document.ApiName) ||
@@ -102,7 +102,8 @@ public class FlowDefinitionService
         }
 
         Directory.CreateDirectory(FlowDefinitionsDirectory);
-        var filePath = Path.Combine(FlowDefinitionsDirectory, $"{document.ApiName}-{document.OperationId}.json");
+        var internalApiName = ConvertToInternalApiName(document.ApiName);
+        var filePath = Path.Combine(FlowDefinitionsDirectory, $"{internalApiName}-{document.OperationId}.json");
 
         var options = new JsonSerializerOptions
         {
@@ -119,10 +120,8 @@ public class FlowDefinitionService
         });
 
         JsonSerializer.Serialize(writer, document, options);
-
         return true;
     }
-
 
     private static FlowDefinition Clone(FlowDefinition source)
     {
@@ -138,5 +137,22 @@ public class FlowDefinitionService
             InputSchema = source.InputSchema.Clone(),
             ActionSchema = source.ActionSchema.Clone()
         };
+    }
+
+    private static string ConvertToInternalApiName(string apiName)
+    {
+        // E.g., shared_ExcelOnlineBusiness => Microsoft.PowerPlatform.ExcelOnlineBusiness
+        if (apiName.StartsWith("shared_"))
+            return "Microsoft.PowerPlatform." + apiName.Substring("shared_".Length);
+        return apiName;
+    }
+
+    private static string ConvertToPublicApiName(string internalApiName)
+    {
+        // E.g., Microsoft.PowerPlatform.ExcelOnlineBusiness => shared_ExcelOnlineBusiness
+        const string prefix = "Microsoft.PowerPlatform.";
+        if (internalApiName.StartsWith(prefix))
+            return "shared_" + internalApiName.Substring(prefix.Length);
+        return internalApiName;
     }
 }

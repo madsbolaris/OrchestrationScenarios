@@ -220,10 +220,29 @@ public class AgentSynchronizerService(ServiceClient svc, IOptions<DataverseSetti
             });
         }
 
+        // Delete all existing botcomponents for this bot
+        var existingTopicsQuery = new QueryExpression("botcomponent")
+        {
+            ColumnSet = new ColumnSet("botcomponentid"),
+            Criteria =
+            {
+                Conditions =
+                {
+                    new ConditionExpression("parentbotid", ConditionOperator.Equal, botId)
+                }
+            }
+        };
+
+        var existingTopics = await svc.RetrieveMultipleAsync(existingTopicsQuery);
+        foreach (var topic in existingTopics.Entities)
+        {
+            await svc.DeleteAsync("botcomponent", topic.Id);
+            Console.WriteLine($"Deleted existing topic before update: {topic.Id}");
+        }
+
         foreach (var toolType in toolTypes)
         {
-            var flowName = toolType.Replace("Microsoft.PowerPlatform.", "");
-            var flowPath = Path.Combine("Resources", "Flows", $"shared_{flowName}.json");
+            var flowPath = Path.Combine("Resources", "Flows", $"{toolType}.json");
 
             if (!File.Exists(flowPath))
                 throw new FileNotFoundException($"Flow definition not found for tool: {toolType}");
@@ -247,8 +266,8 @@ public class AgentSynchronizerService(ServiceClient svc, IOptions<DataverseSetti
                 .GetProperty("operationId")
                 .GetString()!;
 
-            var topicSchema = $"{schemaName}.{flowName}";
-            var topicName = $"{botName}.{flowName}";
+            var topicSchema = $"{schemaName}.{toolType}";
+            var topicName = $"{botName}.{toolType}";
 
             var topicQuery = new QueryExpression("botcomponent")
             {

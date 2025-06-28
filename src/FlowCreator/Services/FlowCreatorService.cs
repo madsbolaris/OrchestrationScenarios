@@ -20,7 +20,9 @@ public class FlowCreatorService(AgentRunner<OpenAIStreamingClient> runner, Copil
 
         while (true)
         {
-            await runner.RunAsync(copilot, messages);
+            var stream = runner.RunAsync(copilot, messages, cancellationToken);
+            await ConsoleRenderHelper.DisplayStreamAsync(stream);
+
             ConsoleRenderHelper.WriteTagOpen(typeof(UserMessage));
 
             string input = string.Empty;
