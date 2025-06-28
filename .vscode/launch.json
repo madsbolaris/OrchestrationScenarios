@@ -27,7 +27,7 @@
       "name": "Scenario Runner: Excel - Get row",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "prep-scenario-runner",
+      "preLaunchTask": "prepare-scenario-runner",
       "program": "${workspaceFolder}/src/ScenarioRunner/bin/Debug/net9.0/ScenarioRunner.dll",
       "args": ["excel-getRow"],
       "cwd": "${workspaceFolder}",

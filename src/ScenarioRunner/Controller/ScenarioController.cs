@@ -2,6 +2,7 @@ using Microsoft.Extensions.Hosting;
 using Terminal.Gui;
 using ScenarioRunner.Views;
 using ScenarioRunner.Helpers;
+using ScenarioRunner.Interfaces;
 
 namespace ScenarioRunner.Controllers;
 
@@ -46,16 +47,21 @@ public class ScenarioController
                 var selectedScenario = scenarios[args.Item];
                 top.Remove(win);
 
+                var streamWin = new Window()
+                {
+                    X = 0,
+                    Y = 1,
+                    Width = Dim.Fill(),
+                    Height = Dim.Fill()
+                };
+
                 var output = new StreamingOutputView
                 {
                     X = 0,
                     Y = 0,
                     Width = Dim.Fill(),
-                    Height = Dim.Fill()
+                    Height = Dim.Fill(1) // reserve space for button
                 };
-
-                top.Add(output);
-                Application.Refresh();
 
                 var backButton = new Button("Back")
                 {
@@ -72,33 +78,32 @@ public class ScenarioController
                         cts = null;
                     }
 
-                    top.Remove(output);
-                    top.Remove(backButton);
+                    top.Remove(streamWin);
                     ShowScenarioSelection();
                 };
 
-
-                top.Add(backButton);
+                streamWin.Add(output, backButton);
+                top.Add(streamWin);
                 Application.Refresh();
 
-                try
+                _ = Task.Run(async () =>
                 {
-                    var stream = selectedScenario.RunCopilotStudioStream(cts.Token);
-                    await TerminalRenderHelper.DisplayStreamAsync(stream, output);
-                }
-                catch (OperationCanceledException) { }
-                finally
-                {
-                    if (cts != null)
+                    try
                     {
-                        cts.Dispose();
-                        cts = null;
+                        var stream = selectedScenario.RunCopilotStudioStream(cts.Token);
+                        await TerminalRenderHelper.DisplayStreamAsync(stream, output);
                     }
-                }
+                    catch (OperationCanceledException) { }
+                    catch (Exception ex)
+                    {
+                        Application.MainLoop.Invoke(() => MessageBox.ErrorQuery("Error", ex.Message, "Ok"));
+                    }
+                });
+
             };
-            
+
             win.Add(listView);
-            Application.Top.Add(win);
+            top.Add(win);
             Application.Refresh();
             Application.MainLoop.Invoke(() => listView.SetFocus());
         }

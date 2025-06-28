@@ -1,6 +1,6 @@
 using AgentsSdk.Models.Runs.Responses.StreamingUpdates;
 
-namespace ScenarioRunner;
+namespace ScenarioRunner.Interfaces;
 
 public interface IScenario
 {

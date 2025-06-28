@@ -5,10 +5,12 @@ using AgentsSdk.Runtime;
 using AgentsSdk.Runtime.Streaming.Providers.CopilotStudio;
 using AgentsSdk.Runtime.Streaming.Providers.OpenAI;
 using Microsoft.Extensions.DependencyInjection;
+using ScenarioRunner.Helpers;
+using ScenarioRunner.Interfaces;
 
-namespace ScenarioRunner;
+namespace ScenarioRunner.Core;
 
-public class Runner : IScenario
+public class ScenarioRunner : IScenario
 {
     private readonly AgentRunner<OpenAIStreamingClient> openAIClient;
     private readonly AgentRunner<CopilotStudioStreamingClient> copilotStudioClient;
@@ -21,7 +23,7 @@ public class Runner : IScenario
 
     public string Name => _name;
 
-    public Runner(IServiceProvider sp, string name, string path, Dictionary<string, Delegate> tools)
+    public ScenarioRunner(IServiceProvider sp, string name, string path, Dictionary<string, Delegate> tools)
     {
         _name = name;
         _path = path;

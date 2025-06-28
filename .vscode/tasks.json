@@ -53,7 +53,7 @@
       }
     },
     {
-      "label": "prep-scenario-runner",
+      "label": "prepare-scenario-runner",
       "dependsOn": [
         "reset-terminal",
         "reset-terminal",

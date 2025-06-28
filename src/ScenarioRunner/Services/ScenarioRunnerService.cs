@@ -2,8 +2,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using ScenarioRunner.Controllers;
 using Terminal.Gui;
+using ScenarioRunner.Interfaces;
 
-namespace ScenarioRunner;
+namespace ScenarioRunner.Services;
 
 public class ScenarioRunnerService : IHostedService
 {

@@ -9,8 +9,10 @@ using AgentsSdk.Models.Settings;
 using Common;
 using Microsoft.Extensions.Options;
 using AgentsSdk.Runtime.Streaming.Providers.CopilotStudio;
+using ScenarioRunner.Interfaces;
+using ScenarioRunner.Services;
 
-namespace ScenarioRunner;
+namespace ScenarioRunner.Core;
 
 class Program
 {
@@ -87,7 +89,7 @@ class Program
 
             services.AddTransient<IScenario>((sp) =>
             {
-                return new Runner(sp, name, file, tools);
+                return new ScenarioRunner(sp, name, file, tools);
             });
         }
     }

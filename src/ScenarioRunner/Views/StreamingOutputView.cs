@@ -40,7 +40,7 @@ public class StreamingOutputView : FrameView
         });
     }
 
-    public void Clear()
+    public void ClearText()
     {
         Application.MainLoop.Invoke(() => _logView.Text = "");
     }

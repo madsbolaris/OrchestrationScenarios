@@ -9,7 +9,7 @@ using AgentsSdk.Models.Tools.ToolDefinitions;
 using AgentsSdk.Parsing;
 using ScenarioRunner.Models;
 
-namespace ScenarioRunner;
+namespace ScenarioRunner.Helpers;
 
 public static class ScenarioLoader
 {
