@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Terminal.Gui;
 
 namespace Common.Views;
@@ -14,8 +16,8 @@ public class Message
 	private string? _toolCallId;
 	private string _renderedText = "";
 
-	public int Height => CalculateHeight();
 	public int Width => CalculateWidth();
+	public int Height => CalculateHeight();
 
 	public Message(View parentView, string text, string sender, DateTime sentAt, Pos position, string? toolName = null, string? toolCallId = null)
 	{
@@ -26,72 +28,62 @@ public class Message
 		_toolCallId = toolCallId;
 		_parentView = parentView;
 
-		_renderedView = new View()
+		UpdateText();
+
+		_renderedView = new View
 		{
-			X = _sender == "You" ? Pos.Right(_parentView) - Width - 2 : 2,
+			X = _sender == "User" ? Pos.Right(_parentView) - Width - 2 : 2,
 			Y = position + 1,
 			Width = Width - 2,
 			Height = Height - 2,
 			CanFocus = false,
 			ColorScheme = new ColorScheme
 			{
-				Normal = new Terminal.Gui.Attribute(sender == "You" ? Color.BrightCyan : Color.White, Color.Black)
+				Normal = new Terminal.Gui.Attribute(
+					_sender == "User" ? Color.BrightCyan : Color.White,
+					Color.Black
+				)
 			},
 			Border = new Border
 			{
 				BorderStyle = BorderStyle.Rounded,
-				BorderBrush = sender == "You" ? Color.BrightCyan : Color.White
-			}
+				BorderBrush = _sender == "User" ? Color.BrightCyan : Color.White
+			},
+			Text = _renderedText
 		};
 
-		UpdateText();
 		_parentView.Add(_renderedView);
 	}
 
 	private void UpdateText()
 	{
-		var prefix = _toolCallId == null
+		string prefix = _toolCallId == null
 			? $"{_sender}:"
 			: $"{_toolName} #{_toolCallId}:";
 
-		_renderedText = $"{prefix}\n{_text}";
-
-		_renderedView.Text = _renderedText;
+		int contentWidth = MaxContentWidth();
+		var wrappedLines = WrapLines(new[] { prefix }.Concat(_text.Split('\n')), contentWidth);
+		_renderedText = string.Join('\n', wrappedLines);
 	}
 
-	public void AppendContent(string text)
+	private List<string> WrapLines(IEnumerable<string> lines, int maxWidth)
 	{
-		_text += text;
-		UpdateText();
-
-		_renderedView.Width = Width - 2;
-		_renderedView.Height = Height - 2;
-		_renderedView.X = _sender == "You" ? Pos.Right(_parentView) - Width - 2 : 2;
-	}
-
-	public void Redraw()
-	{
-		_renderedView.SetNeedsDisplay();
-	}
-
-	private int CalculateHeight()
-	{
-		int height = 3;
-		foreach (var line in _text.Split('\n'))
+		var result = new List<string>();
+		foreach (var line in lines)
 		{
-			height++;
-			int lineLen = 0;
-			foreach (var word in line.Split(' '))
+			int i = 0;
+			while (i < line.Length)
 			{
-				if (lineLen + word.Length > Width - 2)
-				{
-					height++;
-					lineLen = 0;
-				}
-				lineLen += word.Length + 1;
+				int len = Math.Min(maxWidth, line.Length - i);
+				result.Add(line.Substring(i, len));
+				i += len;
 			}
+
+			// For empty lines
+			if (line.Length == 0)
+				result.Add("");
 		}
-		return height;
+		return result;
 	}
 
 	private int CalculateWidth()
@@ -105,10 +97,33 @@ public class Message
 			.DefaultIfEmpty(0)
 			.Max();
 
-		// Add 2 for padding/border
-		int paddedWidth = maxLineLength + 2;
+		return Math.Min(maxLineLength + 2, maxAllowedWidth);
+	}
 
-		// Clamp to max allowed width
-		return Math.Min(paddedWidth, maxAllowedWidth);
+	private int CalculateHeight()
+	{
+		return _renderedText.Split('\n').Length + 2;
+	}
+
+	private int MaxContentWidth()
+	{
+		int parentWidth = _parentView.Frame.Width;
+		return (int)(parentWidth * 0.75) - 4; // minus border + padding
+	}
+
+	public void AppendContent(string text)
+	{
+		_text += text;
+		UpdateText();
+
+		_renderedView.Text = _renderedText;
+		_renderedView.Width = Width - 2;
+		_renderedView.Height = Height - 2;
+		_renderedView.X = _sender == "User" ? Pos.Right(_parentView) - Width - 2 : 2;
+	}
+
+	public void Redraw()
+	{
+		_renderedView.SetNeedsDisplay();
 	}
 }

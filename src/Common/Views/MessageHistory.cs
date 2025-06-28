@@ -84,7 +84,7 @@ public class MessageHistory
 			while (_scrollOperationQueue.Count > 0)
 			{
 				var next = _scrollOperationQueue.Dequeue();
-				next();
+				next?.Invoke();
 			}
 
 			UpdateLayoutAndScroll(_shouldAutoScroll);

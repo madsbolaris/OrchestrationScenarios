@@ -55,5 +55,9 @@ public class ScenarioRunner : IScenario
         return copilotStudioClient.RunAsync(_agent!, clonedMessages, cancellationToken);
     }
 
-
+    public List<ChatMessage> GetStartingMessages()
+    {
+        EnsureLoaded();
+        return [.. _messages!.Select(m => m.Clone())];
+    }
 }

@@ -32,7 +32,7 @@ public static class ChatRenderHelper
 			switch (update)
 			{
 				case ChatMessageUpdate<AgentMessageDelta> chatDelta:
-					HandleChatDelta(chatDelta.Delta, chat, "Bot");
+					HandleChatDelta(chatDelta.Delta, chat, "Agent");
 					break;
 
 				case ChatMessageUpdate<ToolMessageDelta> toolDelta:

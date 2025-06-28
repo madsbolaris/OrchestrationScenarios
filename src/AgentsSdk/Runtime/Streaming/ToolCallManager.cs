@@ -76,6 +76,7 @@ public class ToolCallManager
         {
             _outputMessages.Add(new ToolMessage
             {
+                ToolType = _resolveFunctionName(fnCallContent.Name),
                 ToolCallId = fnCallContent.ToolCallId,
                 Content = [new ToolResultContent { Results = toolResults }]
             });
