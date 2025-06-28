@@ -17,11 +17,12 @@ public static class OpenAIStreamingProcessor
         IAsyncEnumerable<StreamingResponseUpdate> responseStream,
         string conversationId,
         Func<ToolCallContent, Task<object?>> invokeFunction,
+        Func<string, string> resolveFunctionName,
         List<ChatMessage> outputMessages,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var runId = Guid.NewGuid().ToString();
-        var toolCallManager = new ToolCallManager(invokeFunction, outputMessages);
+        var toolCallManager = new ToolCallManager(invokeFunction, resolveFunctionName, outputMessages);
         var responseBuilder = new StringBuilder();
         string? currentMessageId = null;
 
@@ -49,7 +50,7 @@ public static class OpenAIStreamingProcessor
                             yield return AIContentUpdateFactory.Start(currentMessageId, 0, new ToolCallContentDelta
                             {
                                 ToolCallId = fnCall.Id,
-                                Name = fnCall.FunctionName
+                                Name = resolveFunctionName(fnCall.FunctionName)
                             });
                         }
                         break;

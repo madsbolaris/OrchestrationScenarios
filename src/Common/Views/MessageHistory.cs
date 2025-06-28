@@ -1,81 +1,124 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Terminal.Gui;
-using static Terminal.Gui.View;
+using Microsoft.Extensions.Logging;
 
 namespace Common.Views;
 
 public class MessageHistory
 {
-	public List<Message> Messages { get; set; } = new List<Message>();
+	public List<Message> Messages { get; set; } = [];
 	public Pos Bottom => Pos.Bottom(_renderedView);
-	private ScrollView _renderedView;
-	private View _parentView;
-	private int _scrollHeight = 0;
 
-	public MessageHistory(View parentView)
+	private readonly ScrollView _renderedView;
+	private readonly View _parentView;
+	private readonly ILogger _logger;
+
+	public ScrollView ScrollView => _renderedView;
+
+	private readonly Queue<Action> _scrollOperationQueue = new();
+	private bool _scrollFlushScheduled = false;
+	private bool _shouldAutoScroll = false;
+
+	public MessageHistory(View parentView, ILoggerFactory loggerFactory)
 	{
+		_logger = loggerFactory.CreateLogger<MessageHistory>();
 		_parentView = parentView;
 
-		// Create a frame view that will hold the text field
-		_renderedView = new ScrollView()
+		_renderedView = new ScrollView
 		{
 			X = 0,
 			Y = 0,
 			Width = Dim.Fill(),
-			Height = Dim.Fill() - 4,
+			Height = Dim.Fill(),
 			ContentSize = new Size(0, 0),
 		};
 
 		parentView.Add(_renderedView);
 
-		parentView.LayoutComplete += (LayoutEventArgs args) =>
+		// Queue initial layout
+		QueueScrollOp(() => UpdateLayoutAndScroll(autoScroll: true));
+	}
+
+	public void StartMessage(string sender, string? toolName = null, string? toolCallId = null)
+	{
+		var wantsToScroll = IsScrolledToBottom() || _scrollFlushScheduled;
+		if (wantsToScroll)
+			_shouldAutoScroll = true;
+
+		QueueScrollOp(() =>
 		{
-			GetNewContentHeight();
-		};
-
+			var top = Messages.Sum(m => m.Height);
+			var message = new Message(_renderedView, "", sender, DateTime.Now, top, toolName, toolCallId);
+			Messages.Add(message);
+		});
 	}
 
-	public void AddMessage(string input, string sender, DateTime sentAt)
+	public void AppendToLastMessage(string text)
 	{
-		Message message = new Message(_renderedView, input, sender, DateTime.Now, _scrollHeight);
-		Messages.Add(message);
-		_scrollHeight = _scrollHeight + message.Height;
-		GetNewContentHeight();
-	}
+		var wantsToScroll = IsScrolledToBottom() || _scrollFlushScheduled;
+		if (wantsToScroll)
+			_shouldAutoScroll = true;
 
-	public void AppendToMessage(string input)
-	{
-		// Substract the height of the last message
-		_scrollHeight = _scrollHeight - Messages[^1].Height;
-		Messages[^1].AppendContent(input);
-		_scrollHeight = _scrollHeight + Messages[^1].Height;
-		GetNewContentHeight();
-	}
-
-	public void Redraw()
-	{
-		_parentView.Redraw(_renderedView.Bounds);
-	}
-
-	public void GetNewContentHeight()
-	{
-		var currentScrollPosition = _renderedView.ContentOffset.Y;
-		var currentScrollHeight = _renderedView.ContentSize.Height;
-
-		// get larger of parentView.Frame.Height - 6 or _scrollHeight
-		var height = _parentView.Frame.Height - 6;
-		if (_scrollHeight > height)
+		QueueScrollOp(() =>
 		{
-			height = _scrollHeight;
+			if (Messages.Count == 0)
+				return;
+
+			Messages[^1].AppendContent(text);
+		});
+	}
+
+	private void QueueScrollOp(Action op)
+	{
+		_scrollOperationQueue.Enqueue(op);
+
+		if (_scrollFlushScheduled)
+			return;
+
+		_scrollFlushScheduled = true;
+
+		Application.MainLoop.Invoke(() =>
+		{
+			while (_scrollOperationQueue.Count > 0)
+			{
+				var next = _scrollOperationQueue.Dequeue();
+				next();
+			}
+
+			UpdateLayoutAndScroll(_shouldAutoScroll);
+			_shouldAutoScroll = false;
+			_scrollFlushScheduled = false;
+		});
+	}
+
+	private bool IsScrolledToBottom()
+	{
+		int visibleBottom = _renderedView.ContentOffset.Y + _renderedView.Bounds.Height;
+		int contentHeight = Messages.Sum(m => m.Height);
+		return visibleBottom >= contentHeight - 1;
+	}
+
+	private void UpdateLayoutAndScroll(bool autoScroll)
+	{
+		int totalHeight = Messages.Sum(m => m.Height);
+		int contentHeight = Math.Max(totalHeight, _parentView.Frame.Height - 6);
+
+		_renderedView.ContentSize = new Size(_parentView.Frame.Width - 3, contentHeight);
+
+		if (autoScroll)
+		{
+			int newOffsetY = Math.Max(0, contentHeight - _renderedView.Bounds.Height);
+			_renderedView.ContentOffset = new Point(0, newOffsetY);
+			_renderedView.SetNeedsDisplay();
+
+			_logger.LogDebug("Auto-scrolled to bottom. OffsetY={OffsetY}, ContentHeight={ContentHeight}, ViewportHeight={ViewportHeight}",
+				newOffsetY, contentHeight, _renderedView.Bounds.Height);
 		}
-
-		_renderedView.ContentSize = new Size(_parentView.Frame.Width - 3, height);
-
-		// If the user is at the bottom, scroll down
-		if (_renderedView.Frame.Height - currentScrollPosition >= currentScrollHeight)
+		else
 		{
-			_renderedView.ScrollDown(height);
+			_logger.LogDebug("Skipped auto-scroll (user scrolled up).");
 		}
 	}
 }

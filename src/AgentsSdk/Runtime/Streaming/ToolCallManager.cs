@@ -19,13 +19,16 @@ public class ToolCallManager
     private readonly List<Task<(ToolCallContent, object?)>> _tasks = [];
 
     private readonly Func<ToolCallContent, Task<object?>> _invokeFunction;
+    private readonly Func<string, string> _resolveFunctionName;
     private readonly List<ChatMessage> _outputMessages;
 
     public ToolCallManager(
         Func<ToolCallContent, Task<object?>> invokeFunction,
+        Func<string, string> resolveFunctionName,
         List<ChatMessage> outputMessages)
     {
         _invokeFunction = invokeFunction;
+        _resolveFunctionName = resolveFunctionName;
         _outputMessages = outputMessages;
     }
 
@@ -85,6 +88,7 @@ public class ToolCallManager
                 MessageId = messageId,
                 Delta = new StartStreamingOperation<ToolMessageDelta>(new ToolMessageDelta()
                 {
+                    ToolType = _resolveFunctionName(fnCallContent.Name),
                     ToolCallId = fnCallContent.ToolCallId
                 })
             };

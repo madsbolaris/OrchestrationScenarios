@@ -101,10 +101,12 @@ public static class CopilotStudioStreamingProcessor
                         var elements = update.Value.ToJsonElements();
                         elements.TryGetValue("stepId", out var stepId);
                         elements.TryGetValue("observation", out var observation);
+                        elements.TryGetValue("taskDialogId", out var taskDialogId);
 
                         yield return MessageUpdateFactory.Start(conversationId, currentMessageId, new ToolMessageDelta
                         {
-                            ToolCallId = stepId.ToString()
+                            ToolType = taskDialogId.ToString(),
+                            ToolCallId = stepId.ToString(),
                         });
 
                         yield return MessageUpdateFactory.Set(conversationId, currentMessageId, new ToolMessageDelta

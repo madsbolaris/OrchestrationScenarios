@@ -1,59 +1,43 @@
-using System;
 using Terminal.Gui;
 
 namespace Common.Views;
 
+using Microsoft.Extensions.Logging; // Add this at the top
+
 public class ChatView : Window
 {
-	private Action<string> _onInput;
-	private MessageHistory _messageHistory;
+	private readonly Action<string> _onInput;
+	private readonly MessageHistory _messageHistory;
 
-	public ChatView(Action<string> onInput, string title = "Semantic Kernel", bool showInput = true)
+	public ChatView(Action<string> onInput, string title, ILoggerFactory loggerFactory, bool showInput = true)
 	{
 		Title = title;
-
-		ColorScheme = new ColorScheme
-		{
-			Normal = new Terminal.Gui.Attribute(Color.White, Color.Black)
-		};
+		ColorScheme = new ColorScheme { Normal = new Terminal.Gui.Attribute(Color.White, Color.Black) };
 
 		_onInput += onInput;
+		_messageHistory = new MessageHistory(this, loggerFactory);
 
-		_messageHistory = new MessageHistory(this);
-
-		Action<string> onEnter = (string input) =>
-		{
-			// Create a new message
-			_messageHistory.AddMessage(input, "You", DateTime.Now);
-			onInput.Invoke(input);
-		};
-
-		// Create the input window
 		if (showInput)
 		{
-			var InputField = new InputField(this, onEnter, _messageHistory.Bottom);
-			InputField.SetFocus();
+			var inputField = new InputField(this, input =>
+			{
+				_messageHistory.StartMessage("You");
+				_messageHistory.AppendToLastMessage(input);
+				_onInput.Invoke(input);
+			}, _messageHistory.Bottom);
+
+			inputField.SetFocus();
 		}
 	}
 
-	public void AddResponse(string reply, string name = "Bot")
+
+	public void StartMessage(string sender, string? toolName = null, string? toolCallId = null)
 	{
-		// Create a new message
-		_messageHistory.AddMessage(reply, name, DateTime.Now);
+		_messageHistory.StartMessage(sender, toolName, toolCallId);
 	}
 
-	public void AppendResponse(string partial, string name = "Bot")
+	public void AppendToLastMessage(string text)
 	{
-		if (partial == null)
-		{
-			// Create a new message
-			_messageHistory.AddMessage(string.Empty, name, DateTime.Now);
-			return;
-		}
-		else
-		{
-			// Append to the last message
-			_messageHistory.AppendToMessage(partial);
-		}
+		_messageHistory.AppendToLastMessage(text);
 	}
 }

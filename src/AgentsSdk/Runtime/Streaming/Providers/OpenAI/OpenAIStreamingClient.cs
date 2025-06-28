@@ -50,7 +50,8 @@ public sealed class OpenAIStreamingClient(IOptions<OpenAISettings> settings) : I
         await foreach (var update in OpenAIStreamingProcessor.ProcessAsync(
             response,
             conversationId,
-            async fn => await FunctionCallExecutor.ExecuteAsync(fn, aiFunctions),
+            async fn => await FunctionCallHelpers.ExecuteAsync(fn, aiFunctions),
+            fn => FunctionCallHelpers.ResolveName(fn, agent.Tools),
             messages))
         {
             yield return update;

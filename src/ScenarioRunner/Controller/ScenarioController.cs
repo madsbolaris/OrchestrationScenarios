@@ -3,6 +3,9 @@ using Terminal.Gui;
 using ScenarioRunner.Views;
 using ScenarioRunner.Helpers;
 using ScenarioRunner.Interfaces;
+using Common.Views;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace ScenarioRunner.Controllers;
 
@@ -55,12 +58,19 @@ public class ScenarioController
                     Height = Dim.Fill()
                 };
 
-                var output = new StreamingOutputView
+                ChatView chatView = new ChatView(
+                    onInput: (input) => {
+                        // You can optionally send input somewhere here if needed
+                    },
+                    title: selectedScenario.Name,
+                    showInput: false,
+                    loggerFactory: _provider.GetRequiredService<ILoggerFactory>()
+                )
                 {
                     X = 0,
                     Y = 0,
                     Width = Dim.Fill(),
-                    Height = Dim.Fill(1) // reserve space for button
+                    Height = Dim.Fill(1)
                 };
 
                 var backButton = new Button("Back")
@@ -82,7 +92,7 @@ public class ScenarioController
                     ShowScenarioSelection();
                 };
 
-                streamWin.Add(output, backButton);
+                streamWin.Add(chatView, backButton);
                 top.Add(streamWin);
                 Application.Refresh();
 
@@ -90,8 +100,8 @@ public class ScenarioController
                 {
                     try
                     {
-                        var stream = selectedScenario.RunCopilotStudioStream(cts.Token);
-                        await TerminalRenderHelper.DisplayStreamAsync(stream, output);
+                        var stream = selectedScenario.RunOpenAIStream(cts.Token);
+                        await ChatRenderHelper.DisplayStreamToChatViewAsync(stream, chatView);
                     }
                     catch (OperationCanceledException) { }
                     catch (Exception ex)
@@ -99,7 +109,6 @@ public class ScenarioController
                         Application.MainLoop.Invoke(() => MessageBox.ErrorQuery("Error", ex.Message, "Ok"));
                     }
                 });
-
             };
 
             win.Add(listView);
@@ -107,6 +116,7 @@ public class ScenarioController
             Application.Refresh();
             Application.MainLoop.Invoke(() => listView.SetFocus());
         }
+
 
         ShowScenarioSelection();
         Application.Run();
