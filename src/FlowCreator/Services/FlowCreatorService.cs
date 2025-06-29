@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace FlowCreator.Services;
 
-public class FlowCreatorService(AgentRunner<OpenAIStreamingClient> runner, CopilotFactory copilotFactory, IHostApplicationLifetime lifetime) : IHostedService
+public class FlowCreatorService(OpenAIStreamingClient client, CopilotFactory copilotFactory, IHostApplicationLifetime lifetime) : IHostedService
 {
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -20,7 +20,7 @@ public class FlowCreatorService(AgentRunner<OpenAIStreamingClient> runner, Copil
 
         while (true)
         {
-            var stream = runner.RunAsync(copilot, messages, cancellationToken);
+            var stream = client.RunStreamingAsync(copilot, messages, cancellationToken);
             await ConsoleRenderHelper.DisplayStreamAsync(stream);
 
             ConsoleRenderHelper.WriteTagOpen(typeof(UserMessage));

@@ -3,7 +3,7 @@ using AgentsSdk.Models.Tools.ToolDefinitions.Function;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 
-namespace AgentsSdk.Models.Tools.ToolDefinitions.BingGrounding;
+namespace AgentsSdk.Models.Tools.ToolDefinitions.PowerPlatform;
 
 public class PowerPlatformToolDefinition : FunctionToolDefinition
 {

@@ -46,7 +46,6 @@ class Program
                 services.AddSingleton<OpenAIStreamingClient>();
                 services.AddSingleton<FlowDefinitionService>();
                 services.AddSingleton<CopilotFactory>();
-                services.AddSingleton<AgentRunner<OpenAIStreamingClient>>();
                 services.AddSingleton(new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,

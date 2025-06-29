@@ -9,6 +9,8 @@ using System.ClientModel;
 using OpenAI;
 using AgentsSdk.Models.Settings;
 using System.Runtime.CompilerServices;
+using AgentsSdk.Models.Runs.Responses.StreamingOperations;
+using AgentsSdk.Models.Runs.Responses.Deltas;
 
 namespace AgentsSdk.Runtime.Streaming.Providers.OpenAI;
 
@@ -19,42 +21,68 @@ public sealed class OpenAIStreamingClient(IOptions<OpenAISettings> settings) : I
         List<Models.Messages.ChatMessage> messages,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        var prepended = false;
 
-        var responseItems = messages.SelectMany(ToResponseConverter.Convert).ToList();
-        var options = new ResponseCreationOptions { StoredOutputEnabled = false };
-
-        Dictionary<string, AIFunction> aiFunctions = [];
-
-        if (agent.Tools != null)
+        try
         {
-            foreach (var tool in agent.Tools)
+            if (agent.Instructions is { Count: > 0 })
             {
-                options.Tools.Add(ToResponseConverter.Convert(tool));
+                messages.InsertRange(0, agent.Instructions);
+                prepended = true;
+            }
 
-                if (tool is FunctionToolDefinition fnTool)
+            var done = false;
+
+            while (!done)
+            {
+                var responseItems = messages.SelectMany(ToResponseConverter.Convert).ToList();
+                var options = new ResponseCreationOptions { StoredOutputEnabled = false };
+
+                Dictionary<string, AIFunction> aiFunctions = [];
+
+                if (agent.Tools is { Count: > 0 })
                 {
-                    aiFunctions[fnTool.Name] = ToMicrosoftExtensionsAIContentConverter.ToAIFunction(fnTool);
+                    foreach (var tool in agent.Tools)
+                    {
+                        options.Tools.Add(ToResponseConverter.Convert(tool));
+
+                        if (tool is FunctionToolDefinition fnTool)
+                            aiFunctions[fnTool.Name] = ToMicrosoftExtensionsAIContentConverter.ToAIFunction(fnTool);
+                    }
+                }
+
+                var client = new OpenAIResponseClient(
+                    model: agent.Model.Id,
+                    credential: new ApiKeyCredential(settings.Value.ApiKey),
+                    options: new OpenAIClientOptions()
+                );
+
+                var response = client.CreateResponseStreamingAsync(responseItems, options, cancellationToken: cancellationToken);
+                var conversationId = messages.FirstOrDefault()?.ConversationId ?? Guid.NewGuid().ToString();
+
+                await foreach (var update in OpenAIStreamingProcessor.ProcessAsync(
+                    response,
+                    conversationId,
+                    async fn => await FunctionCallHelpers.ExecuteAsync(fn, aiFunctions),
+                    fn => FunctionCallHelpers.ResolveName(fn, agent.Tools),
+                    messages,
+                    cancellationToken))
+                {
+                    yield return update;
+
+                    if (update is RunUpdate { Delta: EndStreamingOperation<RunDelta> })
+                    {
+                        done = true;
+                        break;
+                    }
                 }
             }
         }
-
-        var client = new OpenAIResponseClient(
-            model: agent.Model.Id,
-            credential: new ApiKeyCredential(settings.Value.ApiKey),
-            options: new OpenAIClientOptions()
-        );
-
-        var response = client.CreateResponseStreamingAsync(responseItems, options, cancellationToken: cancellationToken);
-        var conversationId = messages.FirstOrDefault()?.ConversationId ?? Guid.NewGuid().ToString();
-
-        await foreach (var update in OpenAIStreamingProcessor.ProcessAsync(
-            response,
-            conversationId,
-            async fn => await FunctionCallHelpers.ExecuteAsync(fn, aiFunctions),
-            fn => FunctionCallHelpers.ResolveName(fn, agent.Tools),
-            messages))
+        finally
         {
-            yield return update;
+            if (prepended)
+                messages.RemoveRange(0, agent.Instructions!.Count);
         }
     }
+
 }

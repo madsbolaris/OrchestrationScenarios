@@ -22,7 +22,9 @@ internal static class ToMicrosoftExtensionsAIContentConverter
             throw new ArgumentException("FunctionToolDefinition must have a Method defined.");
         }
 
-        return AIFunctionFactory.Create(tool.Method, tool.Name, tool.Description);
+        var aiFunction = AIFunctionFactory.Create(tool.Method, tool.Name, tool.Description);
+
+        return aiFunction;
     }
 
     private static Microsoft.Extensions.AI.AIContent ConvertContent(Models.Messages.ChatMessage parent, Models.Messages.Content.AIContent content)

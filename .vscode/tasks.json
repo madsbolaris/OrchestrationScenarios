@@ -7,7 +7,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/src/ScenarioRunner/ScenarioRunner.csproj"
+        "${workspaceFolder}/src/ScenarioPlayer/ScenarioPlayer.csproj"
       ],
       "problemMatcher": "$msCompile"
     },

@@ -39,6 +39,14 @@ public class MessageHistory
 
 		// Queue initial layout
 		QueueScrollOp(() => UpdateLayoutAndScroll(autoScroll: true));
+
+		// Trigger relayout on resize
+		_parentView.LayoutComplete += (_) => QueueScrollOp(() =>
+		{
+			foreach (var msg in Messages)
+				msg.Redraw(); // triggers resize-aware text update
+			UpdateLayoutAndScroll(autoScroll: false);
+		});
 	}
 
 	public void StartMessage(string sender, string? toolName = null, string? toolCallId = null)
@@ -52,6 +60,7 @@ public class MessageHistory
 			var top = Messages.Sum(m => m.Height);
 			var message = new Message(_renderedView, "", sender, DateTime.Now, top, toolName, toolCallId);
 			Messages.Add(message);
+			RepositionMessages();
 		});
 	}
 
@@ -67,6 +76,7 @@ public class MessageHistory
 				return;
 
 			Messages[^1].AppendContent(text);
+			RepositionMessages();
 		});
 	}
 
@@ -102,9 +112,10 @@ public class MessageHistory
 
 	private void UpdateLayoutAndScroll(bool autoScroll)
 	{
-		int totalHeight = Messages.Sum(m => m.Height);
-		int contentHeight = Math.Max(totalHeight, _parentView.Frame.Height - 6);
+		RepositionMessages();
 
+		int totalHeight = Messages.Sum(m => m.Height);
+		int contentHeight = Math.Max(totalHeight, _parentView.Frame.Height - 2);
 		_renderedView.ContentSize = new Size(_parentView.Frame.Width - 3, contentHeight);
 
 		if (autoScroll)
@@ -119,6 +130,16 @@ public class MessageHistory
 		else
 		{
 			_logger.LogDebug("Skipped auto-scroll (user scrolled up).");
+		}
+	}
+
+	private void RepositionMessages()
+	{
+		int y = 0;
+		foreach (var message in Messages)
+		{
+			message.SetY(y);
+			y += message.Height;
 		}
 	}
 }

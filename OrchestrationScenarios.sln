@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentsSdk", "src\AgentsSdk\AgentsSdk.csproj", "{D71694B4-FB37-4027-AF96-3FD47D093FC4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScenarioRunner", "src\ScenarioRunner\ScenarioRunner.csproj", "{DE75D757-5C22-4DE6-8A97-71722FC231BD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScenarioPlayer", "src\ScenarioPlayer\ScenarioPlayer.csproj", "{DE75D757-5C22-4DE6-8A97-71722FC231BD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject

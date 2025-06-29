@@ -1,20 +1,12 @@
 using AgentsSdk.Models.Agents;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
-namespace ScenarioRunner.Models;
+namespace ScenarioPlayer.Parsing;
 
-public class ScenarioHeader
-{
-    public string DisplayName { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public Agent Agent { get; set; } = new();
-}
-
-public class AgentYamlConverter() : IYamlTypeConverter
+public class AgentYamlConverter : IYamlTypeConverter
 {
     private static readonly string AgentsDirectory =
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "Resources", "Agents"));
@@ -34,7 +26,7 @@ public class AgentYamlConverter() : IYamlTypeConverter
 
             var yamlContent = File.ReadAllText(agentPath);
 
-            // Convert YAML → JSON → Agent using your System.Text.Json converter logic
+            // Convert YAML → JSON → Agent using System.Text.Json
             var intermediateObject = new DeserializerBuilder().Build().Deserialize<object>(yamlContent);
             var json = JsonSerializer.Serialize(intermediateObject);
 
@@ -53,8 +45,8 @@ public class AgentYamlConverter() : IYamlTypeConverter
         })!;
     }
 
-    public void WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer nestedObjectSerializer)
+    public void WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer serializer)
     {
-        throw new NotSupportedException("Writing YAML for Agent is not supported.");
+        throw new NotImplementedException();
     }
 }

@@ -1,6 +1,6 @@
 using Terminal.Gui;
 
-namespace ScenarioRunner.Views;
+namespace ScenarioPlayer.UI.Views;
 
 public class StreamingOutputView : FrameView
 {
@@ -44,4 +44,4 @@ public class StreamingOutputView : FrameView
     {
         Application.MainLoop.Invoke(() => _logView.Text = "");
     }
-} 
+}

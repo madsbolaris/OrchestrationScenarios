@@ -6,7 +6,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "prepare-scenario-runner",
-      "program": "${workspaceFolder}/src/ScenarioRunner/bin/Debug/net9.0/ScenarioRunner.dll",
+      "program": "${workspaceFolder}/src/ScenarioPlayer/bin/Debug/net9.0/ScenarioPlayer.dll",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "stopAtEntry": false

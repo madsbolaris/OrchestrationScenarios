@@ -9,16 +9,16 @@ public class ChatView : Window
 	private readonly Action<string> _onInput;
 	private readonly MessageHistory _messageHistory;
 
-	public ChatView(Action<string> onInput, string title, ILoggerFactory loggerFactory, bool showInput = true)
+	public ChatView(string title, ILoggerFactory loggerFactory, Action<string>? onInput = null)
 	{
 		Title = title;
 		ColorScheme = new ColorScheme { Normal = new Terminal.Gui.Attribute(Color.White, Color.Black) };
 
-		_onInput += onInput;
 		_messageHistory = new MessageHistory(this, loggerFactory);
 
-		if (showInput)
+		if (onInput != null)
 		{
+			_onInput += onInput;
 			var inputField = new InputField(this, input =>
 			{
 				_messageHistory.StartMessage("You");

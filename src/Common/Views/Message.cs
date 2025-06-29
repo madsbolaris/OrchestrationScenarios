@@ -18,6 +18,10 @@ public class Message
 
 	public int Width => CalculateWidth();
 	public int Height => CalculateHeight();
+	private int _lastComputedWidth = -1;
+
+	private string _lastRenderedText = "";
+
 
 	public Message(View parentView, string text, string sender, DateTime sentAt, Pos position, string? toolName = null, string? toolCallId = null)
 	{
@@ -28,14 +32,9 @@ public class Message
 		_toolCallId = toolCallId;
 		_parentView = parentView;
 
-		UpdateText();
-
 		_renderedView = new View
 		{
-			X = _sender == "User" ? Pos.Right(_parentView) - Width - 2 : 2,
 			Y = position + 1,
-			Width = Width - 2,
-			Height = Height - 2,
 			CanFocus = false,
 			ColorScheme = new ColorScheme
 			{
@@ -48,11 +47,12 @@ public class Message
 			{
 				BorderStyle = BorderStyle.Rounded,
 				BorderBrush = _sender == "User" ? Color.BrightCyan : Color.White
-			},
-			Text = _renderedText
+			}
 		};
 
 		_parentView.Add(_renderedView);
+		_parentView.LayoutComplete += (_) => UpdateLayout();
+		UpdateLayout();
 	}
 
 	private void UpdateText()
@@ -71,20 +71,70 @@ public class Message
 		var result = new List<string>();
 		foreach (var line in lines)
 		{
-			int i = 0;
-			while (i < line.Length)
+			if (string.IsNullOrEmpty(line))
 			{
-				int len = Math.Min(maxWidth, line.Length - i);
-				result.Add(line.Substring(i, len));
-				i += len;
+				result.Add("");
+				continue;
 			}
 
-			// For empty lines
-			if (line.Length == 0)
-				result.Add("");
+			var words = line.Split(' ');
+			var currentLine = "";
+
+			foreach (var word in words)
+			{
+				if (word.Length > maxWidth)
+				{
+					if (!string.IsNullOrEmpty(currentLine))
+					{
+						result.Add(currentLine);
+						currentLine = "";
+					}
+
+					for (int i = 0; i < word.Length; i += maxWidth)
+					{
+						result.Add(word.Substring(i, Math.Min(maxWidth, word.Length - i)));
+					}
+					continue;
+				}
+
+				if ((currentLine.Length + word.Length + (currentLine.Length > 0 ? 1 : 0)) > maxWidth)
+				{
+					result.Add(currentLine);
+					currentLine = word;
+				}
+				else
+				{
+					currentLine += (currentLine.Length > 0 ? " " : "") + word;
+				}
+			}
+
+			if (!string.IsNullOrEmpty(currentLine))
+				result.Add(currentLine);
 		}
 		return result;
 	}
+
+	private void UpdateLayout()
+	{
+		int contentWidth = MaxContentWidth();
+
+		if (contentWidth == _lastComputedWidth && _text == _lastRenderedText)
+			return;
+
+		_lastComputedWidth = contentWidth;
+		_lastRenderedText = _text;
+
+		UpdateText();
+
+		_renderedView.Text = _renderedText;
+		_renderedView.Width = Width - 2;
+		_renderedView.Height = Height - 2;
+		_renderedView.X = _sender == "User" ? Pos.Right(_parentView) - Width - 2 : 2;
+
+		_renderedView.SetNeedsDisplay();
+	}
+
+
 
 	private int CalculateWidth()
 	{
@@ -114,16 +164,15 @@ public class Message
 	public void AppendContent(string text)
 	{
 		_text += text;
-		UpdateText();
-
-		_renderedView.Text = _renderedText;
-		_renderedView.Width = Width - 2;
-		_renderedView.Height = Height - 2;
-		_renderedView.X = _sender == "User" ? Pos.Right(_parentView) - Width - 2 : 2;
+		UpdateLayout();
 	}
 
 	public void Redraw()
 	{
 		_renderedView.SetNeedsDisplay();
+	}
+	public void SetY(int newY)
+	{
+		_renderedView.Y = newY + 1;
 	}
 }
