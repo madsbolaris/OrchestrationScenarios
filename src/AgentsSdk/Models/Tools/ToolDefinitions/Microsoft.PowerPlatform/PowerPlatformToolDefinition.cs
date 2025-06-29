@@ -1,8 +1,9 @@
-using System.Text.Json.Nodes;
-using AgentsSdk.Models.Tools.ToolDefinitions.Function;
 using System.Net.Http.Json;
-using System.Text.RegularExpressions;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+using AgentsSdk.Helpers;
+using AgentsSdk.Models.Tools.ToolDefinitions.Function;
 
 namespace AgentsSdk.Models.Tools.ToolDefinitions.PowerPlatform;
 
@@ -10,6 +11,30 @@ public class PowerPlatformToolDefinition : FunctionToolDefinition
 {
     private readonly string _type;
     public override string Type => _type;
+
+    private JsonNode? _baseParameters;
+    private JsonNode? _mergedParameters;
+
+    public override JsonNode? Parameters
+    {
+        get
+        {
+            _mergedParameters ??= SchemaMerger.Merge(_baseParameters, Overrides?.Parameters);
+
+            return _mergedParameters;
+        }
+    }
+
+    private ToolOverrides? _overrides;
+    public override ToolOverrides? Overrides
+    {
+        get => _overrides;
+        set
+        {
+            _overrides = value;
+            _mergedParameters = null;
+        }
+    }
 
     public PowerPlatformToolDefinition(string type)
     {
@@ -46,7 +71,7 @@ public class PowerPlatformToolDefinition : FunctionToolDefinition
         if (schema is not null)
         {
             ExtractRequiredRecursively(schema);
-            Parameters = schema;
+            _baseParameters = schema;
         }
 
         var callbackUrl = doc["callbackUrl"]?.ToString();
@@ -79,25 +104,22 @@ public class PowerPlatformToolDefinition : FunctionToolDefinition
             Executor = Method is not null
                 ? async (inputDict) =>
                 {
-                    JsonNode inputNode = ToJsonNode(inputDict); // move helper here
+                    var effectiveSchema = Overrides?.Parameters ?? Parameters;
+                    var normalized = ToolArgumentNormalizer.NormalizeArguments(effectiveSchema, inputDict);
+
+                    // Convert normalized dictionary to JsonNode for Method
+                    var inputNode = new JsonObject();
+                    foreach (var (key, value) in normalized)
+                    {
+                        inputNode[key] = JsonSerializer.SerializeToNode(value);
+                    }
+
                     var result = Method.DynamicInvoke(inputNode);
                     return result is Task taskResult ? await ConvertAsync(taskResult) : result;
                 }
                 : null
-
         };
     }
-
-    private static JsonNode ToJsonNode(Dictionary<string, object?> dict)
-    {
-        var node = new JsonObject();
-        foreach (var (key, value) in dict)
-        {
-            node[key] = JsonSerializer.SerializeToNode(value);
-        }
-        return node;
-    }
-
 
     private static async Task<object?> ConvertAsync(Task task)
     {
@@ -117,7 +139,6 @@ public class PowerPlatformToolDefinition : FunctionToolDefinition
             {
                 if (propNode is not JsonObject prop) continue;
 
-                // Remove and collect 'required: true'
                 if (prop.TryGetPropertyValue("required", out var requiredFlag))
                 {
                     if (requiredFlag?.GetValue<bool>() == true)
@@ -125,11 +146,9 @@ public class PowerPlatformToolDefinition : FunctionToolDefinition
                         requiredArray.Add(key);
                     }
 
-                    // Always remove 'required' whether true or false
                     prop.Remove("required");
                 }
 
-                // Recurse if nested object with properties
                 if (prop.TryGetPropertyValue("type", out var typeNode) &&
                     typeNode?.GetValue<string>() == "object" &&
                     prop.TryGetPropertyValue("properties", out _))

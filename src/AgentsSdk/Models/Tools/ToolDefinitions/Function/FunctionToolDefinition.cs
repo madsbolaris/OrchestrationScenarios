@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using AgentsSdk.Conversion;
+using AgentsSdk.Helpers;
 using Microsoft.Extensions.AI;
 
 namespace AgentsSdk.Models.Tools.ToolDefinitions.Function;
@@ -14,14 +15,37 @@ public class FunctionToolDefinition : ToolDefinition
 
     public string? Description { get; set; }
 
-    /// <summary>
-    /// JSON Schema describing the parameters. Stored as raw JSON.
-    /// </summary>
-    public JsonNode? Parameters { get; set; }
-
     public bool? Strict { get; set; }
+
     private Delegate? _method;
     private AIFunction? _cachedFunction;
+
+    // Backing fields for schema behavior
+    private JsonNode? _baseParameters;
+    private JsonNode? _mergedParameters;
+
+    // Cache-aware merged schema
+    public virtual JsonNode? Parameters
+    {
+        get
+        {
+            _mergedParameters ??= SchemaMerger.Merge(_baseParameters, Overrides?.Parameters);
+
+            return _mergedParameters;
+        }
+    }
+
+    // Recalculate schema when overrides change
+    private ToolOverrides? _overrides;
+    public override ToolOverrides? Overrides
+    {
+        get => _overrides;
+        set
+        {
+            _overrides = value;
+            _mergedParameters = null;
+        }
+    }
 
     public Delegate? Method
     {
@@ -39,14 +63,14 @@ public class FunctionToolDefinition : ToolDefinition
 
         // Get [KernelFunction("custom_name")] or fallback to actual method name
         var kernelAttr = methodInfo.GetCustomAttributes(typeof(Microsoft.SemanticKernel.KernelFunctionAttribute), false)
-                                .OfType<Microsoft.SemanticKernel.KernelFunctionAttribute>()
-                                .FirstOrDefault();
+            .OfType<Microsoft.SemanticKernel.KernelFunctionAttribute>()
+            .FirstOrDefault();
         var name = kernelAttr?.Name ?? methodInfo.Name;
 
         // Get [Description("...")] or fallback
         var descAttr = methodInfo.GetCustomAttributes(typeof(DescriptionAttribute), false)
-                                .OfType<DescriptionAttribute>()
-                                .FirstOrDefault();
+            .OfType<DescriptionAttribute>()
+            .FirstOrDefault();
         var description = descAttr?.Description ?? "No description available.";
 
         // Create delegate from method
@@ -60,14 +84,14 @@ public class FunctionToolDefinition : ToolDefinition
 
         // Convert to AIFunction
         var aiFunction = AIFunctionFactory.Create(methodDelegate, name, description);
-        var parameters = JsonNode.Parse(aiFunction.JsonSchema.GetRawText());
+        var baseParameters = JsonNode.Parse(aiFunction.JsonSchema.GetRawText());
 
         return new FunctionToolDefinition
         {
             Name = name,
             Description = description,
             Method = methodDelegate,
-            Parameters = parameters,
+            _baseParameters = baseParameters
         };
     }
 
@@ -82,7 +106,8 @@ public class FunctionToolDefinition : ToolDefinition
             Executor = Method is not null
                 ? async (input) =>
                 {
-                    return await _cachedFunction!.InvokeAsync(new(arguments: input));
+                    var normalizedInput = ToolArgumentNormalizer.NormalizeArguments(Parameters, input);
+                    return await _cachedFunction!.InvokeAsync(new(arguments: normalizedInput));
                 }
                 : null
         };

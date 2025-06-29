@@ -9,15 +9,22 @@ namespace AgentsSdk.Models.Tools.ToolDefinitions;
 [JsonConverter(typeof(ToolDefinitionConverter))]
 public abstract class ToolDefinition
 {
+    [JsonPropertyName("type")]
     public abstract string Type { get; }
 
-    public ToolOverrides? Override { get; set; }
+    [JsonPropertyName("overrides")]
+    public virtual ToolOverrides? Overrides { get; set; }
 }
 
 public class ToolOverrides
 {
+    [JsonPropertyName("name")]
     public string? Name { get; set; }
+
+    [JsonPropertyName("description")]
     public string? Description { get; set; }
+
+    [JsonPropertyName("parameters")]
     public JsonNode? Parameters { get; set; }
 }
 
@@ -41,14 +48,25 @@ public class ToolDefinitionConverter : JsonConverter<ToolDefinition>
 
         var json = root.GetRawText();
 
-        return type switch
+        ToolDefinition tool = type switch
         {
-            "Microsoft.BingGrounding" => JsonSerializer.Deserialize<BingGroundingToolDefinition>(json, options),
+            "Microsoft.BingGrounding" =>
+                JsonSerializer.Deserialize<BingGroundingToolDefinition>(json, options)!,
+
             _ when type.StartsWith("Microsoft.PowerPlatform") =>
                 new PowerPlatformToolDefinition(type),
-            // Add more tool definitions here
+
             _ => throw new JsonException($"Unknown tool type '{type}'")
         };
+
+        // Handle tool overrides
+        if (root.TryGetProperty("overrides", out var overridesProp))
+        {
+            var overrides = JsonSerializer.Deserialize<ToolOverrides>(overridesProp.GetRawText(), options);
+            tool.Overrides = overrides;
+        }
+
+        return tool;
     }
 
     public override void Write(Utf8JsonWriter writer, ToolDefinition value, JsonSerializerOptions options)

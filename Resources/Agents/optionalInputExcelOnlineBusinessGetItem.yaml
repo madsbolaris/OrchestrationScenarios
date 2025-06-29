@@ -5,8 +5,8 @@ model: "gpt-4.1"
 tools:
 - type: "Microsoft.PowerPlatform.ExcelOnlineBusiness-GetItem"
   overrides:
-    paramters:
-    - type: object
+    parameters:
+      type: object
       properties:
         source:
           type: string
