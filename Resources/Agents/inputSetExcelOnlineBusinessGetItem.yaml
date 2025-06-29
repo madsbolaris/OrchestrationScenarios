@@ -4,14 +4,15 @@ description: "An agent that retrieves a specific row from an Excel Online Busine
 model: "gpt-4.1"
 tools:
 - type: "Microsoft.PowerPlatform.ExcelOnlineBusiness-GetItem"
-  inputs:
-  - name: source
-    value: me
-  - name: drive
-    value: b!weWC2WCKw0Cpsgu5Y_wRbWkAT9ROadtMtivYyfycom8cje9vd6I7TKSmuFgFyOa3
-  - name: file
-    value: 01BDXC5B2PAD276RNNFRBJ7QSG7PLXA5G3
-  - name: table
-    value: "{7768D97E-C6EB-4A6D-9D81-7FAF86AF1894}"
-  - name: idColumn
-    value: "ID"
+  overrides:
+    paramters:
+    - name: source
+      value: me
+    - name: drive
+      value: b!weWC2WCKw0Cpsgu5Y_wRbWkAT9ROadtMtivYyfycom8cje9vd6I7TKSmuFgFyOa3
+    - name: file
+      value: 01BDXC5B2PAD276RNNFRBJ7QSG7PLXA5G3
+    - name: table
+      default: "{7768D97E-C6EB-4A6D-9D81-7FAF86AF1894}"
+    - name: idColumn
+      value: "ID"

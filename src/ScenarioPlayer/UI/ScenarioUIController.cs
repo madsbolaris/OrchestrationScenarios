@@ -149,6 +149,8 @@ public class ScenarioUIController
                         ChatRenderHelper.DisplayStreamToChatViewAsync(streams["CopilotStudio"], copilotChatView)
                     );
                 });
+
+                await Task.CompletedTask;
             };
 
             win.Add(listView);
@@ -166,5 +168,7 @@ public class ScenarioUIController
                 Height = Dim.Fill(1),
                 ColorScheme = colorScheme
             };
+
+        await Task.CompletedTask;
     }
 }

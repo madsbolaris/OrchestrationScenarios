@@ -134,6 +134,7 @@ public static class CopilotStudioStreamingProcessor
 
             yield return AIContentUpdateFactory.End<ToolCallContentDelta>(contentPartId, 0);
             yield return MessageUpdateFactory.End<AgentMessageDelta>(conversationId, messageId);
+            await Task.CompletedTask;
         }
 
         static async IAsyncEnumerable<StreamingUpdate> EmitToolResult(
@@ -163,6 +164,7 @@ public static class CopilotStudioStreamingProcessor
             });
 
             yield return MessageUpdateFactory.End<ToolMessageDelta>(conversationId, messageId);
+            await Task.CompletedTask;
         }
     }
 }

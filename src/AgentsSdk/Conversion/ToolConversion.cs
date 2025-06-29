@@ -9,6 +9,11 @@ internal static class ToolConversion
 {
     public static AIFunction ToAIFunction(ToolMetadata tool)
     {
+        if (tool.Executor is null)
+        {
+            throw new InvalidOperationException($"Tool '{tool.Name}' is not executable client side.");
+        }
+
         return AIFunctionFactory.Create(tool.Executor, tool.Name, tool.Description ?? "");
     }
 

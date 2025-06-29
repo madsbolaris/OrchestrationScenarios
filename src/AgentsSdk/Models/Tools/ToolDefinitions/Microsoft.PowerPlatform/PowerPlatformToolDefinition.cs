@@ -68,7 +68,7 @@ public class PowerPlatformToolDefinition : FunctionToolDefinition
         };
     }
 
-    internal ToolMetadata ToToolMetadata()
+    internal override ToolMetadata ToToolMetadata()
     {
         return new ToolMetadata
         {

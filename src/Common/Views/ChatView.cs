@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging; // Add this at the top
 
 public class ChatView : Window
 {
-	private readonly Action<string> _onInput;
+	private readonly Action<string>? _onInput;
 	private readonly MessageHistory _messageHistory;
 
 	public ChatView(string title, ILoggerFactory loggerFactory, Action<string>? onInput = null)

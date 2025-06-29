@@ -71,7 +71,7 @@ public class FunctionToolDefinition : ToolDefinition
         };
     }
 
-    internal ToolMetadata ToToolMetadata()
+    internal virtual ToolMetadata ToToolMetadata()
     {
         return new ToolMetadata
         {
