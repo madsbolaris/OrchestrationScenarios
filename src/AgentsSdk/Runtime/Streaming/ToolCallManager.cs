@@ -1,34 +1,31 @@
 using System.Text;
+using System.Text.Json;
 using AgentsSdk.Models.Messages;
 using AgentsSdk.Models.Messages.Content;
+using AgentsSdk.Models.Messages.Types;
 using AgentsSdk.Models.Runs.Responses.StreamingUpdates;
 using AgentsSdk.Models.Runs.Responses.StreamingOperations;
 using AgentsSdk.Models.Runs.Responses.Deltas;
-using AgentsSdk.Models.Messages.Types;
-using System.Text.Json;
+using AgentsSdk.Models.Tools;
+using System.Text.Json.Nodes;
 
 namespace AgentsSdk.Runtime.Streaming;
 
-public class ToolCallManager
+internal class ToolCallManager
 {
     private bool _processedToolCalls = false;
 
-    // Updated to track both ToolCallContent and its corresponding argument builder
     private readonly Dictionary<string, (ToolCallContent Content, StringBuilder Arguments)> _builders = [];
-
     private readonly List<Task<(ToolCallContent, object?)>> _tasks = [];
 
-    private readonly Func<ToolCallContent, Task<object?>> _invokeFunction;
-    private readonly Func<string, string> _resolveFunctionName;
+    private readonly Dictionary<string, ToolMetadata> _toolMetadata;
     private readonly List<ChatMessage> _outputMessages;
 
     public ToolCallManager(
-        Func<ToolCallContent, Task<object?>> invokeFunction,
-        Func<string, string> resolveFunctionName,
+        Dictionary<string, ToolMetadata> toolMetadata,
         List<ChatMessage> outputMessages)
     {
-        _invokeFunction = invokeFunction;
-        _resolveFunctionName = resolveFunctionName;
+        _toolMetadata = toolMetadata;
         _outputMessages = outputMessages;
     }
 
@@ -59,24 +56,38 @@ public class ToolCallManager
         if (!_builders.TryGetValue(toolCallId, out var tuple))
             return;
 
-        tuple.Content.Arguments = JsonSerializer.Deserialize<Dictionary<string, object?>>(tuple.Arguments.ToString());
+        // Deserialize raw string buffer into arguments dictionary
+        var arguments = JsonSerializer.Deserialize<Dictionary<string, object?>>(tuple.Arguments.ToString())!;
+        tuple.Content.Arguments = arguments;
 
         _outputMessages.Add(new AgentMessage
         {
             Content = [tuple.Content]
         });
 
-        var task = Task.Run(async () => (tuple.Content, await _invokeFunction(tuple.Content)));
+        var metadata = _toolMetadata.GetValueOrDefault(tuple.Content.Name!)
+            ?? throw new InvalidOperationException($"Tool '{tuple.Content.Name}' not found.");
+
+        if (metadata.Executor is null)
+            throw new InvalidOperationException($"Tool '{metadata.Name}' is not executable.");
+
+        // Just pass the arguments directly
+        var task = Task.Run(async () => (tuple.Content, await metadata.Executor(arguments)));
+
         _tasks.Add(task);
     }
 
-    public async IAsyncEnumerable<StreamingUpdate> EmitToolMessagesAsync()
+
+    public async IAsyncEnumerable<StreamingUpdate> EmitToolMessagesAsync(string conversationId)
     {
         foreach (var (fnCallContent, toolResults) in await Task.WhenAll(_tasks))
         {
+            var metadata = _toolMetadata.GetValueOrDefault(fnCallContent.Name!)
+                ?? throw new InvalidOperationException($"Tool '{fnCallContent.Name}' not found.");
+
             _outputMessages.Add(new ToolMessage
             {
-                ToolType = _resolveFunctionName(fnCallContent.Name),
+                ToolType = metadata.Type,
                 ToolCallId = fnCallContent.ToolCallId,
                 Content = [new ToolResultContent { Results = toolResults }]
             });
@@ -85,18 +96,18 @@ public class ToolCallManager
 
             yield return new ChatMessageUpdate<ToolMessageDelta>
             {
-                ConversationId = "", // to be set by caller
+                ConversationId = conversationId,
                 MessageId = messageId,
-                Delta = new StartStreamingOperation<ToolMessageDelta>(new ToolMessageDelta()
+                Delta = new StartStreamingOperation<ToolMessageDelta>(new ToolMessageDelta
                 {
-                    ToolType = _resolveFunctionName(fnCallContent.Name),
+                    ToolType = metadata.Type,
                     ToolCallId = fnCallContent.ToolCallId
                 })
             };
 
             yield return new ChatMessageUpdate<ToolMessageDelta>
             {
-                ConversationId = "",
+                ConversationId = conversationId,
                 MessageId = messageId,
                 Delta = new SetStreamingOperation<ToolMessageDelta>(
                     new ToolMessageDelta
@@ -107,7 +118,7 @@ public class ToolCallManager
 
             yield return new ChatMessageUpdate<ToolMessageDelta>
             {
-                ConversationId = "",
+                ConversationId = conversationId,
                 MessageId = messageId,
                 Delta = new EndStreamingOperation<ToolMessageDelta>(new ToolMessageDelta())
             };
@@ -116,8 +127,5 @@ public class ToolCallManager
         _tasks.Clear();
     }
 
-    public bool HasProcessedToolCalls()
-    {
-        return _processedToolCalls;
-    }
+    public bool HasProcessedToolCalls() => _processedToolCalls;
 }

@@ -1,16 +1,18 @@
-using Microsoft.Extensions.AI;
-using OpenAI.Responses;
+using System.Runtime.CompilerServices;
 using AgentsSdk.Conversion;
 using AgentsSdk.Models.Agents;
+using AgentsSdk.Models.Messages;
 using AgentsSdk.Models.Runs.Responses.StreamingUpdates;
-using AgentsSdk.Models.Tools.ToolDefinitions.Function;
-using Microsoft.Extensions.Options;
-using System.ClientModel;
-using OpenAI;
 using AgentsSdk.Models.Settings;
-using System.Runtime.CompilerServices;
+using AgentsSdk.Models.Tools;
+using AgentsSdk.Models.Tools.ToolDefinitions.BingGrounding;
+using AgentsSdk.Models.Tools.ToolDefinitions.Function;
+using AgentsSdk.Models.Tools.ToolDefinitions.PowerPlatform;
+using Microsoft.Extensions.Options;
+using OpenAI;
+using OpenAI.Responses;
+using System.ClientModel;
 using AgentsSdk.Models.Runs.Responses.StreamingOperations;
-using AgentsSdk.Models.Runs.Responses.Deltas;
 
 namespace AgentsSdk.Runtime.Streaming.Providers.OpenAI;
 
@@ -18,7 +20,7 @@ public sealed class OpenAIStreamingClient(IOptions<OpenAISettings> settings) : I
 {
     public async IAsyncEnumerable<StreamingUpdate> RunStreamingAsync(
         Agent agent,
-        List<Models.Messages.ChatMessage> messages,
+        List<ChatMessage> messages,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var prepended = false;
@@ -38,16 +40,22 @@ public sealed class OpenAIStreamingClient(IOptions<OpenAISettings> settings) : I
                 var responseItems = messages.SelectMany(ToResponseConverter.Convert).ToList();
                 var options = new ResponseCreationOptions { StoredOutputEnabled = false };
 
-                Dictionary<string, AIFunction> aiFunctions = [];
+                Dictionary<string, ToolMetadata> toolMetadataMap = [];
 
                 if (agent.Tools is { Count: > 0 })
                 {
                     foreach (var tool in agent.Tools)
                     {
-                        options.Tools.Add(ToResponseConverter.Convert(tool));
+                        var metadata = tool switch
+                        {
+                            PowerPlatformToolDefinition pp => pp.ToToolMetadata(),
+                            FunctionToolDefinition fn => fn.ToToolMetadata(),
+                            BingGroundingToolDefinition bing => bing.ToToolMetadata(),
+                            _ => throw new NotSupportedException($"Unsupported tool type: {tool.GetType().Name}")
+                        };
 
-                        if (tool is FunctionToolDefinition fnTool)
-                            aiFunctions[fnTool.Name] = ToMicrosoftExtensionsAIContentConverter.ToAIFunction(fnTool);
+                        toolMetadataMap[metadata.Name] = metadata;
+                        options.Tools.Add(ToolConversion.ToResponseTool(metadata));
                     }
                 }
 
@@ -63,14 +71,13 @@ public sealed class OpenAIStreamingClient(IOptions<OpenAISettings> settings) : I
                 await foreach (var update in OpenAIStreamingProcessor.ProcessAsync(
                     response,
                     conversationId,
-                    async fn => await FunctionCallHelpers.ExecuteAsync(fn, aiFunctions),
-                    fn => FunctionCallHelpers.ResolveName(fn, agent.Tools),
+                    toolMetadataMap,
                     messages,
                     cancellationToken))
                 {
                     yield return update;
 
-                    if (update is RunUpdate { Delta: EndStreamingOperation<RunDelta> })
+                    if (update is RunUpdate { Delta: EndStreamingOperation<Models.Runs.Responses.Deltas.RunDelta> })
                     {
                         done = true;
                         break;
@@ -84,5 +91,4 @@ public sealed class OpenAIStreamingClient(IOptions<OpenAISettings> settings) : I
                 messages.RemoveRange(0, agent.Instructions!.Count);
         }
     }
-
 }

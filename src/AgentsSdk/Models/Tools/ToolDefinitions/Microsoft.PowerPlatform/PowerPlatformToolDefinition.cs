@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using AgentsSdk.Models.Tools.ToolDefinitions.Function;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 
 namespace AgentsSdk.Models.Tools.ToolDefinitions.PowerPlatform;
 
@@ -59,11 +60,51 @@ public class PowerPlatformToolDefinition : FunctionToolDefinition
         {
             using var httpClient = new HttpClient();
 
-            var response = await httpClient.PostAsJsonAsync(callbackUrl, input);
-            var content = await response.Content.ReadAsStringAsync();
+            var json = input.ToJsonString();
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync(callbackUrl, content);
 
-            return content;
+            return await response.Content.ReadAsStringAsync();
         };
+    }
+
+    internal ToolMetadata ToToolMetadata()
+    {
+        return new ToolMetadata
+        {
+            Name = Name,
+            Type = Type,
+            Description = Description,
+            Parameters = Parameters,
+            Executor = Method is not null
+                ? async (inputDict) =>
+                {
+                    JsonNode inputNode = ToJsonNode(inputDict); // move helper here
+                    var result = Method.DynamicInvoke(inputNode);
+                    return result is Task taskResult ? await ConvertAsync(taskResult) : result;
+                }
+                : null
+
+        };
+    }
+
+    private static JsonNode ToJsonNode(Dictionary<string, object?> dict)
+    {
+        var node = new JsonObject();
+        foreach (var (key, value) in dict)
+        {
+            node[key] = JsonSerializer.SerializeToNode(value);
+        }
+        return node;
+    }
+
+
+    private static async Task<object?> ConvertAsync(Task task)
+    {
+        await task.ConfigureAwait(false);
+
+        var resultProp = task.GetType().GetProperty("Result");
+        return resultProp?.GetValue(task);
     }
 
     private static void ExtractRequiredRecursively(JsonObject schema)

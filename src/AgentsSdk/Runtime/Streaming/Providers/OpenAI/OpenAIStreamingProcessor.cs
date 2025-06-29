@@ -8,21 +8,21 @@ using AgentsSdk.Models.Runs.Responses.StreamingUpdates;
 using AgentsSdk.Models.Messages;
 using AgentsSdk.Helpers;
 using System.Runtime.CompilerServices;
+using AgentsSdk.Models.Tools;
 
 namespace AgentsSdk.Runtime.Streaming.Providers.OpenAI;
 
-public static class OpenAIStreamingProcessor
+internal static class OpenAIStreamingProcessor
 {
     public static async IAsyncEnumerable<StreamingUpdate> ProcessAsync(
         IAsyncEnumerable<StreamingResponseUpdate> responseStream,
         string conversationId,
-        Func<ToolCallContent, Task<object?>> invokeFunction,
-        Func<string, string> resolveFunctionName,
+        Dictionary<string, ToolMetadata> toolMetadataMap,
         List<ChatMessage> outputMessages,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var runId = Guid.NewGuid().ToString();
-        var toolCallManager = new ToolCallManager(invokeFunction, resolveFunctionName, outputMessages);
+        var toolCallManager = new ToolCallManager(toolMetadataMap, outputMessages);
         var responseBuilder = new StringBuilder();
         string? currentMessageId = null;
 
@@ -50,7 +50,7 @@ public static class OpenAIStreamingProcessor
                             yield return AIContentUpdateFactory.Start(currentMessageId, 0, new ToolCallContentDelta
                             {
                                 ToolCallId = fnCall.Id,
-                                Name = resolveFunctionName(fnCall.FunctionName)
+                                Name = fnCall.FunctionName
                             });
                         }
                         break;
@@ -77,7 +77,7 @@ public static class OpenAIStreamingProcessor
                         break;
 
                     case StreamingResponseFunctionCallArgumentsDeltaUpdate fnArgsDelta:
-                        toolCallManager.AddFunctionCallArguments(fnArgsDelta.ItemId, fnArgsDelta.Delta); // create function
+                        toolCallManager.AddFunctionCallArguments(fnArgsDelta.ItemId, fnArgsDelta.Delta);
                         yield return AIContentUpdateFactory.Append(fnArgsDelta.ItemId, fnArgsDelta.OutputIndex, new ToolCallContentDelta
                         {
                             Arguments = fnArgsDelta.Delta
@@ -96,12 +96,8 @@ public static class OpenAIStreamingProcessor
                             currentMessageId = null;
                         }
 
-                        await foreach (var toolUpdate in toolCallManager.EmitToolMessagesAsync())
+                        await foreach (var toolUpdate in toolCallManager.EmitToolMessagesAsync(conversationId))
                         {
-                            if (toolUpdate is ChatMessageUpdate<ToolMessageDelta> chatMessageUpdate)
-                            {
-                                chatMessageUpdate.ConversationId = conversationId;
-                            }
                             yield return toolUpdate;
                         }
                         break;
@@ -136,11 +132,12 @@ public static class OpenAIStreamingProcessor
                         break;
                 }
             }
+
             completed = true;
         }
         finally
         {
-
+            // Nothing needed in finally for now
         }
 
         if (!toolCallManager.HasProcessedToolCalls() && completed)

@@ -30,7 +30,7 @@ public class AgentOverrides
     /// <summary>
     /// Optional list of tools that the agent can use.
     /// </summary>
-    public List<AgentToolDefinition>? Tools { get; set; }
+    public List<ToolDefinition>? Tools { get; set; }
 
     /// <summary>
     /// Specifies how tools are chosen when the agent responds.

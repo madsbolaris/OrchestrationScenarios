@@ -3,18 +3,19 @@ using AgentsSdk.Models.Tools.ToolDefinitions.Function;
 using AgentsSdk.Models.Tools.ToolDefinitions.BingGrounding;
 using AgentsSdk.Models.Tools.ToolDefinitions;
 using AgentsSdk.Models.Messages;
-using System.Text.Json.Nodes;
+using AgentsSdk.Models.Tools.ToolDefinitions.PowerPlatform;
 
 namespace AgentsSdk.Conversion;
 
 internal static class ToResponseConverter
 {
-    public static ResponseTool Convert(AgentToolDefinition tool)
+    public static ResponseTool Convert(ToolDefinition tool)
     {
         return tool switch
         {
-            FunctionToolDefinition func => ConvertFunctionTool(func),
-            BingGroundingToolDefinition => CreateBingTool(),
+            PowerPlatformToolDefinition power => ToolConversion.ToResponseTool(power.ToToolMetadata()),
+            FunctionToolDefinition func => ToolConversion.ToResponseTool(func.ToToolMetadata()),
+            BingGroundingToolDefinition bing => ToolConversion.ToResponseTool(bing.ToToolMetadata()),
             _ => throw new NotSupportedException($"Unknown tool type: {tool.GetType().Name}")
         };
     }
@@ -23,16 +24,5 @@ internal static class ToResponseConverter
     {
         var converted = ToMicrosoftExtensionsAIContentConverter.Convert(message);
         return MicrosoftExtensionsAIToResponseConverter.Convert(converted);
-    }
-
-    private static ResponseTool ConvertFunctionTool(FunctionToolDefinition tool)
-    {
-        var aiFunction = ToMicrosoftExtensionsAIContentConverter.ToAIFunction(tool);
-        return MicrosoftExtensionsAIToResponseConverter.Convert(aiFunction, tool.Parameters ?? new JsonObject());
-    }
-
-    private static ResponseTool CreateBingTool()
-    {
-        return ResponseTool.CreateWebSearchTool();
     }
 }

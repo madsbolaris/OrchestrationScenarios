@@ -6,7 +6,7 @@ using Microsoft.Extensions.AI;
 
 namespace AgentsSdk.Models.Tools.ToolDefinitions.Function;
 
-public class FunctionToolDefinition : AgentToolDefinition
+public class FunctionToolDefinition : ToolDefinition
 {
     public override string Type => "function";
 
@@ -20,8 +20,18 @@ public class FunctionToolDefinition : AgentToolDefinition
     public JsonNode? Parameters { get; set; }
 
     public bool? Strict { get; set; }
+    private Delegate? _method;
+    private AIFunction? _cachedFunction;
 
-    public Delegate? Method { get; set; }
+    public Delegate? Method
+    {
+        get => _method;
+        set
+        {
+            _method = value;
+            _cachedFunction = value is not null ? AIFunctionFactory.Create(value) : null;
+        }
+    }
 
     public static FunctionToolDefinition CreateToolDefinitionFromObjectMethod<T>(T instance, string methodName)
     {
@@ -58,6 +68,23 @@ public class FunctionToolDefinition : AgentToolDefinition
             Description = description,
             Method = methodDelegate,
             Parameters = parameters,
+        };
+    }
+
+    internal ToolMetadata ToToolMetadata()
+    {
+        return new ToolMetadata
+        {
+            Name = Name,
+            Type = Type,
+            Description = Description,
+            Parameters = Parameters,
+            Executor = Method is not null
+                ? async (input) =>
+                {
+                    return await _cachedFunction!.InvokeAsync(new(arguments: input));
+                }
+                : null
         };
     }
 }

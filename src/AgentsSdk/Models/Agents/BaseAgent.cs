@@ -17,7 +17,7 @@ public class BaseAgent
     public string? Description { get; set; }
     public AgentModel Model { get; set; } = default!;
     public List<ChatMessage>? Instructions { get; set; }
-    public List<AgentToolDefinition>? Tools { get; set; }
+    public List<ToolDefinition>? Tools { get; set; }
     public ToolChoiceBehavior? ToolChoice { get; set; }
     public Dictionary<string, string>? Metadata { get; set; }
 }
@@ -45,11 +45,11 @@ public class BaseAgentConverter<T> : JsonConverter<T> where T : BaseAgent, new()
             Model = model,
             Instructions = ParseInstructions(root, options),
             Tools = root.TryGetProperty("tools", out var toolsProp)
-                ? JsonSerializer.Deserialize<List<AgentToolDefinition>>(toolsProp.GetRawText(), new JsonSerializerOptions
+                ? JsonSerializer.Deserialize<List<ToolDefinition>>(toolsProp.GetRawText(), new JsonSerializerOptions
                 {
-                    Converters = { new AgentToolDefinitionConverter() }
+                    Converters = { new ToolDefinitionConverter() }
                 })
-                : new List<AgentToolDefinition>(),
+                : new List<ToolDefinition>(),
             ToolChoice = root.TryGetProperty("toolChoice", out var toolChoiceProp)
                 ? JsonSerializer.Deserialize<ToolChoiceBehavior>(toolChoiceProp.GetRawText(), options)
                 : null,
@@ -88,7 +88,7 @@ public class BaseAgentConverter<T> : JsonConverter<T> where T : BaseAgent, new()
         }
 
         writer.WritePropertyName("tools");
-        JsonSerializer.Serialize(writer, value.Tools ?? new List<AgentToolDefinition>(), options);
+        JsonSerializer.Serialize(writer, value.Tools ?? new List<ToolDefinition>(), options);
 
         if (value.ToolChoice != null)
         {

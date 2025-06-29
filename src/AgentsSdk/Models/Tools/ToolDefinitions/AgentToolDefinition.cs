@@ -6,8 +6,8 @@ using AgentsSdk.Models.Tools.ToolDefinitions.PowerPlatform;
 
 namespace AgentsSdk.Models.Tools.ToolDefinitions;
 
-[JsonConverter(typeof(AgentToolDefinitionConverter))]
-public abstract class AgentToolDefinition
+[JsonConverter(typeof(ToolDefinitionConverter))]
+public abstract class ToolDefinition
 {
     public abstract string Type { get; }
 
@@ -21,9 +21,9 @@ public class ToolOverrides
     public JsonNode? Parameters { get; set; }
 }
 
-public class AgentToolDefinitionConverter : JsonConverter<AgentToolDefinition>
+public class ToolDefinitionConverter : JsonConverter<ToolDefinition>
 {
-    public override AgentToolDefinition? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override ToolDefinition? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
@@ -51,7 +51,7 @@ public class AgentToolDefinitionConverter : JsonConverter<AgentToolDefinition>
         };
     }
 
-    public override void Write(Utf8JsonWriter writer, AgentToolDefinition value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, ToolDefinition value, JsonSerializerOptions options)
     {
         var type = value.Type;
         using var doc = JsonDocument.Parse(JsonSerializer.SerializeToUtf8Bytes(value, value.GetType(), options));
