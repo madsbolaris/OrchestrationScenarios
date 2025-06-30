@@ -38,9 +38,10 @@ public class PowerPlatformToolDefinition : FunctionToolDefinition
     private readonly List<ToolDefinition> _childTools = [];
     public IEnumerable<ToolDefinition> ChildTools => _childTools;
 
-    public PowerPlatformToolDefinition(string type)
+    public PowerPlatformToolDefinition(string type, ToolOverrides? overrides = null)
     {
         _type = type;
+        Overrides = overrides;
 
         // Parse API name and operationId from the type
         var match = Regex.Match(type, @"^Microsoft\.PowerPlatform\.([^-]+)-(.+)$");
@@ -80,7 +81,7 @@ public class PowerPlatformToolDefinition : FunctionToolDefinition
 
                     if (propObj.TryGetPropertyValue("dynamicValues", out var dynamicNode) && dynamicNode is JsonObject dynamicValues)
                     {
-                        var childTool = CreateDynamicListEnumTool(Name, propName, dynamicValues, props);
+                        var childTool = CreateDynamicListEnumTool(Name, propName, dynamicValues, Parameters);
                         if (childTool is not null)
                             _childTools.Add(childTool);
                     }
@@ -170,16 +171,25 @@ public class PowerPlatformToolDefinition : FunctionToolDefinition
         string parentToolName,
         string propName,
         JsonObject dynamicValues,
-        JsonObject schemaProperties)
+        JsonNode fullSchema)
     {
         if (!dynamicValues.TryGetPropertyValue("operationId", out var opNode) || opNode is null)
             return null;
 
         var operationId = opNode.GetValue<string>();
 
-        var parameters = dynamicValues["parameters"] is JsonObject original
+        // Extract full parameter references and overrides
+        var paramRefs = dynamicValues["parameters"] is JsonObject original
             ? JsonSerializer.Deserialize<JsonObject>(original.ToJsonString())!
             : new JsonObject();
+
+        // Extract "properties" from the merged Parameters schema
+        if (fullSchema is not JsonObject schemaObj ||
+            !schemaObj.TryGetPropertyValue("properties", out var propsNode) ||
+            propsNode is not JsonObject schemaProperties)
+        {
+            return null;
+        }
 
         var valueCollection = dynamicValues["value-collection"]?.GetValue<string>() ?? "value";
         var valuePath = dynamicValues["value-path"]?.GetValue<string>() ?? "id";
@@ -192,28 +202,42 @@ public class PowerPlatformToolDefinition : FunctionToolDefinition
         var type = $"Microsoft.PowerPlatform.{api}.ListEnum-{formattedProp}";
         var name = $"ListEnum-{formattedProp}";
 
-        var inputDescriptions = new Dictionary<string, string>();
-        foreach (var (key, val) in parameters)
+        var mergedProperties = new JsonObject();
+
+        foreach (var (key, val) in paramRefs)
         {
-            if (val is JsonObject paramObj &&
-                paramObj.TryGetPropertyValue("parameter", out var refNode) &&
+            if (val is not JsonObject paramObj)
+                continue;
+
+            // Look up base schema using parameter reference
+            JsonObject? refSchema = null;
+            if (paramObj.TryGetPropertyValue("parameter", out var refNode) &&
                 refNode?.GetValue<string>() is string refName &&
-                schemaProperties.TryGetPropertyValue(refName, out var refPropNode) &&
-                refPropNode is JsonObject refPropObj &&
-                refPropObj.TryGetPropertyValue("description", out var descNode))
+                schemaProperties.TryGetPropertyValue(refName, out var refJsonNode) &&
+                refJsonNode is JsonObject refJson)
             {
-                inputDescriptions[refName] = descNode?.GetValue<string>() ?? refName;
+                refSchema = JsonNode.Parse(refJson.ToJsonString())!.AsObject();
             }
+
+            var overrideSchema = new JsonObject(paramObj.Where(kvp => kvp.Key != "parameter"));
+
+            var merged = refSchema is not null
+                ? SchemaMerger.Merge(refSchema, overrideSchema)!.AsObject()
+                : overrideSchema;
+
+            mergedProperties[key] = merged;
         }
 
         return new ListEnumToolDefinition(
             type,
             name,
             operationId,
-            parameters,
+            mergedProperties,
+            dynamicValues["parameters"]!.AsObject(), 
             valueCollection,
             valuePath,
-            valueTitle,
-            inputDescriptions);
+            valueTitle);
     }
+
+
 }

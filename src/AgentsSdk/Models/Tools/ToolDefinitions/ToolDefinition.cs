@@ -48,23 +48,23 @@ public class ToolDefinitionConverter : JsonConverter<ToolDefinition>
 
         var json = root.GetRawText();
 
+        // Handle tool overrides
+        ToolOverrides overrides = null;
+        if (root.TryGetProperty("overrides", out var overridesProp))
+        {
+            overrides = JsonSerializer.Deserialize<ToolOverrides>(overridesProp.GetRawText(), options);
+        }
+
         ToolDefinition tool = type switch
         {
             "Microsoft.BingGrounding" =>
                 JsonSerializer.Deserialize<BingGroundingToolDefinition>(json, options)!,
 
             _ when type.StartsWith("Microsoft.PowerPlatform") =>
-                new PowerPlatformToolDefinition(type),
+                new PowerPlatformToolDefinition(type, overrides),
 
             _ => throw new JsonException($"Unknown tool type '{type}'")
         };
-
-        // Handle tool overrides
-        if (root.TryGetProperty("overrides", out var overridesProp))
-        {
-            var overrides = JsonSerializer.Deserialize<ToolOverrides>(overridesProp.GetRawText(), options);
-            tool.Overrides = overrides;
-        }
 
         return tool;
     }

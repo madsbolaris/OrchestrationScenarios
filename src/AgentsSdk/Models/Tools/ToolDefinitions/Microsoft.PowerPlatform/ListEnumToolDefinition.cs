@@ -13,7 +13,6 @@ public class ListEnumToolDefinition : FunctionToolDefinition
 {
     private readonly string _type;
     public override string Type => _type;
-
     protected JsonNode? _baseParameters;
     private JsonNode? _mergedParameters;
 
@@ -41,33 +40,23 @@ public class ListEnumToolDefinition : FunctionToolDefinition
         string type,
         string name,
         string operationId,
-        JsonObject parameters,
+        JsonObject inputSchema,              // Merged properties -> used in _baseParameters
+        JsonObject rawInvocationParameters,  // Original dynamicValues["parameters"]
         string valueCollection,
         string valuePath,
-        string valueTitle,
-        Dictionary<string, string>? inputDescriptions = null)
+        string valueTitle)
     {
+        _type = type;
         Name = name;
         Description = $"Enumerates values for {operationId}";
 
-        if (inputDescriptions is { Count: > 0 })
+        if (inputSchema is { Count: > 0 })
         {
-            var props = new JsonObject();
-            foreach (var (key, desc) in inputDescriptions)
-            {
-                props[key] = new JsonObject
-                {
-                    ["type"] = "string",
-                    ["description"] = desc
-                };
-            }
-
-            // Assign to baseParameters using reflection-compatible access
             _baseParameters = new JsonObject
-                {
-                    ["type"] = "object",
-                    ["properties"] = props
-                };
+            {
+                ["type"] = "object",
+                ["properties"] = inputSchema
+            };
         }
 
         Method = (Func<Dictionary<string, object?>, Task<object?>>)(async (inputDict) =>
@@ -80,8 +69,9 @@ public class ListEnumToolDefinition : FunctionToolDefinition
             httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token.Token}");
             httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 
+            // Reconstruct wrappedParams from rawInvocationParameters
             var wrappedParams = new JsonObject();
-            foreach (var (key, val) in parameters)
+            foreach (var (key, val) in rawInvocationParameters)
             {
                 if (val is JsonObject obj && obj.TryGetPropertyValue("parameter", out var refNode))
                 {
@@ -131,6 +121,7 @@ public class ListEnumToolDefinition : FunctionToolDefinition
         });
     }
 
+
     internal override ToolMetadata ToToolMetadata()
     {
         return new ToolMetadata
@@ -151,7 +142,6 @@ public class ListEnumToolDefinition : FunctionToolDefinition
             : null
         };
     }
-
     private static async Task<object?> ConvertAsync(Task task)
     {
         await task.ConfigureAwait(false);
