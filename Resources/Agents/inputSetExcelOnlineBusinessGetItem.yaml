@@ -8,26 +8,26 @@ tools:
     parameters:
       type: object
       properties:
-        source:
+        sourceId:
           type: string
           default: me
           readonly: true
-        drive:
+        driveId:
           type: string
           default: b!weWC2WCKw0Cpsgu5Y_wRbWkAT9ROadtMtivYyfycom8cje9vd6I7TKSmuFgFyOa3
           readonly: true
-        file:
+        fileId:
           type: string
           default: 01BDXC5B2PAD276RNNFRBJ7QSG7PLXA5G3
           readonly: true
-        table:
+        tableId:
           type: string
           default: "{7768D97E-C6EB-4A6D-9D81-7FAF86AF1894}"
           readonly: true
-        idColumn:
+        keyColumn:
           type: string
           default: "ID"
           readonly: true
-        id:
+        keyValue:
           title: "Row ID"
           description: "The ID of the row to retrieve from the table."

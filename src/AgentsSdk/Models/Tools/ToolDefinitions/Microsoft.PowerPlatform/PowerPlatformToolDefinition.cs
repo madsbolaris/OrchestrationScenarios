@@ -165,7 +165,7 @@ public class PowerPlatformToolDefinition : ClientSideToolDefinition
                     // Wrap primitive as { "value": primitive } for uniform handling
                     paramRefs[key] = new JsonObject
                     {
-                        ["value"] = JsonNode.Parse(valNode.ToJsonString())!
+                        ["value"] = JsonNode.Parse(valNode!.ToJsonString())!
                     };
                 }
             }

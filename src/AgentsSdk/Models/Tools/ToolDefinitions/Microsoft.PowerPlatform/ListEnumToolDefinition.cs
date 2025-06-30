@@ -88,7 +88,7 @@ public class ListEnumToolDefinition : ClientSideToolDefinition
         var json = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
-            throw new InvalidOperationException($"ListEnum call failed: {response.StatusCode}\n{json}");
+            return json;
 
         var root = JsonNode.Parse(json);
         if (root is not JsonObject rootObj)

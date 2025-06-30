@@ -3,7 +3,7 @@
   "schemaVersion": "1.0.0.0",
   "properties": {
     "summary": "Get a row",
-    "description": "Get a row using a key column.",
+    "description": "Get a row using a key column; use the listEnum tools to search for available sources, drives, files, tables, and columns if the user provides name values",
     "connectionReferences": {
       "shared_excelonlinebusiness": {
         "runtimeSource": "embedded",
@@ -37,9 +37,9 @@
             "schema": {
               "type": "object",
               "properties": {
-                "source": {
+                "sourceId": {
                   "type": "string",
-                  "description": "Select from the drop-down or specify one of the following:\r\n            - \u0022me\u0022\r\n            - \u0022SharePoint Site URL\u0022\r\n            - \u0022users/someone\u0027s UPN\u0022\r\n            - \u0022groups/group Id\u0022\r\n            - \u0022sites/SharePoint Site URL:/teams/team name:\u0022 (the colons are required)",
+                  "description": "Rquires the ID of the source; use the GetSources tool to get available sources if the user provides a name.",
                   "required": true,
                   "dynamicValues": {
                     "operationId": "GetSources",
@@ -52,9 +52,9 @@
                     "value-title": "displayName"
                   }
                 },
-                "drive": {
+                "driveId": {
                   "type": "string",
-                  "description": "Select a document library from the drop-down.",
+                  "description": "Requires the ID of the source; Use the GetDrives tool to get available drives if the user provides a name.",
                   "required": true,
                   "dynamicValues": {
                     "operationId": "GetDrives",
@@ -69,9 +69,9 @@
                     "value-title": "name"
                   }
                 },
-                "file": {
+                "fileId": {
                   "type": "string",
-                  "description": "Select an Excel file through File Browse.",
+                  "description": "Requires the ID of the file",
                   "required": true,
                   "dynamicValues": {
                     "capability": "file-picker",
@@ -89,9 +89,9 @@
                     "value-path": "Id"
                   }
                 },
-                "table": {
+                "tableId": {
                   "type": "string",
-                  "description": "Select a table from the drop-down.",
+                  "description": "Requires the ID of the table; use the GetTables tool to get available tables if the user provides a name",
                   "required": true,
                   "dynamicValues": {
                     "operationId": "GetTables",
@@ -112,7 +112,7 @@
                     "value-title": "name"
                   }
                 },
-                "idColumn": {
+                "keyColumn": {
                   "type": "string",
                   "description": "Select a column from the drop-down.",
                   "required": true,
@@ -137,7 +137,7 @@
                     "value-title": "displayName"
                   }
                 },
-                "id": {
+                "keyValue": {
                   "type": "string",
                   "description": "Enter the key value.",
                   "required": true,
@@ -168,12 +168,12 @@
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
                 },
                 "parameters": {
-                  "source": "@triggerBody()?[\u0027source\u0027]",
-                  "drive": "@triggerBody()?[\u0027drive\u0027]",
-                  "file": "@triggerBody()?[\u0027file\u0027]",
-                  "table": "@triggerBody()?[\u0027table\u0027]",
-                  "idColumn": "@triggerBody()?[\u0027idColumn\u0027]",
-                  "id": "@triggerBody()?[\u0027id\u0027]",
+                  "source": "@triggerBody()?[\u0027sourceId\u0027]",
+                  "drive": "@triggerBody()?[\u0027driveId\u0027]",
+                  "file": "@triggerBody()?[\u0027fileId\u0027]",
+                  "table": "@triggerBody()?[\u0027tableId\u0027]",
+                  "idColumn": "@triggerBody()?[\u0027keyColumn\u0027]",
+                  "id": "@triggerBody()?[\u0027keyValue\u0027]",
                   "dateTimeFormat": "@triggerBody()?[\u0027dateTimeFormat\u0027]"
                 },
                 "authentication": null
