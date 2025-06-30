@@ -28,7 +28,7 @@ public class ListEnumToolDefinition : ClientSideToolDefinition
     {
         _type = type;
         Name = name;
-        Description = $"Enumerates values for {settings.OperationId}";
+        Description = $"Enumerates {settings.ValuePath} and {settings.ValueTitle} for {settings.OperationId}";
         _invocationParameters = invocationParameters;
         _settings = settings;
 
@@ -43,6 +43,36 @@ public class ListEnumToolDefinition : ClientSideToolDefinition
 
         _executor = ExecuteAsync;
     }
+
+    protected override JsonNode? FilteredParameters
+    {
+        get
+        {
+            if (Parameters is not JsonObject obj)
+                return Parameters;
+
+            if (!obj.TryGetPropertyValue("properties", out var propsNode) || propsNode is not JsonObject props)
+                return obj;
+
+            var filteredProps = new JsonObject();
+            foreach (var (key, value) in props)
+            {
+                if (value is JsonObject propObj &&
+                    (!propObj.TryGetPropertyValue("readonly", out var readonlyNode) ||
+                    !string.Equals(readonlyNode?.ToString(), "true", StringComparison.OrdinalIgnoreCase)))
+                {
+                    filteredProps[key] = JsonNode.Parse(propObj.ToJsonString())!;
+                }
+            }
+
+            return new JsonObject
+            {
+                ["type"] = "object",
+                ["properties"] = filteredProps
+            };
+        }
+    }
+
 
     private async Task<object?> ExecuteAsync(Dictionary<string, object?> inputDict)
     {

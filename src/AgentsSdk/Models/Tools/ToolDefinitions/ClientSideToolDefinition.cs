@@ -48,6 +48,33 @@ public abstract class ClientSideToolDefinition : ToolDefinition
         _executor = executor;
     }
 
+    protected virtual JsonNode? FilteredParameters =>
+        Parameters is JsonObject obj
+            ? FilterObject(obj)
+            : Parameters;
+
+    private static JsonObject FilterObject(JsonObject original)
+    {
+        var filtered = new JsonObject();
+        if (original.TryGetPropertyValue("properties", out var propsNode) &&
+            propsNode is JsonObject props)
+        {
+            var filteredProps = new JsonObject();
+            foreach (var (key, value) in props)
+            {
+                if (value is JsonObject propObj)
+                {
+                    filteredProps[key] = InputParameterFilter.Filter(propObj);
+                }
+            }
+            filtered["type"] = "object";
+            filtered["properties"] = filteredProps;
+            return filtered;
+        }
+
+        return original;
+    }
+
     protected static async Task<object?> ConvertAsync(Task task)
     {
         await task.ConfigureAwait(false);
@@ -61,7 +88,7 @@ public abstract class ClientSideToolDefinition : ToolDefinition
             Name = Name,
             Type = Type,
             Description = Description,
-            Parameters = Parameters,
+            Parameters = FilteredParameters,
             Executor = _executor is not null
                 ? async (input) =>
                 {

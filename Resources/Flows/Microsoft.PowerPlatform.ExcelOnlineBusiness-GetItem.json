@@ -39,7 +39,7 @@
               "properties": {
                 "sourceId": {
                   "type": "string",
-                  "description": "Rquires the ID of the source; use the GetSources tool to get available sources if the user provides a name.",
+                  "description": "Use GetSources to get available IDs",
                   "required": true,
                   "dynamicValues": {
                     "operationId": "GetSources",
@@ -54,7 +54,7 @@
                 },
                 "driveId": {
                   "type": "string",
-                  "description": "Requires the ID of the source; Use the GetDrives tool to get available drives if the user provides a name.",
+                  "description": "Use GetDrives to get available IDs",
                   "required": true,
                   "dynamicValues": {
                     "operationId": "GetDrives",
@@ -71,7 +71,7 @@
                 },
                 "fileId": {
                   "type": "string",
-                  "description": "Requires the ID of the file",
+                  "description": "",
                   "required": true,
                   "dynamicValues": {
                     "capability": "file-picker",
@@ -91,7 +91,7 @@
                 },
                 "tableId": {
                   "type": "string",
-                  "description": "Requires the ID of the table; use the GetTables tool to get available tables if the user provides a name",
+                  "description": "Use GetTables to get available IDs",
                   "required": true,
                   "dynamicValues": {
                     "operationId": "GetTables",
@@ -114,7 +114,7 @@
                 },
                 "keyColumn": {
                   "type": "string",
-                  "description": "Select a column from the drop-down.",
+                  "description": "Use GetColumns to get available columns",
                   "required": true,
                   "dynamicValues": {
                     "operationId": "GetColumns",
@@ -139,13 +139,13 @@
                 },
                 "keyValue": {
                   "type": "string",
-                  "description": "Enter the key value.",
+                  "description": "The value of the key column",
                   "required": true,
                   "dynamicValues": null
                 },
                 "dateTimeFormat": {
                   "type": "string",
-                  "description": "DateTime Format.",
+                  "description": "",
                   "required": false,
                   "dynamicValues": null
                 }

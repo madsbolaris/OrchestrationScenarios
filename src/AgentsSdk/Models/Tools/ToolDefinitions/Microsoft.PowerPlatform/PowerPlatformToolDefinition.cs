@@ -37,7 +37,7 @@ public class PowerPlatformToolDefinition : ClientSideToolDefinition
         var doc = JsonNode.Parse(json)!;
 
         var properties = doc["properties"];
-        Description = properties?["description"]?.ToString() ?? "No description provided.";
+        Description = properties?["description"]?.ToString();
         Name = $"{apiName}-{operationId}";
 
         var schema = properties?["definition"]?["triggers"]?["manual"]?["inputs"]?["schema"] as JsonObject;
@@ -188,7 +188,7 @@ public class PowerPlatformToolDefinition : ClientSideToolDefinition
                 if (allProps.TryGetPropertyValue(parameterName, out var sourceProp) &&
                     sourceProp is JsonObject propObj)
                 {
-                    inputSchema[inputName] = JsonNode.Parse(propObj.ToJsonString())!;
+                    inputSchema[inputName] = InputParameterFilter.Filter(propObj);
                 }
 
                 invocationParams[inputName] = new ListEnumParameterReference

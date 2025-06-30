@@ -43,7 +43,18 @@ public static class ToolArgumentNormalizer
 
         return result.ToDictionary(
             kvp => kvp.Key,
-            kvp => kvp.Value?.Deserialize<object?>()
+            kvp =>
+            {
+                var value = kvp.Value?.Deserialize<object?>();
+
+                // If it's a string and contains "::", strip it
+                if (value is string s && s.Contains("::"))
+                {
+                    return s.Split(["::"], 2, StringSplitOptions.None)[0];
+                }
+
+                return value;
+            }
         );
     }
 
