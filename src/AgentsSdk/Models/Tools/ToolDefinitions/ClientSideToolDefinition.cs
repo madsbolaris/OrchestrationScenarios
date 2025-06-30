@@ -67,7 +67,8 @@ public abstract class ClientSideToolDefinition : ToolDefinition
                 {
                     var effectiveSchema = Overrides?.Parameters ?? Parameters;
                     var normalized = ToolArgumentNormalizer.NormalizeArguments(effectiveSchema, input);
-                    return JsonSerializer.Serialize(await _executor(normalized));
+                    var results = await _executor(normalized);
+                    return results;
                 }
                 : null
         };

@@ -22,7 +22,7 @@ tools:
           readonly: true
         tableId:
           type: string
-          default: "{7768D97E-C6EB-4A6D-9D81-7FAF86AF1894}"
+          default: "{7768D97E-C6EB-4A6D-9D81-7FAF86AF1894}::Table1"
         keyColumn:
           type: string
           default: "ID"

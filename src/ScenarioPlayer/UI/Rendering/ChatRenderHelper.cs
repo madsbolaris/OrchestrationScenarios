@@ -1,3 +1,5 @@
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using AgentsSdk.Models.Messages;
 using AgentsSdk.Models.Messages.Content;
 using AgentsSdk.Models.Messages.Types;
@@ -138,7 +140,21 @@ public static class ChatRenderHelper
                 break;
 
             case ToolResultContent result:
-                chat.AppendToLastMessage(result.Results?.ToString() ?? "");
+                // check if results are already strings
+                if (result.Results!.GetType() == typeof(string))
+                {
+                    chat.AppendToLastMessage(result.Results.ToString() ?? "");
+                    return;
+                }
+
+                // otherwise serialize the results to JSON with out indents
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = false,
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // Allows unescaped characters
+                };
+                var jsonString = JsonSerializer.Serialize(result.Results, options);
+                chat.AppendToLastMessage(jsonString ?? "");
                 break;
         }
     }

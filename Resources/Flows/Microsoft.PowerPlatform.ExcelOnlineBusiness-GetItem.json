@@ -60,7 +60,7 @@
                     "operationId": "GetDrives",
                     "parameters": {
                       "source": {
-                        "parameter": "source"
+                        "parameter": "sourceId"
                       },
                       "$select": "id,name"
                     },
@@ -82,7 +82,7 @@
                         "application/vnd.ms-excel.sheet.binary.macroEnabled.12"
                       ],
                       "drive": {
-                        "parameter": "drive"
+                        "parameter": "driveId"
                       },
                       "dataset": null
                     },
@@ -97,13 +97,13 @@
                     "operationId": "GetTables",
                     "parameters": {
                       "source": {
-                        "parameter": "source"
+                        "parameter": "sourceId"
                       },
                       "drive": {
-                        "parameter": "drive"
+                        "parameter": "driveId"
                       },
                       "file": {
-                        "parameter": "file"
+                        "parameter": "fileId"
                       },
                       "$select": "id,name"
                     },
@@ -120,16 +120,16 @@
                     "operationId": "GetColumns",
                     "parameters": {
                       "source": {
-                        "parameter": "source"
+                        "parameter": "sourceId"
                       },
                       "drive": {
-                        "parameter": "drive"
+                        "parameter": "driveId"
                       },
                       "file": {
-                        "parameter": "file"
+                        "parameter": "fileId"
                       },
                       "table": {
-                        "parameter": "table"
+                        "parameter": "tableId"
                       }
                     },
                     "value-collection": "value",
