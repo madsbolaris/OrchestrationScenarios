@@ -40,42 +40,50 @@
                 "dataset": {
                   "type": "string",
                   "description": "Dataset.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "table": {
                   "type": "string",
                   "description": "Table name.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "pkColumn": {
                   "type": "string",
                   "description": "PK column name.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "isGeneratedColumn": {
                   "type": "boolean",
                   "description": "Is PK column generated.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "$filter": {
                   "type": "string",
                   "description": "An ODATA filter query to restrict the entries returned (e.g. stringColumn eq \u0027string\u0027 OR numberColumn lt 123).",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "$orderby": {
                   "type": "string",
                   "description": "An ODATA orderBy query for specifying the order of entries.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "$top": {
                   "type": "integer",
                   "description": "Total number of entries to retrieve (default = all).",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "$skip": {
                   "type": "integer",
                   "description": "The number of entries to skip (default = 0).",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 }
               }
             },

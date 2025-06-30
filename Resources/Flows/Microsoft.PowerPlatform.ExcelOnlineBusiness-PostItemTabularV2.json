@@ -1,5 +1,5 @@
 {
-  "callbackUrl": "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/d0b89d9d025349dd8786cf6977aaf64a/triggers/manual/paths/invoke/?api-version=1\u0026tenantId=tId\u0026environmentName=5a7d35b7-29b3-e0ec-a289-8fd0ce3aab0a\u0026sp=%2Ftriggers%2Fmanual%2Frun\u0026sv=1.0\u0026sig=-5uX6WWL0Kd2WtX1C3OUVEtoIhhr9NhDT4Zy8GHKVqc",
+  "callbackUrl": "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5d7b3489c80544db84e5825b345f4793/triggers/manual/paths/invoke/?api-version=1\u0026tenantId=tId\u0026environmentName=5a7d35b7-29b3-e0ec-a289-8fd0ce3aab0a\u0026sp=%2Ftriggers%2Fmanual%2Frun\u0026sv=1.0\u0026sig=8koCkAZm9HqKxyxagk51CLR7FWWpxZtwYC4RGDn9IIo",
   "schemaVersion": "1.0.0.0",
   "properties": {
     "summary": "Insert row (V2)",
@@ -40,27 +40,32 @@
                 "dataset": {
                   "type": "string",
                   "description": "Dataset.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "table": {
                   "type": "string",
                   "description": "Table name.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "pkColumn": {
                   "type": "string",
                   "description": "PK column name.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "isGeneratedColumn": {
                   "type": "boolean",
                   "description": "Is PK column generated.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "item": {
                   "type": "object",
                   "description": "Row to insert into the specified Excel Online table",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 }
               }
             },

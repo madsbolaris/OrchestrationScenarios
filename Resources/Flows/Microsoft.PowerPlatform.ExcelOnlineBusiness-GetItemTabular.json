@@ -40,27 +40,32 @@
                 "dataset": {
                   "type": "string",
                   "description": "Dataset.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "table": {
                   "type": "string",
                   "description": "Table name.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "pkColumn": {
                   "type": "string",
                   "description": "PK column name.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "id": {
                   "type": "string",
                   "description": "Unique identifier of row to retrieve.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "isGeneratedColumn": {
                   "type": "boolean",
                   "description": "Is PK column generated.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 }
               }
             },

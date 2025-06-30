@@ -56,6 +56,21 @@ public sealed class OpenAIStreamingClient(IOptions<OpenAISettings> settings) : I
 
                         toolMetadataMap[metadata.Name] = metadata;
                         options.Tools.Add(ToolConversion.ToResponseTool(metadata));
+
+                        if (tool is PowerPlatformToolDefinition { ChildTools: var children })
+                        {
+                            foreach (var child in children)
+                            {
+                                var childMeta = child switch
+                                {
+                                    FunctionToolDefinition fn => fn.ToToolMetadata(),
+                                    _ => throw new NotSupportedException("Only FunctionToolDefinition child tools are supported")
+                                };
+
+                                toolMetadataMap[childMeta.Name] = childMeta;
+                                options.Tools.Add(ToolConversion.ToResponseTool(childMeta));
+                            }
+                        }
                     }
                 }
 

@@ -40,37 +40,114 @@
                 "source": {
                   "type": "string",
                   "description": "Select from the drop-down or specify one of the following:\r\n            - \u0022me\u0022\r\n            - \u0022SharePoint Site URL\u0022\r\n            - \u0022users/someone\u0027s UPN\u0022\r\n            - \u0022groups/group Id\u0022\r\n            - \u0022sites/SharePoint Site URL:/teams/team name:\u0022 (the colons are required)",
-                  "required": true
+                  "required": true,
+                  "dynamicValues": {
+                    "operationId": "GetSources",
+                    "parameters": {
+                      "$select": "id,displayName",
+                      "$top": "999"
+                    },
+                    "value-collection": "value",
+                    "value-path": "id",
+                    "value-title": "displayName"
+                  }
                 },
                 "drive": {
                   "type": "string",
                   "description": "Select a document library from the drop-down.",
-                  "required": true
+                  "required": true,
+                  "dynamicValues": {
+                    "operationId": "GetDrives",
+                    "parameters": {
+                      "source": {
+                        "parameter": "source"
+                      },
+                      "$select": "id,name"
+                    },
+                    "value-collection": "value",
+                    "value-path": "id",
+                    "value-title": "name"
+                  }
                 },
                 "file": {
                   "type": "string",
                   "description": "Select an Excel file through File Browse.",
-                  "required": true
+                  "required": true,
+                  "dynamicValues": {
+                    "capability": "file-picker",
+                    "parameters": {
+                      "isFolder": false,
+                      "fileFilter": [
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "application/vnd.ms-excel.sheet.binary.macroEnabled.12"
+                      ],
+                      "drive": {
+                        "parameter": "drive"
+                      },
+                      "dataset": null
+                    },
+                    "value-path": "Id"
+                  }
                 },
                 "table": {
                   "type": "string",
                   "description": "Select a table from the drop-down.",
-                  "required": true
+                  "required": true,
+                  "dynamicValues": {
+                    "operationId": "GetTables",
+                    "parameters": {
+                      "source": {
+                        "parameter": "source"
+                      },
+                      "drive": {
+                        "parameter": "drive"
+                      },
+                      "file": {
+                        "parameter": "file"
+                      },
+                      "$select": "id,name"
+                    },
+                    "value-collection": "value",
+                    "value-path": "id",
+                    "value-title": "name"
+                  }
                 },
                 "idColumn": {
                   "type": "string",
                   "description": "Select a column from the drop-down.",
-                  "required": true
+                  "required": true,
+                  "dynamicValues": {
+                    "operationId": "GetColumns",
+                    "parameters": {
+                      "source": {
+                        "parameter": "source"
+                      },
+                      "drive": {
+                        "parameter": "drive"
+                      },
+                      "file": {
+                        "parameter": "file"
+                      },
+                      "table": {
+                        "parameter": "table"
+                      }
+                    },
+                    "value-collection": "value",
+                    "value-path": "name",
+                    "value-title": "displayName"
+                  }
                 },
                 "id": {
                   "type": "string",
                   "description": "Enter the key value.",
-                  "required": true
+                  "required": true,
+                  "dynamicValues": null
                 },
                 "dateTimeFormat": {
                   "type": "string",
                   "description": "DateTime Format.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 }
               }
             },

@@ -40,7 +40,8 @@
                 "dataset": {
                   "type": "string",
                   "description": "Dataset.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 }
               }
             },

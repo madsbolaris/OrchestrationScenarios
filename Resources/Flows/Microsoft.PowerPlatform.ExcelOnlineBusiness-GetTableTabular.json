@@ -40,12 +40,14 @@
                 "dataset": {
                   "type": "string",
                   "description": "Dataset.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "table": {
                   "type": "string",
                   "description": "Table name.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 }
               }
             },

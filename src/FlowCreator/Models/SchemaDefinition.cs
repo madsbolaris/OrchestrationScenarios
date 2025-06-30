@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace FlowCreator.Models
@@ -39,6 +40,9 @@ namespace FlowCreator.Models
             public string? Description { get; set; }
             [JsonPropertyName("required")]
             public bool Required { get; set; } = false;
+
+            [JsonPropertyName("dynamicValues")]
+            public JsonElement? DynamicValues { get; set; } = null;
         }
 
 

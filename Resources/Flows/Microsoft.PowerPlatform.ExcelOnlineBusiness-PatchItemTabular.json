@@ -40,32 +40,38 @@
                 "dataset": {
                   "type": "string",
                   "description": "Dataset.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "table": {
                   "type": "string",
                   "description": "Table name.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "pkColumn": {
                   "type": "string",
                   "description": "PK column name.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "id": {
                   "type": "string",
                   "description": "Unique identifier of the row to update.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "isGeneratedColumn": {
                   "type": "boolean",
                   "description": "Is PK column generated.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 },
                 "item": {
                   "type": "object",
                   "description": "Row with updated values.",
-                  "required": false
+                  "required": false,
+                  "dynamicValues": null
                 }
               }
             },

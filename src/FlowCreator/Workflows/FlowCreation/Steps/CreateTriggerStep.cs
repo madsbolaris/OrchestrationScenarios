@@ -77,7 +77,7 @@ public sealed class CreateTriggerStep(
         {
             foreach (var paramOrRef in parametersArray.EnumerateArray())
             {
-                JsonElement param;
+                JsonElement? param = null;
 
                 if (paramOrRef.TryGetProperty("$ref", out var refNode))
                 {
@@ -86,8 +86,8 @@ public sealed class CreateTriggerStep(
                     if (refPath is null)
                         continue;
 
-                    param = ResolveRefObject(swaggerDoc, refPath) ?? default;
-                    if (param.ValueKind != JsonValueKind.Object)
+                    param = ResolveRefObject(swaggerDoc, refPath);
+                    if (param?.ValueKind != JsonValueKind.Object)
                         continue;
                 }
                 else
@@ -95,21 +95,21 @@ public sealed class CreateTriggerStep(
                     param = paramOrRef;
                 }
 
-                if (!param.TryGetProperty("name", out var nameNode))
+                if (!param.HasValue || !param.Value.TryGetProperty("name", out var nameNode))
                     continue;
 
                 var name = nameNode.GetString()!;
-                var description = param.TryGetProperty("description", out var descNode)
+                var description = param.Value.TryGetProperty("description", out var descNode)
                     ? descNode.GetString() ?? ""
                     : "";
 
                 string type = "string";
 
-                if (param.TryGetProperty("type", out var typeNode))
+                if (param.Value.TryGetProperty("type", out var typeNode))
                 {
                     type = typeNode.GetString() ?? "string";
                 }
-                else if (param.TryGetProperty("schema", out var schemaNode))
+                else if (param.Value.TryGetProperty("schema", out var schemaNode))
                 {
                     if (schemaNode.TryGetProperty("type", out var innerTypeNode))
                     {
@@ -122,14 +122,24 @@ public sealed class CreateTriggerStep(
                     }
                 }
 
-                var required = param.TryGetProperty("required", out var requiredNode) &&
+                var required = param.Value.TryGetProperty("required", out var requiredNode) &&
                             requiredNode.ValueKind == JsonValueKind.True;
+
+                // Save the x-ms-dynamic-values property (handling nullable JsonElement)
+                JsonElement? dynamicValues = null;
+                if (param.Value.TryGetProperty("x-ms-dynamic-values", out var dynamicValuesNode))
+                {
+                    // Deep copy the dynamicValuesNode
+                    string dynamicValuesJson = dynamicValuesNode.ToString();
+                    dynamicValues = JsonDocument.Parse(dynamicValuesJson).RootElement;
+                }
 
                 schema.Properties[name] = new SchemaDefinition.SchemaProperty
                 {
                     Type = type,
                     Description = description,
-                    Required = required
+                    Required = required,
+                    DynamicValues = dynamicValues // Add dynamic values here
                 };
             }
         }
@@ -194,7 +204,6 @@ public sealed class CreateTriggerStep(
 
         return current;
     }
-
 }
 
 public class CreateTriggerInput

@@ -34,12 +34,8 @@ public static class ServiceRegistration
                 return new AddTokenHandler(settings);
             });
 
-        // Add scenario loader + manager
-        var tools = new Dictionary<string, Delegate>
-        {
-            ["DateTime-Now"] = () => DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
-        };
-        services.AddSingleton(new YamlScenarioLoader(tools));
+        // Add scenario parsing and management services
+        services.AddSingleton<YamlScenarioLoader>();
         services.AddSingleton<IScenarioManager, DefaultScenarioManager>();
 
         // UI logic

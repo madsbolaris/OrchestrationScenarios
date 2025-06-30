@@ -11,13 +11,6 @@ namespace ScenarioPlayer.Parsing;
 
 public class YamlScenarioLoader
 {
-    private readonly Dictionary<string, Delegate> _tools;
-
-    public YamlScenarioLoader(Dictionary<string, Delegate> tools)
-    {
-        _tools = tools;
-    }
-
     public ScenarioDefinition Load(string filePath)
     {
         var content = File.ReadAllText(filePath);
