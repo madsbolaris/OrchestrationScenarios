@@ -46,16 +46,14 @@ public class PowerPlatformToolDefinition : ClientSideToolDefinition
             ExtractRequiredRecursively(schema);
             _baseParameters = schema;
 
-            if (Parameters is JsonObject mergedSchema &&
-                mergedSchema.TryGetPropertyValue("properties", out var propsNode) &&
+            if (Parameters is JsonObject merged &&
+                merged.TryGetPropertyValue("properties", out var propsNode) &&
                 propsNode is JsonObject props)
             {
                 foreach (var (propName, propValue) in props)
                 {
-                    if (propValue is not JsonObject propObj)
-                        continue;
-
-                    if (!propObj.TryGetPropertyValue("dynamicValues", out var dynamicNode) ||
+                    if (propValue is not JsonObject propObj ||
+                        !propObj.TryGetPropertyValue("dynamicValues", out var dynamicNode) ||
                         dynamicNode is not JsonObject dynamicValues)
                         continue;
 
@@ -96,7 +94,6 @@ public class PowerPlatformToolDefinition : ClientSideToolDefinition
         {
             var effectiveSchema = Overrides?.Parameters ?? Parameters;
             var normalized = ToolArgumentNormalizer.NormalizeArguments(effectiveSchema, inputDict);
-
             var inputNode = new JsonObject();
             foreach (var (key, value) in normalized)
             {
@@ -141,66 +138,92 @@ public class PowerPlatformToolDefinition : ClientSideToolDefinition
     }
 
     private static ToolDefinition? CreateDynamicListEnumTool(
-    string parentToolName,
-    string propName,
-    JsonObject dynamicValues,
-    JsonNode mergedParametersNode, // this is the merged Parameters node (from Parameters)
-    object? readOnlyExpectedValue)
+        string parentToolName,
+        string propName,
+        JsonObject dynamicValues,
+        JsonNode mergedParametersNode,
+        object? readOnlyExpectedValue)
     {
-        if (!dynamicValues.TryGetPropertyValue("operationId", out var opNode) || opNode is null)
+        if (!dynamicValues.TryGetPropertyValue("operationId", out var opNode))
             return null;
 
-        var operationId = opNode.GetValue<string>();
+        var operationId = opNode!.GetValue<string>();
 
-        var paramRefs = dynamicValues["parameters"] is JsonObject original
-            ? JsonSerializer.Deserialize<JsonObject>(original.ToJsonString())!
-            : new JsonObject();
+        var paramRefs = new Dictionary<string, JsonObject>();
 
-        var valueCollection = dynamicValues["value-collection"]?.GetValue<string>() ?? "value";
-        var valuePath = dynamicValues["value-path"]?.GetValue<string>() ?? "id";
-        var valueTitle = dynamicValues["value-title"]?.GetValue<string>() ?? "name";
+        if (dynamicValues.TryGetPropertyValue("parameters", out var parametersNode) &&
+            parametersNode is JsonObject parametersObj)
+        {
+            foreach (var (key, valNode) in parametersObj)
+            {
+                if (valNode is JsonObject obj)
+                {
+                    paramRefs[key] = obj;
+                }
+                else
+                {
+                    // Wrap primitive as { "value": primitive } for uniform handling
+                    paramRefs[key] = new JsonObject
+                    {
+                        ["value"] = JsonNode.Parse(valNode.ToJsonString())!
+                    };
+                }
+            }
+        }
 
-        var parts = parentToolName.Split('-', 2, StringSplitOptions.RemoveEmptyEntries);
+        var inputSchema = new JsonObject();
+        var invocationParams = new Dictionary<string, ListEnumParameterReference>();
+
+        if (mergedParametersNode is not JsonObject mergedParameters ||
+            !mergedParameters.TryGetPropertyValue("properties", out var propsNode) ||
+            propsNode is not JsonObject allProps)
+            return null;
+
+        foreach (var (inputName, meta) in paramRefs)
+        {
+            if (meta.TryGetPropertyValue("parameter", out var refNode))
+            {
+                var parameterName = refNode!.GetValue<string>();
+
+                if (allProps.TryGetPropertyValue(parameterName, out var sourceProp) &&
+                    sourceProp is JsonObject propObj)
+                {
+                    inputSchema[inputName] = JsonNode.Parse(propObj.ToJsonString())!;
+                }
+
+                invocationParams[inputName] = new ListEnumParameterReference
+                {
+                    ParameterName = parameterName
+                };
+            }
+            else
+            {
+                invocationParams[inputName] = new ListEnumParameterReference
+                {
+                    StaticValue = meta["value"]
+                };
+            }
+        }
+
+        var parts = parentToolName.Split('-', 2);
         var api = parts.ElementAtOrDefault(0) ?? "UnknownApi";
         var formattedProp = char.ToUpperInvariant(propName[0]) + propName[1..];
 
         var type = $"Microsoft.PowerPlatform.{api}.ListEnum-{formattedProp}";
         var name = $"ListEnum-{formattedProp}";
 
-        var mergedInputParams = new JsonObject();
-
-        // Extract schema["properties"] from Parameters
-        if (mergedParametersNode is not JsonObject mergedParameters ||
-            !mergedParameters.TryGetPropertyValue("properties", out var propsNode) ||
-            propsNode is not JsonObject allProps)
-            return null;
-
-        foreach (var (inputName, val) in paramRefs)
-        {
-            if (val is not JsonObject paramMeta)
-                continue;
-
-            if (!paramMeta.TryGetPropertyValue("parameter", out var refNode) ||
-                refNode?.GetValue<string>() is not string refName)
-                continue;
-
-            if (!allProps.TryGetPropertyValue(refName, out var propNode) || propNode is not JsonObject propObj)
-                continue;
-
-            // Clone the schema to avoid "already has a parent" error
-            var clone = JsonNode.Parse(propObj.ToJsonString())!.AsObject();
-            mergedInputParams[inputName] = clone;
-        }
-
         return new ListEnumToolDefinition(
             type,
             name,
-            operationId,
-            mergedInputParams,
-            paramRefs,
-            valueCollection,
-            valuePath,
-            valueTitle,
-            readOnlyExpectedValue);
+            inputSchema,
+            invocationParams,
+            new ListEnumSettings
+            {
+                OperationId = operationId,
+                ValueCollection = dynamicValues["value-collection"]?.GetValue<string>() ?? "value",
+                ValuePath = dynamicValues["value-path"]?.GetValue<string>() ?? "id",
+                ValueTitle = dynamicValues["value-title"]?.GetValue<string>() ?? "name",
+                ReadOnlyExpectedValue = readOnlyExpectedValue
+            });
     }
 }

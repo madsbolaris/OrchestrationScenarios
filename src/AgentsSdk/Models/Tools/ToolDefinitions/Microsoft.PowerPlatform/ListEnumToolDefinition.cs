@@ -9,14 +9,11 @@ namespace AgentsSdk.Models.Tools.ToolDefinitions.PowerPlatform;
 
 public class ListEnumToolDefinition : ClientSideToolDefinition
 {
-    private readonly string _operationId;
-    private readonly JsonObject _rawInvocationParameters;
-    private readonly string _valueCollection;
-    private readonly string _valuePath;
-    private readonly string _valueTitle;
+    private readonly string _type;
     public override string Type => _type;
 
-    private readonly object? _readOnlyExpectedValue;
+    private readonly Dictionary<string, ListEnumParameterReference> _invocationParameters;
+    private readonly ListEnumSettings _settings;
 
     private static readonly string RequestUrl =
         "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com/powerautomate/apis/shared_excelonlinebusiness/connections/845f7ef2b3e14296a6e0bc77a564a9b2/listEnum?api-version=1";
@@ -24,25 +21,16 @@ public class ListEnumToolDefinition : ClientSideToolDefinition
     public ListEnumToolDefinition(
         string type,
         string name,
-        string operationId,
         JsonObject inputSchema,
-        JsonObject rawInvocationParameters,
-        string valueCollection,
-        string valuePath,
-        string valueTitle,
-        object? readOnlyExpectedValue = null)
+        Dictionary<string, ListEnumParameterReference> invocationParameters,
+        ListEnumSettings settings)
         : base(type)
     {
         _type = type;
         Name = name;
-        Description = $"Enumerates values for {operationId}";
-
-        _operationId = operationId;
-        _rawInvocationParameters = rawInvocationParameters;
-        _valueCollection = valueCollection;
-        _valuePath = valuePath;
-        _valueTitle = valueTitle;
-        _readOnlyExpectedValue = readOnlyExpectedValue;
+        Description = $"Enumerates values for {settings.OperationId}";
+        _invocationParameters = invocationParameters;
+        _settings = settings;
 
         if (inputSchema is { Count: > 0 })
         {
@@ -56,8 +44,6 @@ public class ListEnumToolDefinition : ClientSideToolDefinition
         _executor = ExecuteAsync;
     }
 
-    private readonly string _type;
-
     private async Task<object?> ExecuteAsync(Dictionary<string, object?> inputDict)
     {
         var credential = new DefaultAzureCredential();
@@ -69,22 +55,11 @@ public class ListEnumToolDefinition : ClientSideToolDefinition
         httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 
         var wrappedParams = new JsonObject();
-        foreach (var (key, val) in _rawInvocationParameters)
+        foreach (var (key, reference) in _invocationParameters)
         {
-            if (val is JsonObject obj && obj.TryGetPropertyValue("parameter", out var refNode))
-            {
-                wrappedParams[key] = new JsonObject
-                {
-                    ["parameterReference"] = refNode?.GetValue<string>()
-                };
-            }
-            else
-            {
-                wrappedParams[key] = new JsonObject
-                {
-                    ["value"] = JsonSerializer.SerializeToNode(val)
-                };
-            }
+            wrappedParams[key] = reference.ParameterName != null
+                ? new JsonObject { ["parameterReference"] = reference.ParameterName }
+                : new JsonObject { ["value"] = JsonSerializer.SerializeToNode(reference.StaticValue) };
         }
 
         var runtimeInputs = new JsonObject();
@@ -98,11 +73,11 @@ public class ListEnumToolDefinition : ClientSideToolDefinition
             ["parameters"] = runtimeInputs,
             ["dynamicInvocationDefinition"] = new JsonObject
             {
-                ["operationId"] = _operationId,
+                ["operationId"] = _settings.OperationId,
                 ["parameters"] = wrappedParams,
-                ["itemsPath"] = _valueCollection,
-                ["itemValuePath"] = _valuePath,
-                ["itemTitlePath"] = _valueTitle
+                ["itemsPath"] = _settings.ValueCollection,
+                ["itemValuePath"] = _settings.ValuePath,
+                ["itemTitlePath"] = _settings.ValueTitle
             }
         };
 
@@ -119,24 +94,19 @@ public class ListEnumToolDefinition : ClientSideToolDefinition
         if (root is not JsonObject rootObj)
             return json;
 
-        // Apply filtering if readonly + default were provided
-        if (_readOnlyExpectedValue is not null &&
+        if (_settings.ReadOnlyExpectedValue is not null &&
             rootObj.TryGetPropertyValue("value", out var valueArrayNode) &&
             valueArrayNode is JsonArray valueArray)
         {
             var filteredArray = new JsonArray();
             foreach (var item in valueArray)
             {
-                if (item is not JsonObject obj)
-                    continue;
-
-                if (obj.TryGetPropertyValue("value", out var valNode) &&
-                    valNode?.ToJsonString() == JsonSerializer.Serialize(_readOnlyExpectedValue))
+                if (item is JsonObject obj &&
+                    obj.TryGetPropertyValue("value", out var valNode) &&
+                    valNode?.ToJsonString() == JsonSerializer.Serialize(_settings.ReadOnlyExpectedValue))
                 {
-                    var clone = JsonNode.Parse(obj.ToJsonString())!.AsObject();
-                    filteredArray.Add(clone);
+                    filteredArray.Add(JsonNode.Parse(obj.ToJsonString())!.AsObject());
                 }
-
             }
 
             rootObj["value"] = filteredArray;

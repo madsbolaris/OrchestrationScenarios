@@ -1,4 +1,5 @@
 // ClientSideToolDefinition.cs
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using AgentsSdk.Helpers;
 
@@ -66,7 +67,7 @@ public abstract class ClientSideToolDefinition : ToolDefinition
                 {
                     var effectiveSchema = Overrides?.Parameters ?? Parameters;
                     var normalized = ToolArgumentNormalizer.NormalizeArguments(effectiveSchema, input);
-                    return await _executor(normalized);
+                    return JsonSerializer.Serialize(await _executor(normalized));
                 }
                 : null
         };
