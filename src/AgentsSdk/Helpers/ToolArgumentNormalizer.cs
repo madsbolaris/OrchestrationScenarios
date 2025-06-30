@@ -47,10 +47,35 @@ public static class ToolArgumentNormalizer
         );
     }
 
-    private static JsonNode DeepClone(JsonNode node) =>
-        JsonNode.Parse(node.ToJsonString())!;
+    public static Dictionary<string, object?> GetReadOnlyDefaults(JsonNode? schemaNode)
+    {
+        var result = new Dictionary<string, object?>();
 
-    private static bool IsJsonTrue(JsonNode? node)
+        if (schemaNode is not JsonObject schema ||
+            !schema.TryGetPropertyValue("properties", out var propsNode) ||
+            propsNode is not JsonObject properties)
+        {
+            return result;
+        }
+
+        foreach (var (propName, propSchemaNode) in properties)
+        {
+            if (propSchemaNode is not JsonObject propSchema)
+                continue;
+
+            var isReadonly = IsJsonTrue(propSchema["readonly"]);
+            var hasDefault = propSchema.TryGetPropertyValue("default", out var defaultNode);
+
+            if (isReadonly && hasDefault)
+            {
+                result[propName] = defaultNode?.Deserialize<object>();
+            }
+        }
+
+        return result;
+    }
+
+    public static bool IsJsonTrue(JsonNode? node)
     {
         if (node is null) return false;
 
@@ -59,4 +84,7 @@ public static class ToolArgumentNormalizer
             v.TryGetValue<string>(out var s) && bool.TryParse(s, out var parsed) && parsed
         ));
     }
+
+    private static JsonNode DeepClone(JsonNode node) =>
+        JsonNode.Parse(node.ToJsonString())!;
 }

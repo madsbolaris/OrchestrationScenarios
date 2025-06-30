@@ -4,51 +4,45 @@ using System.Text.Json.Nodes;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Azure.Identity;
-using AgentsSdk.Models.Tools.ToolDefinitions.Function;
-using AgentsSdk.Helpers;
 
 namespace AgentsSdk.Models.Tools.ToolDefinitions.PowerPlatform;
 
-public class ListEnumToolDefinition : FunctionToolDefinition
+public class ListEnumToolDefinition : ClientSideToolDefinition
 {
-    private readonly string _type;
+    private readonly string _operationId;
+    private readonly JsonObject _rawInvocationParameters;
+    private readonly string _valueCollection;
+    private readonly string _valuePath;
+    private readonly string _valueTitle;
     public override string Type => _type;
-    protected JsonNode? _baseParameters;
-    private JsonNode? _mergedParameters;
 
-    public override JsonNode? Parameters
-    {
-        get
-        {
-            _mergedParameters ??= SchemaMerger.Merge(_baseParameters, Overrides?.Parameters);
-            return _mergedParameters;
-        }
-    }
+    private readonly object? _readOnlyExpectedValue;
 
-    private ToolOverrides? _overrides;
-    public override ToolOverrides? Overrides
-    {
-        get => _overrides;
-        set
-        {
-            _overrides = value;
-            _mergedParameters = null;
-        }
-    }
-    
+    private static readonly string RequestUrl =
+        "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com/powerautomate/apis/shared_excelonlinebusiness/connections/845f7ef2b3e14296a6e0bc77a564a9b2/listEnum?api-version=1";
+
     public ListEnumToolDefinition(
         string type,
         string name,
         string operationId,
-        JsonObject inputSchema,              // Merged properties -> used in _baseParameters
-        JsonObject rawInvocationParameters,  // Original dynamicValues["parameters"]
+        JsonObject inputSchema,
+        JsonObject rawInvocationParameters,
         string valueCollection,
         string valuePath,
-        string valueTitle)
+        string valueTitle,
+        object? readOnlyExpectedValue = null)
+        : base(type)
     {
         _type = type;
         Name = name;
         Description = $"Enumerates values for {operationId}";
+
+        _operationId = operationId;
+        _rawInvocationParameters = rawInvocationParameters;
+        _valueCollection = valueCollection;
+        _valuePath = valuePath;
+        _valueTitle = valueTitle;
+        _readOnlyExpectedValue = readOnlyExpectedValue;
 
         if (inputSchema is { Count: > 0 })
         {
@@ -59,95 +53,95 @@ public class ListEnumToolDefinition : FunctionToolDefinition
             };
         }
 
-        Method = (Func<Dictionary<string, object?>, Task<object?>>)(async (inputDict) =>
-        {
-            var credential = new DefaultAzureCredential();
-            var token = await credential.GetTokenAsync(
-                new Azure.Core.TokenRequestContext(["https://service.flow.microsoft.com/.default"]));
-
-            using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token.Token}");
-            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-
-            // Reconstruct wrappedParams from rawInvocationParameters
-            var wrappedParams = new JsonObject();
-            foreach (var (key, val) in rawInvocationParameters)
-            {
-                if (val is JsonObject obj && obj.TryGetPropertyValue("parameter", out var refNode))
-                {
-                    wrappedParams[key] = new JsonObject
-                    {
-                        ["parameterReference"] = refNode?.GetValue<string>()
-                    };
-                }
-                else
-                {
-                    wrappedParams[key] = new JsonObject
-                    {
-                        ["value"] = JsonSerializer.SerializeToNode(val)
-                    };
-                }
-            }
-
-            var runtimeInputs = new JsonObject();
-            foreach (var (key, value) in inputDict)
-            {
-                runtimeInputs[key] = JsonSerializer.SerializeToNode(value);
-            }
-
-            var body = new JsonObject
-            {
-                ["parameters"] = runtimeInputs,
-                ["dynamicInvocationDefinition"] = new JsonObject
-                {
-                    ["operationId"] = operationId,
-                    ["parameters"] = wrappedParams,
-                    ["itemsPath"] = valueCollection,
-                    ["itemValuePath"] = valuePath,
-                    ["itemTitlePath"] = valueTitle
-                }
-            };
-
-            var response = await httpClient.PostAsync(
-                RequestUrl,
-                new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"));
-
-            var json = await response.Content.ReadAsStringAsync();
-
-            if (!response.IsSuccessStatusCode)
-                throw new InvalidOperationException($"ListEnum call failed: {response.StatusCode}\n{json}");
-
-            return json;
-        });
+        _executor = ExecuteAsync;
     }
 
+    private readonly string _type;
 
-    internal override ToolMetadata ToToolMetadata()
+    private async Task<object?> ExecuteAsync(Dictionary<string, object?> inputDict)
     {
-        return new ToolMetadata
-        {
-            Name = Name,
-            Type = Type,
-            Description = Description,
-            Parameters = Parameters,
-            Executor = Method is not null
-                ? async (inputDict) =>
-                {
-                    var effectiveSchema = Overrides?.Parameters ?? Parameters;
-                    var normalized = ToolArgumentNormalizer.NormalizeArguments(effectiveSchema, inputDict);
+        var credential = new DefaultAzureCredential();
+        var token = await credential.GetTokenAsync(
+            new Azure.Core.TokenRequestContext(["https://service.flow.microsoft.com/.default"]));
 
-                    var result = Method.DynamicInvoke(normalized);
-                    return result is Task taskResult ? await ConvertAsync(taskResult) : result;
-                }
-            : null
+        using var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token.Token}");
+        httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+
+        var wrappedParams = new JsonObject();
+        foreach (var (key, val) in _rawInvocationParameters)
+        {
+            if (val is JsonObject obj && obj.TryGetPropertyValue("parameter", out var refNode))
+            {
+                wrappedParams[key] = new JsonObject
+                {
+                    ["parameterReference"] = refNode?.GetValue<string>()
+                };
+            }
+            else
+            {
+                wrappedParams[key] = new JsonObject
+                {
+                    ["value"] = JsonSerializer.SerializeToNode(val)
+                };
+            }
+        }
+
+        var runtimeInputs = new JsonObject();
+        foreach (var (key, value) in inputDict)
+        {
+            runtimeInputs[key] = JsonSerializer.SerializeToNode(value);
+        }
+
+        var body = new JsonObject
+        {
+            ["parameters"] = runtimeInputs,
+            ["dynamicInvocationDefinition"] = new JsonObject
+            {
+                ["operationId"] = _operationId,
+                ["parameters"] = wrappedParams,
+                ["itemsPath"] = _valueCollection,
+                ["itemValuePath"] = _valuePath,
+                ["itemTitlePath"] = _valueTitle
+            }
         };
-    }
-    private static async Task<object?> ConvertAsync(Task task)
-    {
-        await task.ConfigureAwait(false);
-        return task.GetType().GetProperty("Result")?.GetValue(task);
-    }
 
-    private static readonly string RequestUrl =
-        "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com/powerautomate/apis/shared_excelonlinebusiness/connections/845f7ef2b3e14296a6e0bc77a564a9b2/listEnum?api-version=1";
+        var response = await httpClient.PostAsync(
+            RequestUrl,
+            new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"));
+
+        var json = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException($"ListEnum call failed: {response.StatusCode}\n{json}");
+
+        var root = JsonNode.Parse(json);
+        if (root is not JsonObject rootObj)
+            return json;
+
+        // Apply filtering if readonly + default were provided
+        if (_readOnlyExpectedValue is not null &&
+            rootObj.TryGetPropertyValue("value", out var valueArrayNode) &&
+            valueArrayNode is JsonArray valueArray)
+        {
+            var filteredArray = new JsonArray();
+            foreach (var item in valueArray)
+            {
+                if (item is not JsonObject obj)
+                    continue;
+
+                if (obj.TryGetPropertyValue("value", out var valNode) &&
+                    valNode?.ToJsonString() == JsonSerializer.Serialize(_readOnlyExpectedValue))
+                {
+                    var clone = JsonNode.Parse(obj.ToJsonString())!.AsObject();
+                    filteredArray.Add(clone);
+                }
+
+            }
+
+            rootObj["value"] = filteredArray;
+        }
+
+        return rootObj;
+    }
 }

@@ -63,7 +63,7 @@ public sealed class OpenAIStreamingClient(IOptions<OpenAISettings> settings) : I
                             {
                                 var childMeta = child switch
                                 {
-                                    FunctionToolDefinition fn => fn.ToToolMetadata(),
+                                    ListEnumToolDefinition le => le.ToToolMetadata(),
                                     _ => throw new NotSupportedException("Only FunctionToolDefinition child tools are supported")
                                 };
 
