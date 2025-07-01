@@ -4,7 +4,37 @@ description: "A scenario where the user tries to override one of the inputs to t
 agent: "optionalInputExcelOnlineBusinessGetItem"
 ---
 
-<user><text>Give me the value of this row
+<user>
+<text>Give me the value of this row
 - table: The personal table
-- key value: 1
-</text></user>
+- key value: 1</text>
+</user>
+
+<start/>
+
+<agent>
+<tool-call> name="ListEnum-TableId" id="0001">{}</tool-call>
+</agent>
+<tool> for="0001"
+<tool-result>{"value":[{"value":"{7768D97E-C6EB-4A6D-9D81-7FAF86AF1894}","displayName":"Work"},{"value":"{38F0E18A-481E-46B3-BF8E-CE47C72FFBE5}","displayName":"Personal"}]}</tool-result>
+</tool>
+<agent>
+<tool-call> name="ListEnum-KeyColumn" id="0002">{"table":"{38F0E18A-481E-46B3-BF8E-CE47C72FFBE5}::Personal"}</tool-call>
+</agent>
+<tool> for="0002"
+<tool-result>{"error":{"code":"DynamicInvocationFailed","message":"The dynamic invocation request failed with error: {\"status\":400,\"message\":\"The parameter 'table' has an invalid value '{38F0E18A-481E-46B3-BF8E-CE47C72FFBE5}::Personal'.\"}."}}</tool-result>
+</tool>
+<agent>
+<tool-call> name="ExcelOnlineBusiness-GetItem" id="0004">{"tableId":"{38F0E18A-481E-46B3-BF8E-CE47C72FFBE5}","keyValue":"1"}</tool-call>
+</agent>
+<tool> for="0004"
+<tool-result>{"@odata.context":"https://excelonline-eus2.azconn-eus2-003.p.azurewebsites.net/$metadata#drives('b%21weWC2WCKw0Cpsgu5Y_wRbWkAT9ROadtMtivYyfycom8cje9vd6I7TKSmuFgFyOa3')/Files('01BDXC5B2PAD276RNNFRBJ7QSG7PLXA5G3')/Tables('%7B38F0E18A-481E-46B3-BF8E-CE47C72FFBE5%7D')/items/$entity","@odata.etag":"","ItemInternalId":"1","ID":"1","Name":"Clean bathroom","Description":"Scrub all the surfaces","Is done":"Yes"}</tool-result>
+</tool>
+<agent>
+<text>Here is the value of the row with key value 1 from the Personal table:
+
+- ID: 1
+- Name: Clean bathroom
+- Description: Scrub all the surfaces
+- Is done: Yes</text>
+</agent>

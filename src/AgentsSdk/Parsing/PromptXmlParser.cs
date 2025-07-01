@@ -14,6 +14,9 @@ public static class PromptXmlParser
 
         foreach (var node in doc.Root!.Elements())
         {
+            if (node.Name.LocalName == "start")
+                break;
+
             var content = ParseContentParts(node);
 
             ChatMessage msg = node.Name.LocalName switch
@@ -36,6 +39,7 @@ public static class PromptXmlParser
 
         return messages;
     }
+
 
     private static List<AIContent> ParseContentParts(XElement messageNode)
     {
