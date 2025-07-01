@@ -1,0 +1,163 @@
+{
+  "callbackUrl": "https://5a7d35b729b3e0eca2898fd0ce3aab.0a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8ece4c5cc0e141e0893cdbf1f425d544/triggers/manual/paths/invoke/?api-version=1\u0026tenantId=tId\u0026environmentName=5a7d35b7-29b3-e0ec-a289-8fd0ce3aab0a\u0026sp=%2Ftriggers%2Fmanual%2Frun\u0026sv=1.0\u0026sig=KYekUMRrfThDL8o4AkeWUQTO47uuEMLZ6UBT4wYbzMg",
+  "schemaVersion": "1.0.0.0",
+  "properties": {
+    "summary": "Get item",
+    "description": "Gets a single item by its id from a SharePoint list.",
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "mabolan_SharePoint"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Http",
+          "inputs": {
+            "method": "POST",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "dataset": {
+                  "type": "string",
+                  "description": "Example: https://contoso.sharepoint.com/sites/sitename",
+                  "required": true,
+                  "dynamicValues": {
+                    "operationId": "GetDataSets",
+                    "parameters": {},
+                    "value-collection": "value",
+                    "value-path": "Name",
+                    "value-title": "DisplayName"
+                  }
+                },
+                "table": {
+                  "type": "string",
+                  "description": "SharePoint list name",
+                  "required": true,
+                  "dynamicValues": {
+                    "operationId": "GetTables",
+                    "parameters": {
+                      "dataset": {
+                        "parameter": "dataset"
+                      }
+                    },
+                    "value-collection": "value",
+                    "value-path": "Name",
+                    "value-title": "DisplayName"
+                  }
+                },
+                "id": {
+                  "type": "integer",
+                  "description": "Unique identifier of item to be retrieved",
+                  "required": true,
+                  "dynamicValues": null
+                },
+                "view": {
+                  "type": "string",
+                  "description": "Avoid column threshold issues by only using columns defined in a view",
+                  "required": false,
+                  "dynamicValues": {
+                    "operationId": "GetTableViews",
+                    "parameters": {
+                      "dataset": {
+                        "parameter": "dataset"
+                      },
+                      "table": {
+                        "parameter": "table"
+                      }
+                    },
+                    "value-path": "Name",
+                    "value-title": "DisplayName"
+                  }
+                }
+              }
+            },
+            "triggerAuthenticationType": "All"
+          }
+        }
+      },
+      "actions": {
+        "try": {
+          "type": "Scope",
+          "actions": {
+            "action": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "connectorName": "SharePoint",
+                  "apiName": "shared_sharepointonline",
+                  "operationId": "GetItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "@triggerBody()?[\u0027dataset\u0027]",
+                  "table": "@triggerBody()?[\u0027table\u0027]",
+                  "id": "@triggerBody()?[\u0027id\u0027]",
+                  "view": "@triggerBody()?[\u0027view\u0027]"
+                },
+                "authentication": null
+              }
+            }
+          }
+        },
+        "successResponse": {
+          "type": "Response",
+          "kind": "Http",
+          "inputs": {
+            "statusCode": 200,
+            "headers": {
+              "content_Type": "application/json"
+            },
+            "body": "@outputs(\u0027Action\u0027)?[\u0027body\u0027]"
+          },
+          "runAfter": {
+            "try": [
+              "Succeeded"
+            ]
+          }
+        },
+        "catch": {
+          "type": "Scope",
+          "actions": {
+            "errorResponse": {
+              "type": "Response",
+              "kind": "Http",
+              "inputs": {
+                "statusCode": 200,
+                "headers": {
+                  "content_Type": "application/json"
+                },
+                "body": "@outputs(\u0027Action\u0027)?[\u0027body\u0027]"
+              }
+            }
+          },
+          "runAfter": {
+            "try": [
+              "Failed"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

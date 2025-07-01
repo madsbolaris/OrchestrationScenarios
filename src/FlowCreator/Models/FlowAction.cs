@@ -48,6 +48,12 @@ namespace FlowCreator.Models
                 [JsonPropertyName("connectionName")]
                 public string? ConnectionName { get; set; }
 
+                [JsonPropertyName("connectorName")]
+                public string? ConnectorName { get; set; }
+
+                [JsonPropertyName("apiName")]
+                public string? ApiName { get; set; }
+
                 [JsonPropertyName("operationId")]
                 public string? OperationId { get; set; }
 
@@ -59,7 +65,9 @@ namespace FlowCreator.Models
                     return new FlowHost
                     {
                         ConnectionName = this.ConnectionName,
+                        ConnectorName = this.ConnectorName,
                         OperationId = this.OperationId,
+                        ApiName = this.ApiName,
                         ApiId = this.ApiId
                     };
                 }

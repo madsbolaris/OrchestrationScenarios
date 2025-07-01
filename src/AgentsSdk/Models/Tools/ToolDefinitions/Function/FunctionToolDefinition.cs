@@ -34,52 +34,25 @@ public class FunctionToolDefinition : ClientSideToolDefinition
     {
         var methodInfo = typeof(T).GetMethod(methodName)!;
 
-        var kernelAttr = methodInfo.GetCustomAttributes(typeof(Microsoft.SemanticKernel.KernelFunctionAttribute), false)
-            .OfType<Microsoft.SemanticKernel.KernelFunctionAttribute>()
-            .FirstOrDefault();
-        var name = kernelAttr?.Name ?? methodInfo.Name;
-
-        var descAttr = methodInfo.GetCustomAttributes(typeof(DescriptionAttribute), false)
-            .OfType<DescriptionAttribute>()
-            .FirstOrDefault();
-        var description = descAttr?.Description ?? "No description available.";
-
-        var methodDelegate = Delegate.CreateDelegate(
-            typeof(Func<,>).MakeGenericType(
-                methodInfo.GetParameters().First().ParameterType,
-                methodInfo.ReturnType),
-            instance,
-            methodInfo
-        );
-
-        var aiFunction = AIFunctionFactory.Create(methodDelegate, name, description);
+        var aiFunction = AIFunctionFactory.Create(methodInfo, instance);
         var baseParameters = JsonNode.Parse(aiFunction.JsonSchema.GetRawText());
 
-        var tool = new FunctionToolDefinition(name, description)
+        var tool = new FunctionToolDefinition(aiFunction.Name, aiFunction.Description)
         {
-            Method = methodDelegate,
+            Method = aiFunction.InvokeAsync,
             _baseParameters = baseParameters,
             _cachedFunction = aiFunction
         };
 
-        return tool;
-    }
-
-    internal override ToolMetadata ToToolMetadata()
-    {
-        return new ToolMetadata
+        tool._executor = async (inputDict) =>
         {
-            Name = Name,
-            Type = Type,
-            Description = Description,
-            Parameters = Parameters,
-            Executor = _cachedFunction is not null
-                ? async (input) =>
-                {
-                    var normalized = ToolArgumentNormalizer.NormalizeArguments(Parameters, input);
-                    return await _cachedFunction.InvokeAsync(new(arguments: normalized));
-                }
-                : null
+            var effectiveSchema = tool.Overrides?.Parameters ?? tool.Parameters;
+            var normalized = ToolArgumentNormalizer.NormalizeArguments(effectiveSchema, inputDict);
+
+            return await aiFunction.InvokeAsync(new(normalized));
         };
+
+
+        return tool;
     }
 }

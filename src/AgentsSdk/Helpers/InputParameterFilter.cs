@@ -11,7 +11,7 @@ public static class InputParameterFilter
         {
             if (AllowedKeys.Contains(key))
             {
-                filtered[key] = JsonNode.Parse(value!.ToJsonString());
+                filtered[key] = value is null ? null : JsonNode.Parse(value.ToJsonString());
             }
         }
 

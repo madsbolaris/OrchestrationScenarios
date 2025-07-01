@@ -134,18 +134,21 @@ public class SpecWorkflow
     [KernelFunction("update_api_id")]
     [Description("Must be called whenever the user provides the API name. This function will use the API name to also get the API ID.")]
     public Task<string> UpdateApiNameAsync(
-        [Description("The name of the API provided by the user; should begin with `shared_`. If given a full path, just provide the last part after the last `/`; the function will then resolve it to the correct API. Use title case for the API name, e.g., `shared_ExcelOnlineBusiness`.")]
-        string apiName)
+        [Description("The name of the API provided by the user; should begin with `shared_`. If given a full path, just provide the last part after the last `/`; the function will then resolve it to the correct API. Change any user input to title case for the API name, e.g., `shared_excelonlinebusiness` -> `shared_ExcelOnlineBusiness`.")]
+        string apiName,
+        [Description("The name of the connector; if not provided, it will be derived from the API name. If the API name starts with `shared_`, the connector name will be the part after `shared_`. Change any user input to title case for the Connector name (e.g., `excelonlinebusiness` -> `ExcelOnlineBusiness`).")]
+        string? connectorName = null)
     {
         var input = new AskForApiNameInput
         {
-            ApiName = apiName
+            ApiName = apiName,
+            ConnectorName = connectorName ?? (apiName.StartsWith("shared_") ? apiName[7..] : apiName)
         };
         return RunStepAsync(SpecWorkflowEvents.AskForApiName, input);
     }
 
     [KernelFunction("update_operation_id")]
-    [Description("Must be called whenever the user provides the operation ID. You'll get a list of valid operation IDs from UpdateApiNameAsync.")]
+    [Description("Must be called whenever the user provides the operation ID. You'll get a list of valid operation IDs from update_api_id, so always call that first before asking the user for which operation they want.")]
     public Task<string> UpdateOperationIdAsync(string operationId)
     {
         var input = new AskForOperationIdInput

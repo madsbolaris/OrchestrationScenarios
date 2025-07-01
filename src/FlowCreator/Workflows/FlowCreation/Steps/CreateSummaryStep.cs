@@ -33,7 +33,7 @@ public sealed class CreateSummaryStep(
             return;
         }
 
-        var connectorName = doc.ApiName.StartsWith("shared_") ? doc.ApiName[7..] : doc.ApiName;
+        var connectorName = doc.ConnectorName;
         var swaggerPath = Path.Combine(
             settings.Value.FolderPath,
             $"src/Connectors/FirstParty/{connectorName}/Connector/apidefinition.swagger.json"

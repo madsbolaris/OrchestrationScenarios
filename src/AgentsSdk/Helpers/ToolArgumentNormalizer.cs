@@ -96,6 +96,6 @@ public static class ToolArgumentNormalizer
         ));
     }
 
-    private static JsonNode DeepClone(JsonNode node) =>
-        JsonNode.Parse(node.ToJsonString())!;
+    private static JsonNode? DeepClone(JsonNode? node) =>
+        node is null ? null : JsonNode.Parse(node.ToJsonString());
 }

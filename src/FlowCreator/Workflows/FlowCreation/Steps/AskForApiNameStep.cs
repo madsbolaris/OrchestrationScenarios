@@ -20,6 +20,7 @@ public sealed class AskForApiNameStep(
     {
         var doc = workingFlowDefinitionService.GetCurrentFlowDefinition();
         var apiName = input.ApiName;
+        var connectorName = input.ConnectorName;
         var folderPath = settings.Value.FolderPath;
         var sampleFilePath = Path.Combine(folderPath, "src/source/tools/DocGenerator/SampleRequestResponses/PowerApps.json");
 
@@ -30,7 +31,7 @@ public sealed class AskForApiNameStep(
         using var document = JsonDocument.Parse(json);
 
         var element = document.RootElement.EnumerateArray()
-            .FirstOrDefault(e => e.TryGetProperty("name", out var name) && name.GetString() == apiName);
+            .FirstOrDefault(e => e.TryGetProperty("name", out var name) && name.GetString()!.ToLower() == apiName.ToLower());
 
         string? fullPath = element.ValueKind != JsonValueKind.Undefined
             ? element.GetProperty("id").GetString()
@@ -43,11 +44,13 @@ public sealed class AskForApiNameStep(
             return;
         }
 
-        var connectorName = apiName.StartsWith("shared_") ? apiName[7..] : apiName;
         var swaggerPath = Path.Combine(folderPath, $"src/Connectors/FirstParty/{connectorName}/Connector/apidefinition.swagger.json");
 
         if (!File.Exists(swaggerPath))
-            throw new FileNotFoundException("Could not find the API definition file.", swaggerPath);
+        {
+            await context.EmitEventAsync(SpecWorkflowEvents.EmitError, $"API with name '{apiName}' was successfully found, but a connector with name '{connectorName}' does not exist. Please ask the user to provide a valid connector name for the api `{apiName}`.");
+            return;
+        }
 
         var swaggerJson = File.ReadAllText(swaggerPath);
         var swaggerNode = JsonNode.Parse(swaggerJson);
@@ -58,12 +61,16 @@ public sealed class AskForApiNameStep(
             var productionOps = paths
                 .SelectMany(p => p.Value is JsonObject methods
                     ? methods
-                        .Where(m => string.Equals(
-                            m.Value?["x-ms-api-annotation"]?["status"]?.ToString(),
-                            "Production",
-                            StringComparison.OrdinalIgnoreCase))
+                        .Where(m =>
+                            m.Value is JsonObject method &&
+                            // Not deprecated
+                            (!method.TryGetPropertyValue("deprecated", out var deprecatedNode) || deprecatedNode?.GetValue<bool>() != true) &&
+                            // Not marked internal
+                            (!method.TryGetPropertyValue("x-ms-visibility", out var visibilityNode) || !string.Equals(visibilityNode?.ToString(), "internal", StringComparison.OrdinalIgnoreCase)) &&
+                            // Has operationId
+                            !string.IsNullOrEmpty(method["operationId"]?.ToString())
+                        )
                         .Select(m => m.Value?["operationId"]?.ToString())
-                        .Where(opId => !string.IsNullOrEmpty(opId))
                     : Enumerable.Empty<string?>())
                 .ToList();
 
@@ -75,17 +82,19 @@ public sealed class AskForApiNameStep(
             else
             {
                 await context.EmitEventAsync(SpecWorkflowEvents.EmitHelp, 
-                    "No production operations found in the Swagger file; confirm with the user if they want to proceed with the API ID provided.");
+                    "No non-deprecated, externally-visible operations found in the Swagger file; confirm with the user if they want to proceed with the API ID provided.");
             }
         }
 
         doc.ApiName = apiName;
         doc.ApiId = fullPath;
+        doc.ConnectorName = connectorName;
 
         workingFlowDefinitionService.UpdateCurrentFlowDefinition((d) =>
         {
             d.ApiName = apiName;
             d.ApiId = fullPath;
+            d.ConnectorName = connectorName;
             return d;
         });
 
@@ -100,4 +109,7 @@ public class AskForApiNameInput
 {
     [JsonPropertyName("apiName")]
     public required string ApiName { get; set; }
+
+    [JsonPropertyName("connectorName")]
+    public required string ConnectorName { get; set; }
 }

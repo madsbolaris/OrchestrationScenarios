@@ -92,6 +92,7 @@ public class FlowDefinitionService
         if (document.Summary == null ||
             document.Description == null ||
             string.IsNullOrWhiteSpace(document.ApiName) ||
+            string.IsNullOrWhiteSpace(document.ConnectorName) ||
             string.IsNullOrWhiteSpace(document.OperationId) ||
             string.IsNullOrWhiteSpace(document.ApiId) ||
             string.IsNullOrWhiteSpace(document.ConnectionReferenceLogicalName) ||

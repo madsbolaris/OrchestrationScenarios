@@ -25,7 +25,7 @@ public sealed class AskForOperationIdStep(
             return;
         }
 
-        var connectorName = doc.ApiName.Replace("shared_", string.Empty);
+        var connectorName = doc.ConnectorName;
         var swaggerPath = Path.Combine(settings.Value.FolderPath, $"src/Connectors/FirstParty/{connectorName}/Connector/apidefinition.swagger.json");
 
         if (!File.Exists(swaggerPath))
@@ -47,16 +47,25 @@ public sealed class AskForOperationIdStep(
 
                 foreach (var (_, operation) in methodSet)
                 {
-                    var opId = operation?["operationId"]?.ToString();
-                    var status = operation?["x-ms-api-annotation"]?["status"]?.ToString();
+                    if (operation is not JsonObject method)
+                        continue;
+
+                    var opId = method["operationId"]?.ToString();
+                    var isDeprecated = method.TryGetPropertyValue("deprecated", out var deprecatedNode) &&
+                                    deprecatedNode?.GetValue<bool>() == true;
+
+                    var isInternal = method.TryGetPropertyValue("x-ms-visibility", out var visibilityNode) &&
+                                    string.Equals(visibilityNode?.ToString(), "internal", StringComparison.OrdinalIgnoreCase);
 
                     if (!string.IsNullOrEmpty(opId))
                     {
-                        if (status?.Equals("Production", StringComparison.OrdinalIgnoreCase) == true)
-                            productionOps.Add(opId);
-
+                        // Track all operationIds to match the input, even if not "production"
                         if (opId == input.OperationId)
                             found = true;
+
+                        // Only add to productionOps if NOT deprecated and NOT internal
+                        if (!isDeprecated && !isInternal)
+                            productionOps.Add(opId);
                     }
                 }
             }

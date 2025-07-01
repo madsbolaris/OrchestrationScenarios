@@ -32,6 +32,8 @@ public sealed class CreateActionStep(
                 Host = new FlowAction.FlowActionInputs.FlowHost
                 {
                     ConnectionName = doc.ApiName,
+                    ApiName = doc.ApiName,
+                    ConnectorName = doc.ConnectorName,
                     ApiId = doc.ApiId,
                     OperationId = doc.OperationId
                 },

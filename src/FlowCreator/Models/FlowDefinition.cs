@@ -28,11 +28,22 @@ public class FlowDefinition
     [JsonIgnore]
     public string? ApiName
     {
-        get => ActionSchema?.Inputs?.Host?.ConnectionName;
+        get => ActionSchema?.Inputs?.Host?.ApiName;
         set
         {
             if (ActionSchema?.Inputs?.Host != null)
-                ActionSchema.Inputs.Host.ConnectionName = value;
+                ActionSchema.Inputs.Host.ApiName = value;
+        }
+    }
+
+    [JsonIgnore]
+    public string? ConnectorName
+    {
+        get => ActionSchema?.Inputs?.Host?.ConnectorName;
+        set
+        {
+            if (ActionSchema?.Inputs?.Host != null)
+                ActionSchema.Inputs.Host.ConnectorName = value;
         }
     }
 
@@ -117,7 +128,7 @@ public class FlowDefinitionConverter : JsonConverter<FlowDefinition>
                                     .GetProperty("name")
                                     .GetString();
 
-                result.ApiName = (apiName != "CONNECTION_NAME") ? apiName : null;
+                result.ApiName = (apiName != "API_NAME") ? apiName : null;
                 result.ConnectionReferenceLogicalName = (connRefName != "CONNECTION_REFERENCE_NAME") ? connRefName : null;
                 break;
             }
@@ -169,7 +180,7 @@ public class FlowDefinitionConverter : JsonConverter<FlowDefinition>
 
             var hostNode = actionNode.GetProperty("inputs").GetProperty("host");
             var operationId = hostNode.GetProperty("operationId").GetString();
-            var connectionName = hostNode.GetProperty("connectionName").GetString();
+            var connectorName = hostNode.GetProperty("connectorName").GetString();
             var apiId = hostNode.GetProperty("apiId").GetString();
 
             var parametersNode = actionNode.GetProperty("inputs").GetProperty("parameters");
@@ -190,19 +201,18 @@ public class FlowDefinitionConverter : JsonConverter<FlowDefinition>
                 {
                     Host = new FlowAction.FlowActionInputs.FlowHost
                     {
-                        ConnectionName = connectionName != "CONNECTION_NAME" ? connectionName : null,
+                        ConnectionName = result.ApiName != "CONNECTION_NAME" ? result.ApiName : null,
+                        ConnectorName = connectorName != "CONNECTOR_NAME" ? connectorName : null,
                         OperationId = operationId != "OPERATION_ID" ? operationId : null,
                         ApiId = apiId != "API_ID" ? apiId : null
                     },
-                    Parameters = parameters.Count > 0 ? parameters : null,
-                    Authentication = null
+                    Parameters = parameters.Count > 0 ? parameters : null
                 }
             };
 
             // Mirror operationId back to top-level helper
             result.OperationId = result.ActionSchema.Inputs.Host.OperationId;
             result.ApiId = result.ActionSchema.Inputs.Host.ApiId;
-            result.ApiName = result.ActionSchema.Inputs.Host.ConnectionName;
         }
 
         return result;
@@ -310,6 +320,7 @@ public class FlowDefinitionConverter : JsonConverter<FlowDefinition>
         var clone = action.Clone();
 
         clone.Inputs.Host.ConnectionName ??= "CONNECTION_NAME";
+        clone.Inputs.Host.ConnectorName ??= "CONNECTION_NAME";
         clone.Inputs.Host.OperationId ??= "OPERATION_ID";
         clone.Inputs.Host.ApiId ??= "API_ID";
 
