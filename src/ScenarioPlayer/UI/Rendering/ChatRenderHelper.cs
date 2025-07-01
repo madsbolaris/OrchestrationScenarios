@@ -43,9 +43,13 @@ public static class ChatRenderHelper
 				chat.MessageHistory.AppendXml(XmlChatSerializer.SerializeStartTag(typeof(AgentMessage)));
 				break;
 			case ToolMessage tool:
-				chat.StartMessage("Tool", tool.ToolType, GetShortToolCallId(tool.ToolCallId));
+				var shortId = GetShortToolCallId(tool.ToolCallId);
+				chat.StartMessage("Tool", tool.ToolType, shortId);
 				chat.MessageHistory.AppendXml(XmlChatSerializer.SerializeStartTag(
-					typeof(ToolMessage), $"for=\"{GetShortToolCallId(tool.ToolCallId)}\""));
+					typeof(ToolMessage), new Dictionary<string, string>
+					{
+						["for"] = shortId
+					}));
 				break;
 		}
 
@@ -91,7 +95,11 @@ public static class ChatRenderHelper
 				{
 					var shortId = GetShortToolCallId(toolDelta.ToolCallId);
 					chat.StartMessage("Tool", toolDelta.ToolType, shortId);
-					chat.MessageHistory.AppendXml(XmlChatSerializer.SerializeStartTag(type, $"for=\"{shortId}\""));
+					chat.MessageHistory.AppendXml(XmlChatSerializer.SerializeStartTag(
+						type, new Dictionary<string, string>
+						{
+							["for"] = shortId
+						}));
 				}
 				else
 				{
@@ -126,12 +134,16 @@ public static class ChatRenderHelper
 
 					_openXmlBuffers[type] = new StringBuilder();
 					_openXmlBuffers[type].Append(XmlChatSerializer.SerializeStartTag(
-						type, $"name=\"{toolCall.Name}\" id=\"{shortId}\"").TrimEnd('>', '\n') + ">");
+						type, new Dictionary<string, string>
+						{
+							["name"] = toolCall.Name,
+							["id"] = shortId
+						}));
 				}
 				else
 				{
 					_openXmlBuffers[type] = new StringBuilder();
-					_openXmlBuffers[type].Append(XmlChatSerializer.SerializeStartTag(type).TrimEnd('>', '\n') + ">");
+					_openXmlBuffers[type].Append(XmlChatSerializer.SerializeStartTag(type));
 				}
 				break;
 

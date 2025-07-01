@@ -12,32 +12,44 @@ namespace ScenarioPlayer.UI.Rendering;
 
 public static class XmlChatSerializer
 {
-    public static string SerializeStartTag(Type? type, string? attributes = null)
+    public static string SerializeStartTag(Type? type, Dictionary<string, string>? attributes = null)
     {
+        if (type == null) return "";
+
         var tag = GetTag(type);
         var sb = new StringBuilder();
-        using var writer = CreateWriter(sb);
 
-        writer.WriteStartElement(tag);
-        if (attributes != null)
+        using (var writer = XmlWriter.Create(sb, new XmlWriterSettings
         {
-            // Manually write raw attribute string into tag
-            writer.WriteRaw(" " + attributes);
+            OmitXmlDeclaration = true,
+            Indent = false,
+            NewLineHandling = NewLineHandling.None
+        }))
+        {
+            writer.WriteStartElement(tag);
+            if (attributes != null)
+            {
+                foreach (var (key, value) in attributes)
+                    writer.WriteAttributeString(key, value);
+            }
+            writer.WriteString(""); // ✅ Prevents <tag />
+            writer.Flush();
         }
 
-        writer.WriteString(""); // force tag to stay open
-        writer.WriteEndElement(); // will reopen/close immediately
-        writer.Flush();
-
+        // Remove trailing </tag>
         var xml = sb.ToString();
-        // Trim self-closing tag, convert to open-only: <tag></tag> => <tag>
-        return xml.Replace($"</{tag}>", "").TrimEnd() + "\n";
+        var endTag = $"</{tag}>";
+        if (xml.EndsWith(endTag))
+            xml = xml[..^endTag.Length];
+
+        return xml;
     }
+
 
     public static string SerializeEndTag(Type? type)
     {
-        var tag = GetTag(type);
-        return $"</{tag}>\n";
+        if (type == null) return "";
+        return $"</{GetTag(type)}>\n"; // only one line break to avoid double spacing
     }
 
     public static string SerializeContent(AIContent content)
@@ -59,7 +71,22 @@ public static class XmlChatSerializer
         => WrapElement("tool-result", SerializeResultValue(result));
 
     public static string SerializeAppendValue(string? text) =>
-        Escape(text ?? "") + "\n";
+        Escape(text ?? "");
+
+    public static string Escape(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        var sb = new StringBuilder();
+        using var writer = CreateWriter(sb);
+        writer.WriteStartElement("x");
+        writer.WriteString(text);
+        writer.WriteEndElement();
+        writer.Flush();
+        var result = sb.ToString();
+        var start = result.IndexOf('>') + 1;
+        var end = result.LastIndexOf('<');
+        return result[start..end];
+    }
 
     private static string WrapElement(string tagName, string value, Action<XmlWriter>? writeAttributes = null)
     {
@@ -108,20 +135,4 @@ public static class XmlChatSerializer
         var t when t == typeof(ToolResultContent) => "tool-result",
         _ => "unknown"
     };
-
-    public static string Escape(string text)
-    {
-        // Use XmlWriter’s escaping logic via surrogate wrap
-        var sb = new StringBuilder();
-        using var writer = CreateWriter(sb);
-        writer.WriteStartElement("dummy");
-        writer.WriteString(text);
-        writer.WriteEndElement();
-        writer.Flush();
-
-        var result = sb.ToString();
-        var start = result.IndexOf('>') + 1;
-        var end = result.LastIndexOf('<');
-        return result[start..end];
-    }
 }
