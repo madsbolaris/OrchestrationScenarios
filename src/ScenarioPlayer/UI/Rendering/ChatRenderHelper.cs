@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text;
 using AgentsSdk.Models.Messages;
 using AgentsSdk.Models.Messages.Content;
 using AgentsSdk.Models.Messages.Types;
@@ -13,149 +14,170 @@ namespace ScenarioPlayer.UI.Rendering;
 
 public static class ChatRenderHelper
 {
-    private static readonly Dictionary<string, string> _toolCallIdMap = new();
-    private static int _toolCallIdCounter = 1;
+	private static readonly Dictionary<string, string> _toolCallIdMap = new();
+	private static int _toolCallIdCounter = 1;
 
-    private static string GetShortToolCallId(string longId)
-    {
-        if (!_toolCallIdMap.TryGetValue(longId, out var shortId))
-        {
-            shortId = _toolCallIdCounter.ToString("D4");
-            _toolCallIdMap[longId] = shortId;
-            _toolCallIdCounter++;
-        }
-        return shortId;
-    }
+	private static readonly Dictionary<Type, StringBuilder> _openXmlBuffers = new();
 
-    public static void RenderStaticMessage(ChatMessage message, ChatView chat)
-    {
-        switch (message)
-        {
-            case UserMessage:
-                chat.StartMessage("User");
-                break;
-            case AgentMessage:
-                chat.StartMessage("Agent");
-                break;
-            case ToolMessage tool:
-                chat.StartMessage("Tool", tool.ToolType, GetShortToolCallId(tool.ToolCallId));
-                break;
-        }
+	private static string GetShortToolCallId(string longId)
+	{
+		if (!_toolCallIdMap.TryGetValue(longId, out var shortId))
+		{
+			shortId = _toolCallIdCounter.ToString("D4");
+			_toolCallIdMap[longId] = shortId;
+			_toolCallIdCounter++;
+		}
+		return shortId;
+	}
 
-        foreach (var content in message.Content)
-        {
-            switch (content)
-            {
-                case TextContent text:
-                    chat.AppendToLastMessage(text.Text);
-                    break;
-                case ToolCallContent call:
-                    chat.AppendToLastMessage($"{call.Name} #{GetShortToolCallId(call.ToolCallId)}\n");
-                    break;
-                case ToolResultContent result:
-                    chat.AppendToLastMessage(result.Results?.ToString() ?? "");
-                    break;
-            }
-        }
-    }
+	public static void RenderStaticMessage(ChatMessage message, ChatView chat)
+	{
+		switch (message)
+		{
+			case UserMessage:
+				chat.StartMessage("User");
+				chat.MessageHistory.AppendXml(XmlChatSerializer.SerializeStartTag(typeof(UserMessage)));
+				break;
+			case AgentMessage:
+				chat.StartMessage("Agent");
+				chat.MessageHistory.AppendXml(XmlChatSerializer.SerializeStartTag(typeof(AgentMessage)));
+				break;
+			case ToolMessage tool:
+				chat.StartMessage("Tool", tool.ToolType, GetShortToolCallId(tool.ToolCallId));
+				chat.MessageHistory.AppendXml(XmlChatSerializer.SerializeStartTag(
+					typeof(ToolMessage), $"for=\"{GetShortToolCallId(tool.ToolCallId)}\""));
+				break;
+		}
 
-    public static async Task DisplayStreamToChatViewAsync(
-        IAsyncEnumerable<StreamingUpdate> stream,
-        ChatView chat)
-    {
-        await foreach (var update in stream)
-        {
-            switch (update)
-            {
-                case ChatMessageUpdate<AgentMessageDelta> agent:
-                    HandleChatDelta(agent.Delta, chat, "Agent");
-                    break;
-                case ChatMessageUpdate<ToolMessageDelta> tool:
-                    HandleChatDelta(tool.Delta, chat, "Tool");
-                    break;
-                case AIContentUpdate<TextContentDelta> text:
-                    HandleAIContentDelta(text.Delta, chat);
-                    break;
-                case AIContentUpdate<ToolCallContentDelta> toolCall:
-                    HandleAIContentDelta(toolCall.Delta, chat);
-                    break;
-            }
-        }
-    }
+		foreach (var content in message.Content)
+		{
+			AppendContent(content, chat);
+		}
 
-    private static void HandleChatDelta<T>(StreamingOperation<T> delta, ChatView chat, string sender)
-        where T : SystemGeneratedMessageDelta
-    {
-        switch (delta)
-        {
-            case StartStreamingOperation<T> start:
-                if (start.Value is ToolMessageDelta toolDelta)
-                {
-                    chat.StartMessage(sender, toolDelta.ToolType, GetShortToolCallId(toolDelta.ToolCallId));
-                }
-                else
-                {
-                    chat.StartMessage(sender);
-                }
-                break;
+		chat.MessageHistory.AppendXml(XmlChatSerializer.SerializeEndTag(GetMessageType(message)));
+	}
 
-            case SetStreamingOperation<T> set:
-                foreach (var content in ((SystemGeneratedMessageDelta)set.Value).Content!)
-                    AppendContent(content, chat);
-                break;
+	public static async Task DisplayStreamToChatViewAsync(
+		IAsyncEnumerable<StreamingUpdate> stream,
+		ChatView chat)
+	{
+		await foreach (var update in stream)
+		{
+			switch (update)
+			{
+				case ChatMessageUpdate<AgentMessageDelta> agent:
+					HandleChatDelta(agent.Delta, chat, typeof(AgentMessageDelta));
+					break;
+				case ChatMessageUpdate<ToolMessageDelta> tool:
+					HandleChatDelta(tool.Delta, chat, typeof(ToolMessageDelta));
+					break;
+				case AIContentUpdate<TextContentDelta> text:
+					HandleAIContentDelta(text.Delta, chat, typeof(TextContentDelta));
+					break;
+				case AIContentUpdate<ToolCallContentDelta> toolCall:
+					HandleAIContentDelta(toolCall.Delta, chat, typeof(ToolCallContentDelta));
+					break;
+			}
+		}
+	}
 
-            case EndStreamingOperation<T>:
-                break;
-        }
-    }
+	private static void HandleChatDelta<T>(StreamingOperation<T> delta, ChatView chat, Type type)
+		where T : SystemGeneratedMessageDelta
+	{
+		switch (delta)
+		{
+			case StartStreamingOperation<T> start:
+				if (start.Value is ToolMessageDelta toolDelta)
+				{
+					var shortId = GetShortToolCallId(toolDelta.ToolCallId);
+					chat.StartMessage("Tool", toolDelta.ToolType, shortId);
+					chat.MessageHistory.AppendXml(XmlChatSerializer.SerializeStartTag(type, $"for=\"{shortId}\""));
+				}
+				else
+				{
+					chat.StartMessage("Agent");
+					chat.MessageHistory.AppendXml(XmlChatSerializer.SerializeStartTag(type));
+				}
+				break;
 
-    private static void HandleAIContentDelta<T>(StreamingOperation<T> delta, ChatView chat)
-        where T : AIContentDelta
-    {
-        switch (delta)
-        {
-            case StartStreamingOperation<T> start when start.Value is ToolCallContentDelta call:
-                chat.AppendToLastMessage($"{call.Name} #{GetShortToolCallId(call.ToolCallId)}\n");
-                break;
+			case SetStreamingOperation<T> set:
+				foreach (var content in ((SystemGeneratedMessageDelta)set.Value).Content!)
+				{
+					AppendContent(content, chat);
+				}
+				break;
 
-            case AppendStreamingOperation<T> append:
-                chat.AppendToLastMessage(append.Value?.ToString() ?? "");
-                break;
+			case EndStreamingOperation<T> end:
+				chat.MessageHistory.AppendXml(XmlChatSerializer.SerializeEndTag(type));
+				break;
+		}
+	}
 
-            case EndStreamingOperation<T>:
-                break;
-        }
-    }
+	private static void HandleAIContentDelta<T>(StreamingOperation<T> delta, ChatView chat, Type type)
+		where T : AIContentDelta
+	{
+		switch (delta)
+		{
+			case StartStreamingOperation<T> start:
+				if (start.Value is ToolCallContentDelta toolCall)
+				{
+					var shortId = GetShortToolCallId(toolCall.ToolCallId);
+					chat.AppendToLastMessage($"{toolCall.Name} #{shortId}\n");
 
-    private static void AppendContent(AIContent content, ChatView chat)
-    {
-        switch (content)
-        {
-            case TextContent text:
-                chat.AppendToLastMessage(text.Text);
-                break;
+					_openXmlBuffers[type] = new StringBuilder();
+					_openXmlBuffers[type].Append(XmlChatSerializer.SerializeStartTag(
+						type, $"name=\"{toolCall.Name}\" id=\"{shortId}\"").TrimEnd('>', '\n') + ">");
+				}
+				else
+				{
+					_openXmlBuffers[type] = new StringBuilder();
+					_openXmlBuffers[type].Append(XmlChatSerializer.SerializeStartTag(type).TrimEnd('>', '\n') + ">");
+				}
+				break;
 
-            case ToolCallContent call:
-                chat.AppendToLastMessage($"{call.Name} #{GetShortToolCallId(call.ToolCallId)}\n");
-                break;
+			case AppendStreamingOperation<T> append:
+				var token = append.Value?.ToString() ?? "";
+				chat.AppendToLastMessage(token);
 
-            case ToolResultContent result:
-                // check if results are already strings
-                if (result.Results!.GetType() == typeof(string))
-                {
-                    chat.AppendToLastMessage(result.Results.ToString() ?? "");
-                    return;
-                }
+				if (_openXmlBuffers.TryGetValue(type, out var buf))
+					buf.Append(XmlChatSerializer.Escape(token));
+				break;
 
-                // otherwise serialize the results to JSON with out indents
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = false,
-                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // Allows unescaped characters
-                };
-                var jsonString = JsonSerializer.Serialize(result.Results, options);
-                chat.AppendToLastMessage(jsonString ?? "");
-                break;
-        }
-    }
+			case EndStreamingOperation<T>:
+				if (_openXmlBuffers.TryGetValue(type, out var completed))
+				{
+					completed.Append(XmlChatSerializer.SerializeEndTag(type));
+					chat.MessageHistory.AppendXml(completed.ToString());
+					_openXmlBuffers.Remove(type);
+				}
+				break;
+		}
+	}
+
+	private static void AppendContent(AIContent content, ChatView chat)
+	{
+		chat.AppendToLastMessage(content switch
+		{
+			TextContent text => text.Text,
+			ToolCallContent call => $"{call.Name} #{GetShortToolCallId(call.ToolCallId)}\n",
+			ToolResultContent result => result.Results is string s
+				? s
+				: JsonSerializer.Serialize(result.Results, new JsonSerializerOptions
+				{
+					WriteIndented = false,
+					Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+			 }),
+			_ => ""
+		});
+
+		chat.MessageHistory.AppendXml(XmlChatSerializer.SerializeContent(content));
+	}
+
+	private static Type GetMessageType(ChatMessage message) => message switch
+	{
+		UserMessage => typeof(UserMessage),
+		AgentMessage => typeof(AgentMessage),
+		ToolMessage => typeof(ToolMessage),
+		_ => typeof(object)
+	};
 }

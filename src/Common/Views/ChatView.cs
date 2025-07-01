@@ -1,8 +1,8 @@
+using System;
 using Terminal.Gui;
+using Microsoft.Extensions.Logging;
 
 namespace Common.Views;
-
-using Microsoft.Extensions.Logging; // Add this at the top
 
 public class ChatView : Window
 {
@@ -15,10 +15,33 @@ public class ChatView : Window
 		ColorScheme = new ColorScheme { Normal = new Terminal.Gui.Attribute(Color.White, Color.Black) };
 
 		_messageHistory = new MessageHistory(this, loggerFactory);
+		_onInput = onInput;
 
-		if (onInput != null)
+		// Always add the Copy XML button in the top-right corner
+		var copyButton = new Button("Copy XML")
 		{
-			_onInput += onInput;
+			X = Pos.AnchorEnd(12), // 12 = button width for alignment; adjust if label changes
+			Y = 0,
+		};
+
+		copyButton.Clicked += () =>
+		{
+			if (Clipboard.IsSupported)
+			{
+				Clipboard.Contents = _messageHistory.Xml;
+				MessageBox.Query("Copied", "Conversation XML copied to clipboard.", "OK");
+			}
+			else
+			{
+				MessageBox.ErrorQuery("Clipboard Not Supported", "Terminal clipboard is not available.", "OK");
+			}
+		};
+
+		Add(copyButton);
+
+		// Optionally add input field if enabled
+		if (_onInput != null)
+		{
 			var inputField = new InputField(this, input =>
 			{
 				_messageHistory.StartMessage("You");
@@ -30,14 +53,15 @@ public class ChatView : Window
 		}
 	}
 
-
 	public void StartMessage(string sender, string? toolName = null, string? toolCallId = null)
 	{
 		_messageHistory.StartMessage(sender, toolName, toolCallId);
 	}
 
-	public void AppendToLastMessage(string text)
+	public void AppendToLastMessage(string content)
 	{
-		_messageHistory.AppendToLastMessage(text);
+		_messageHistory.AppendToLastMessage(content);
 	}
+
+	public MessageHistory MessageHistory => _messageHistory;
 }

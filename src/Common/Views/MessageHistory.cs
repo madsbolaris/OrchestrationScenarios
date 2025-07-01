@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Terminal.Gui;
 using Microsoft.Extensions.Logging;
 
@@ -14,6 +15,11 @@ public class MessageHistory
 	private readonly ScrollView _renderedView;
 	private readonly View _parentView;
 	private readonly ILogger _logger;
+
+	private readonly StringBuilder _xmlBuilder = new();
+	public string Xml => _xmlBuilder.ToString();
+	public void AppendXml(string xml) => _xmlBuilder.Append(xml);
+	public void ResetXml() => _xmlBuilder.Clear();
 
 	public ScrollView ScrollView => _renderedView;
 
