@@ -1,4 +1,7 @@
 using Terminal.Gui;
+using Terminal.Gui.App;
+using Terminal.Gui.ViewBase;
+using Terminal.Gui.Views;
 
 namespace ScenarioPlayer.UI.Views;
 
@@ -6,17 +9,17 @@ public class StreamingOutputView : FrameView
 {
     private readonly TextView _logView;
 
-    public StreamingOutputView() : base("Agent Output")
+    public StreamingOutputView() : base()
     {
         _logView = new TextView
         {
+            Text = "Agent Output",
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(),
             ReadOnly = true,
-            WordWrap = true,
-            Multiline = true
+            WordWrap = true
         };
 
         Add(_logView);
@@ -24,24 +27,27 @@ public class StreamingOutputView : FrameView
 
     public void AppendLine(string line)
     {
-        Application.MainLoop.Invoke(() =>
+        Application.Invoke(() =>
         {
             _logView.Text += line + "\n";
-            _logView.MoveEnd();
+            // _logView.ScrollToEnd();
         });
     }
 
     public void AppendRaw(string text)
     {
-        Application.MainLoop.Invoke(() =>
+        Application.Invoke(() =>
         {
             _logView.Text += text;
-            _logView.MoveEnd();
+            // _logView.ScrollToEnd();
         });
     }
 
     public void ClearText()
     {
-        Application.MainLoop.Invoke(() => _logView.Text = "");
+        Application.Invoke(() =>
+        {
+            _logView.Text = "";
+        });
     }
 }

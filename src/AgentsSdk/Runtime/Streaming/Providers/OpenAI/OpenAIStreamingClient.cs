@@ -13,6 +13,7 @@ using OpenAI;
 using OpenAI.Responses;
 using System.ClientModel;
 using AgentsSdk.Models.Runs.Responses.StreamingOperations;
+using AgentsSdk.Models.Tools.ToolDefinitions.Mock;
 
 namespace AgentsSdk.Runtime.Streaming.Providers.OpenAI;
 
@@ -48,6 +49,7 @@ public sealed class OpenAIStreamingClient(IOptions<OpenAISettings> settings) : I
                     {
                         var metadata = tool switch
                         {
+                            MockToolDefinition mt => mt.ToToolMetadata(),
                             PowerPlatformToolDefinition pp => pp.ToToolMetadata(),
                             FunctionToolDefinition fn => fn.ToToolMetadata(),
                             BingGroundingToolDefinition bing => bing.ToToolMetadata(),

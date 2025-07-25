@@ -1,0 +1,20 @@
+name: "allDefaultWeatherBot"
+displayName: "Gets the current weather"
+description: "An agent that retrieves the current weather for a specified location using the MSN Weather API."
+model: "gpt-4.1"
+tools:
+- type: "Mock.MSN-GetWeather"
+  overrides:
+    parameters:
+      type: object
+      properties:
+        location:
+          type: string
+          description: "The location for which to retrieve the current weather."
+          default: "98105"
+        unit:
+          type: string
+          description: "The unit of measurement for the temperature."
+          default: "Fahrenheit"
+          readonly: true
+      required: []

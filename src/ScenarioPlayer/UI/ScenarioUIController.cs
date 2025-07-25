@@ -4,6 +4,10 @@ using ScenarioPlayer.Core.Services;
 using Common.Views;
 using Microsoft.Extensions.Logging;
 using ScenarioPlayer.UI.Rendering;
+using Terminal.Gui.App;
+using Terminal.Gui.Views;
+using Terminal.Gui.ViewBase;
+using System.Collections.ObjectModel;
 
 namespace ScenarioPlayer.UI;
 
@@ -28,116 +32,72 @@ public class ScenarioUIController
         var scenarios = _scenarioManager.GetAllScenarios().OrderBy(s => s.Name).ToList();
 
         Application.Init();
-
-        var colorScheme = new ColorScheme
+        var top = new Toplevel
         {
-            Normal = new Terminal.Gui.Attribute(Color.White, Color.Black),
-            Focus = new Terminal.Gui.Attribute(Color.Black, Color.Gray),
-            HotNormal = new Terminal.Gui.Attribute(Color.BrightBlue, Color.Black),
-            HotFocus = new Terminal.Gui.Attribute(Color.Black, Color.BrightBlue)
+            Width = Dim.Fill(),
+            Height = Dim.Fill()
         };
-
-        var flatBorderStyle = new Border
-        {
-            BorderStyle = BorderStyle.None,
-            Effect3D = false,
-            DrawMarginFrame = false
-        };
-
-        Application.Top.ColorScheme = colorScheme;
-
-        var top = Application.Top;
-        ShowScenarioSelection();
-
-        Application.Run();
 
         void ShowScenarioSelection()
         {
             var win = new Window
             {
                 X = 0,
-                Y = 1,
+                Y = 0,
                 Width = Dim.Fill(),
-                Height = Dim.Fill(),
-                ColorScheme = colorScheme
+                Height = Dim.Fill()
             };
 
-            var listView = new ListView(scenarios.Select(s => s.Name).ToList())
+            var listView = new ListView
             {
                 X = 0,
                 Y = 0,
                 Width = Dim.Fill(),
                 Height = Dim.Fill(1),
-                ColorScheme = colorScheme
+                CanFocus = true
             };
 
-            listView.OpenSelectedItem += async args =>
+            var scenarioNames = new ObservableCollection<string>(scenarios.Select(s => s.Name));
+            listView.SetSource<string>(scenarioNames);
+
+            listView.OpenSelectedItem += async (s, args) =>
             {
                 var selectedScenario = scenarios[args.Item];
-
                 top.Remove(win);
 
                 var streamWin = new Window
                 {
                     X = 0,
-                    Y = 1,
+                    Y = 0,
                     Width = Dim.Fill(),
-                    Height = Dim.Fill(),
-                    Border = flatBorderStyle,
-                    ColorScheme = colorScheme
+                    Height = Dim.Fill()
                 };
 
                 var openAIChatView = CreateChatView("OpenAI", $"{selectedScenario.Name} (OpenAI)");
-                var copilotChatView = CreateChatView("CopilotStudio", $"{selectedScenario.Name} (Copilot Studio)");
+                // var copilotChatView = CreateChatView("CopilotStudio", $"{selectedScenario.Name} (Copilot Studio)");
 
-                var backButton = new Button("Back")
+                var backButton = new Button
                 {
+                    Text = "Back",
                     X = Pos.Center(),
                     Y = Pos.AnchorEnd(1),
-                    ColorScheme = colorScheme,
-                    HotKey = (Key)0,
-                    HotKeySpecifier = '\xffff',
+                    CanFocus = true
                 };
 
-                var focusable = new List<View> { openAIChatView, copilotChatView, backButton };
-                var focusIndex = 0;
-                focusable[focusIndex].SetFocus();
-
-                backButton.Clicked += () =>
+                backButton.Accepting += (s, e) =>
                 {
                     top.Remove(streamWin);
                     ShowScenarioSelection();
+                    e.Handled = true;
                 };
 
-                streamWin.KeyPress += (e) =>
-                {
-                    if (e.KeyEvent.Key == Key.CursorRight)
-                    {
-                        focusIndex = (focusIndex + 1) % focusable.Count;
-                        focusable[focusIndex].SetFocus();
-                        e.Handled = true;
-                    }
-                    else if (e.KeyEvent.Key == Key.CursorLeft)
-                    {
-                        focusIndex = (focusIndex - 1 + focusable.Count) % focusable.Count;
-                        focusable[focusIndex].SetFocus();
-                        e.Handled = true;
-                    }
-                    else if (e.KeyEvent.Key == Key.Esc)
-                    {
-                        backButton.OnClicked();
-                        e.Handled = true;
-                    }
-                };
-
-                streamWin.Add(openAIChatView, copilotChatView, backButton);
+                streamWin.Add(openAIChatView, /*copilotChatView,*/ backButton);
                 top.Add(streamWin);
-                Application.Refresh();
 
                 foreach (var message in selectedScenario.StartingMessages)
                 {
                     ChatRenderHelper.RenderStaticMessage(message, openAIChatView);
-                    ChatRenderHelper.RenderStaticMessage(message, copilotChatView);
+                    // ChatRenderHelper.RenderStaticMessage(message, copilotChatView);
                 }
 
                 _ = Task.Run(async () =>
@@ -145,8 +105,8 @@ public class ScenarioUIController
                     var streams = _executor.RunScenario(selectedScenario, cancellationToken);
 
                     await Task.WhenAll(
-                        ChatRenderHelper.DisplayStreamToChatViewAsync(streams["OpenAI"], openAIChatView),
-                        ChatRenderHelper.DisplayStreamToChatViewAsync(streams["CopilotStudio"], copilotChatView)
+                        ChatRenderHelper.DisplayStreamToChatViewAsync(streams["OpenAI"], openAIChatView)
+                        // ChatRenderHelper.DisplayStreamToChatViewAsync(streams["CopilotStudio"], copilotChatView)
                     );
                 });
 
@@ -155,8 +115,8 @@ public class ScenarioUIController
 
             win.Add(listView);
             top.Add(win);
-            Application.Refresh();
-            Application.MainLoop.Invoke(() => listView.SetFocus());
+
+            Application.Invoke(() => listView.SetFocus());
         }
 
         ChatView CreateChatView(string label, string title) =>
@@ -166,9 +126,15 @@ public class ScenarioUIController
                 Y = 0,
                 Width = label == "OpenAI" ? Dim.Percent(50) : Dim.Fill(),
                 Height = Dim.Fill(1),
-                ColorScheme = colorScheme
+                CanFocus = true
             };
+
+        ShowScenarioSelection();
+
+        Application.Run(top);
+        top.Dispose();
 
         await Task.CompletedTask;
     }
+
 }

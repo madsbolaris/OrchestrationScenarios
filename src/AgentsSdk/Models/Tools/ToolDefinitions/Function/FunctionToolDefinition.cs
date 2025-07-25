@@ -11,7 +11,6 @@ public class FunctionToolDefinition : ClientSideToolDefinition
     public bool? Strict { get; set; }
 
     private Delegate? _method;
-    private AIFunction? _cachedFunction;
 
     public Delegate? Method
     {
@@ -19,7 +18,6 @@ public class FunctionToolDefinition : ClientSideToolDefinition
         set
         {
             _method = value;
-            _cachedFunction = value is not null ? AIFunctionFactory.Create(value) : null;
         }
     }
 
@@ -40,8 +38,7 @@ public class FunctionToolDefinition : ClientSideToolDefinition
         var tool = new FunctionToolDefinition(aiFunction.Name, aiFunction.Description)
         {
             Method = aiFunction.InvokeAsync,
-            _baseParameters = baseParameters,
-            _cachedFunction = aiFunction
+            _baseParameters = baseParameters
         };
 
         tool._executor = async (inputDict) =>

@@ -10,4 +10,5 @@ public class ScenarioDefinition
     public string Path { get; init; } = string.Empty;
     public Agent Agent { get; init; } = new();
     public List<ChatMessage> StartingMessages { get; init; } = new();
+    public string SourceFile { get; set; } = string.Empty;
 }

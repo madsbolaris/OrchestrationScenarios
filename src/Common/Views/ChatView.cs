@@ -1,6 +1,9 @@
 using System;
 using Terminal.Gui;
 using Microsoft.Extensions.Logging;
+using Terminal.Gui.Views;
+using Terminal.Gui.App;
+using Terminal.Gui.ViewBase;
 
 namespace Common.Views;
 
@@ -12,29 +15,31 @@ public class ChatView : Window
 	public ChatView(string title, ILoggerFactory loggerFactory, Action<string>? onInput = null)
 	{
 		Title = title;
-		ColorScheme = new ColorScheme { Normal = new Terminal.Gui.Attribute(Color.White, Color.Black) };
 
 		_messageHistory = new MessageHistory(this, loggerFactory);
 		_onInput = onInput;
 
-		// Always add the Copy XML button in the top-right corner
-		var copyButton = new Button("Copy XML")
+		// Add the Copy XML button
+		var copyButton = new Button
 		{
-			X = Pos.AnchorEnd(12), // 12 = button width for alignment; adjust if label changes
+			Text = "Copy XML",
+			X = Pos.AnchorEnd(12),
 			Y = 0,
+			CanFocus = true
 		};
 
-		copyButton.Clicked += () =>
+		copyButton.Accepting += (s, e) =>
 		{
 			if (Clipboard.IsSupported)
 			{
-				Clipboard.Contents = _messageHistory.Xml;
-				MessageBox.Query("Copied", "Conversation XML copied to clipboard.", "OK");
+				Clipboard.TrySetClipboardData(_messageHistory.Xml);
+				MessageBox.Query("Copied", "Conversation XML copied to clipboard.", buttons: new[] { "OK" });
 			}
 			else
 			{
 				MessageBox.ErrorQuery("Clipboard Not Supported", "Terminal clipboard is not available.", "OK");
 			}
+			e.Handled = true;
 		};
 
 		Add(copyButton);

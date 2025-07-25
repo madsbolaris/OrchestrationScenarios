@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Terminal.Gui;
+using Terminal.Gui.Drawing;
+using Terminal.Gui.ViewBase;
 
 namespace Common.Views;
 
@@ -19,9 +21,7 @@ public class Message
 	public int Width => CalculateWidth();
 	public int Height => CalculateHeight();
 	private int _lastComputedWidth = -1;
-
 	private string _lastRenderedText = "";
-
 
 	public Message(View parentView, string text, string sender, DateTime sentAt, Pos position, string? toolName = null, string? toolCallId = null)
 	{
@@ -36,22 +36,11 @@ public class Message
 		{
 			Y = position + 1,
 			CanFocus = false,
-			ColorScheme = new ColorScheme
-			{
-				Normal = new Terminal.Gui.Attribute(
-					_sender == "User" ? Color.BrightCyan : Color.White,
-					Color.Black
-				)
-			},
-			Border = new Border
-			{
-				BorderStyle = BorderStyle.Rounded,
-				BorderBrush = _sender == "User" ? Color.BrightCyan : Color.White
-			}
+			BorderStyle = LineStyle.Rounded
 		};
 
 		_parentView.Add(_renderedView);
-		_parentView.LayoutComplete += (_) => UpdateLayout();
+
 		UpdateLayout();
 	}
 
@@ -127,14 +116,12 @@ public class Message
 		UpdateText();
 
 		_renderedView.Text = _renderedText;
-		_renderedView.Width = Width - 2;
-		_renderedView.Height = Height - 2;
+		_renderedView.Width = Width;
+		_renderedView.Height = Height;
 		_renderedView.X = _sender == "User" ? Pos.Right(_parentView) - Width - 2 : 2;
 
-		_renderedView.SetNeedsDisplay();
+		_renderedView.SetNeedsDraw();
 	}
-
-
 
 	private int CalculateWidth()
 	{
@@ -169,8 +156,9 @@ public class Message
 
 	public void Redraw()
 	{
-		_renderedView.SetNeedsDisplay();
+		_renderedView.SetNeedsDraw();
 	}
+
 	public void SetY(int newY)
 	{
 		_renderedView.Y = newY + 1;

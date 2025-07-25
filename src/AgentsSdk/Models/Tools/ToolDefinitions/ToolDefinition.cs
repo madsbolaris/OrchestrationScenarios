@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using AgentsSdk.Models.Tools.ToolDefinitions.BingGrounding;
+using AgentsSdk.Models.Tools.ToolDefinitions.Mock;
 using AgentsSdk.Models.Tools.ToolDefinitions.PowerPlatform;
 
 namespace AgentsSdk.Models.Tools.ToolDefinitions;
@@ -62,6 +63,9 @@ public class ToolDefinitionConverter : JsonConverter<ToolDefinition>
 
             _ when type.StartsWith("Microsoft.PowerPlatform") =>
                 new PowerPlatformToolDefinition(type, overrides),
+
+            _ when type.StartsWith("Mock") =>
+                new MockToolDefinition(type, overrides),
 
             _ => throw new JsonException($"Unknown tool type '{type}'")
         };
